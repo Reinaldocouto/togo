@@ -1,0 +1,14 @@
+C:\github\togo\bin\Debug\net10.0\togo.exe
+C:\github\togo\bin\Debug\net10.0\togo.deps.json
+C:\github\togo\bin\Debug\net10.0\togo.runtimeconfig.json
+C:\github\togo\bin\Debug\net10.0\togo.dll
+C:\github\togo\bin\Debug\net10.0\togo.pdb
+C:\github\togo\obj\Debug\net10.0\togo.GeneratedMSBuildEditorConfig.editorconfig
+C:\github\togo\obj\Debug\net10.0\togo.AssemblyInfoInputs.cache
+C:\github\togo\obj\Debug\net10.0\togo.AssemblyInfo.cs
+C:\github\togo\obj\Debug\net10.0\togo.csproj.CoreCompileInputs.cache
+C:\github\togo\obj\Debug\net10.0\togo.dll
+C:\github\togo\obj\Debug\net10.0\refint\togo.dll
+C:\github\togo\obj\Debug\net10.0\togo.pdb
+C:\github\togo\obj\Debug\net10.0\togo.genruntimeconfig.cache
+C:\github\togo\obj\Debug\net10.0\ref\togo.dll
