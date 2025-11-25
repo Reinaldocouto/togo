@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\\Togo.Domain\\Togo.Domain.csproj" />
+    <ProjectReference Include="..\\Togo.Application\\Togo.Application.csproj" />
+  </ItemGroup>
+</Project>
