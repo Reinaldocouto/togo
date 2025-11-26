@@ -45,9 +45,9 @@ dotnet run --project backend/src/Togo.Api/Togo.Api.csproj
 A API ficará disponível em `http://localhost:5000` (HTTP) e `https://localhost:7000` (HTTPS por padrão do Kestrel).
 
 ## Testes rápidos com curl/Postman
-- Autenticação:
+- Autenticação (alias `/login` e rota principal `/api/auth/login`):
   ```bash
-  curl -X POST http://localhost:5000/login \
+  curl -X POST http://localhost:5000/api/auth/login \
     -H "Content-Type: application/json" \
     -d '{"email":"admin@togo.com","password":"ChangeMe123!"}'
   ```
