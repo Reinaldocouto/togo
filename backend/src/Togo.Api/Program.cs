@@ -52,6 +52,7 @@ static async Task EnsureDatabaseAsync(IServiceProvider services)
     {
         await dbContext.Database.EnsureCreatedAsync();
     }
+    await dbContext.Database.MigrateAsync();
 
     if (!await dbContext.Users.AnyAsync())
     {

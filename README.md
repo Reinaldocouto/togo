@@ -15,6 +15,7 @@ A .NET 8 backend organized under `backend/` with Domain, Application, Infrastruc
 
 ## Configuração do banco de dados
 O banco padrão usa SQLite em `togo.db` (ao lado do executável). As migrations já estão incluídas no projeto. Na inicialização, a API verifica se há migrations compiladas; se houver, ela as aplica automaticamente. Se nenhum script de migration estiver presente (por exemplo, em um build sem ferramentas `dotnet-ef`), a API cai para `EnsureCreated` e cria as tabelas a partir do modelo, evitando falhas de tabela ausente.
+O banco padrão usa SQLite em `togo.db` (ao lado do executável). As migrations já estão incluídas no projeto.
 
 1. Restaurar dependências e aplicar migrations manualmente (opcional quando executar a API, pois ela aplica automaticamente):
    ```bash
