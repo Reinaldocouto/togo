@@ -43,6 +43,15 @@ static async Task EnsureDatabaseAsync(IServiceProvider services)
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
+    var hasMigrations = (await dbContext.Database.GetMigrationsAsync()).Any();
+    if (hasMigrations)
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+    else
+    {
+        await dbContext.Database.EnsureCreatedAsync();
+    }
     await dbContext.Database.MigrateAsync();
 
     if (!await dbContext.Users.AnyAsync())
