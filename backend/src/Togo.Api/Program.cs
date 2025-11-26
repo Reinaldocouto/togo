@@ -13,6 +13,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException("Connection string 'Default' not found.");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=togo.db";
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
 
@@ -22,6 +27,7 @@ builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddSingleton<ITokenService, InMemoryTokenService>();
 
 var app = builder.Build();
+await ApplyMigrationsAndSeedAsync(app.Services);
 await EnsureDatabaseAsync(app.Services);
 
 if (app.Environment.IsDevelopment())
@@ -37,6 +43,7 @@ app.MapGet("/health", () => Results.Ok("Healthy"));
 
 app.Run();
 
+static async Task ApplyMigrationsAndSeedAsync(IServiceProvider services)
 static async Task EnsureDatabaseAsync(IServiceProvider services)
 {
     using var scope = services.CreateScope();
@@ -57,6 +64,11 @@ static async Task EnsureDatabaseAsync(IServiceProvider services)
     if (!await dbContext.Users.AnyAsync())
     {
         const string defaultPassword = "ChangeMe123!";
+        const string defaultEmail = "admin@togo.com";
+        User.EnsurePasswordMeetsRules(defaultPassword);
+
+        var admin = User.Create("Admin", defaultEmail, hasher.HashPassword(defaultPassword));
+        await dbContext.Users.AddAsync(admin);
         User.EnsurePasswordMeetsRules(defaultPassword);
         var user = User.Create("Admin", "admin@togo.local", hasher.HashPassword(defaultPassword));
         await dbContext.Users.AddAsync(user);
