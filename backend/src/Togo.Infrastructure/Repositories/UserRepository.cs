@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Togo.Application.Interfaces;
+using Togo.Domain.Interfaces;
 using Togo.Domain.Entities;
 using Togo.Infrastructure.Persistence;
 

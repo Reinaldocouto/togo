@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Togo.Application.Interfaces;
+using Togo.Domain.Interfaces;
 using Togo.Domain.Entities;
 
 namespace Togo.Infrastructure.Tokens;

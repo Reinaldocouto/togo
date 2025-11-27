@@ -1,6 +1,6 @@
 using Togo.Domain.Entities;
 
-namespace Togo.Application.Interfaces;
+namespace Togo.Domain.Interfaces;
 
 public interface ITokenService
 {

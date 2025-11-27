@@ -1,4 +1,4 @@
-using Togo.Application.Interfaces;
+using Togo.Domain.Interfaces;
 using Togo.Domain.Entities;
 
 namespace Togo.Application.Services;

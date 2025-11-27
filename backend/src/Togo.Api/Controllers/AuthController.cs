@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Togo.Api.Models;
-using Togo.Application.Interfaces;
+using Togo.Domain.Interfaces;
 
 namespace Togo.Api.Controllers;
 
@@ -18,7 +18,6 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    [HttpPost("/login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
         var user = await _authenticateUser.AuthenticateAsync(request.Email, request.Password, cancellationToken);

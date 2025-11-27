@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Togo.Api.Models;
-using Togo.Application.Interfaces;
+using Togo.Domain.Interfaces;
 
 namespace Togo.Api.Controllers;
 

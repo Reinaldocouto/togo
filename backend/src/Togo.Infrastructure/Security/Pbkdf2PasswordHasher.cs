@@ -1,5 +1,5 @@
 using System.Security.Cryptography;
-using Togo.Application.Interfaces;
+using Togo.Domain.Interfaces;
 
 namespace Togo.Infrastructure.Security;
 
