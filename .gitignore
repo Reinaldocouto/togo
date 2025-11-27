@@ -1,0 +1,40 @@
+# Build output
+bin/
+obj/
+**/bin/
+**/obj/
+
+# User-specific
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Cache
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cache
+*.dbmdl
+
+# Logs
+*.log
+
+# Migrations/runtime artifacts
+*.db
+*.db-shm
+*.db-wal
+
+# Visual Studio
+.vs/
+
+# Rider/VS Code
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
