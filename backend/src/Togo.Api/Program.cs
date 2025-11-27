@@ -13,25 +13,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("DefaultCors", policy =>
-    {
-        policy.WithOrigins(
-                "http://localhost:5173",
-                "http://localhost:3000",
-                "https://localhost:5173",
-                "https://localhost:3000")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' not found.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=togo.db";
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthenticateUser, AuthenticateUserService>();
@@ -40,6 +28,7 @@ builder.Services.AddSingleton<ITokenService, InMemoryTokenService>();
 
 var app = builder.Build();
 await ApplyMigrationsAndSeedAsync(app.Services);
+await EnsureDatabaseAsync(app.Services);
 
 if (app.Environment.IsDevelopment())
 {
@@ -49,19 +38,27 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("DefaultCors");
-
 app.MapControllers();
 app.MapGet("/health", () => Results.Ok("Healthy"));
 
 app.Run();
 
 static async Task ApplyMigrationsAndSeedAsync(IServiceProvider services)
+static async Task EnsureDatabaseAsync(IServiceProvider services)
 {
     using var scope = services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
+    var hasMigrations = (await dbContext.Database.GetMigrationsAsync()).Any();
+    if (hasMigrations)
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+    else
+    {
+        await dbContext.Database.EnsureCreatedAsync();
+    }
     await dbContext.Database.MigrateAsync();
 
     if (!await dbContext.Users.AnyAsync())
@@ -72,6 +69,9 @@ static async Task ApplyMigrationsAndSeedAsync(IServiceProvider services)
 
         var admin = User.Create("Admin", defaultEmail, hasher.HashPassword(defaultPassword));
         await dbContext.Users.AddAsync(admin);
+        User.EnsurePasswordMeetsRules(defaultPassword);
+        var user = User.Create("Admin", "admin@togo.local", hasher.HashPassword(defaultPassword));
+        await dbContext.Users.AddAsync(user);
         await dbContext.SaveChangesAsync();
     }
 }
