@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import api from '../services/api';
 import { useAuth, User } from '../contexts/AuthContext';
 
 interface LoginResponse {
-  user: User;
+  userId: string;
+  name: string;
+  email: string;
   token: string;
 }
 
@@ -22,12 +25,21 @@ const Login: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await api.post<LoginResponse>('/login', { email, password });
-      const { user, token } = response.data;
-      login(user, token);
+      const { data } = await api.post('/Auth/login', { email, password });
+      const { name, email: userEmail, token } = data;
+
+      if (!token || !name || !userEmail) {
+        throw new Error('Resposta de login inválida');
+      }
+
+      login({ name, email: userEmail }, token);
       navigate('/dashboard');
     } catch (err) {
-      setError('Usuário ou senha inválidos');
+       const isUnauthorized = axios.isAxiosError(err) && err.response?.status === 401;
+      const message = isUnauthorized
+        ? 'Usuário ou senha inválidos'
+        : 'Não foi possível realizar o login. Tente novamente.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }

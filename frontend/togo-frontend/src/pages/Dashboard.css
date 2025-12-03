@@ -1,0 +1,156 @@
+/*
+ * Estilos para a nova página de Dashboard.
+ *
+ * Esta folha de estilos define a estrutura visual inspirada no projeto
+ * Togo Petcare, com uma barra lateral escura, área de conteúdo principal
+ * clara e cartões de métricas. Os nomes das classes seguem um padrão
+ * semântico para facilitar a leitura e manutenção.
+ */
+
+/* Container principal que define o layout de duas colunas: barra lateral e conteúdo */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #023020; /* verde escuro de fundo */
+  color: #f1f5f9;            /* texto claro para contraste */
+  overflow: hidden;
+}
+
+/* Barra lateral fixa à esquerda */
+.sidebar {
+  width: 240px;
+  background-color: #01261c; /* verde ainda mais escuro para diferenciar */
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Logotipo ou título da aplicação na barra lateral */
+.sidebar .logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #4ade80; /* tom de verde para destacar a marca */
+  cursor: pointer;
+}
+
+/* Lista de navegação na barra lateral */
+.nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Item de navegação */
+.nav-list li {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #f1f5f9;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Estado de hover para item de navegação */
+.nav-list li:hover {
+  background-color: #01463d;
+  color: #4ade80;
+}
+
+/* Área principal de conteúdo */
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+/* Barra superior dentro do conteúdo */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+/* Saudação exibida na barra superior */
+.topbar .greeting {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Botão de logout na barra superior */
+.topbar button {
+  padding: 0.5rem 1rem;
+  background: #4ade80;
+  border-radius: 6px;
+  border: none;
+  color: #023020;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+/* Efeito de hover no botão de logout */
+.topbar button:hover {
+  background: #3cb371;
+}
+
+/* Grid que organiza os cartões de métricas */
+.metrics-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Grid responsivo: duas colunas a partir de tablets */
+@media (min-width: 768px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Grid responsivo: quatro colunas em telas grandes */
+@media (min-width: 1024px) {
+  .metrics-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Cartão individual de métrica */
+.metric-card {
+  background-color: #01261c;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Título do cartão */
+.metric-card h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+/* Valor principal da métrica */
+.metric-card .value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+  color: #f1f5f9;
+}
+
+/* Descrição adicional ou subtexto */
+.metric-card .description {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 0.5rem;
+}
