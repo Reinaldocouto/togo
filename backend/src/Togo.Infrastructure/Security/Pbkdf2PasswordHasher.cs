@@ -28,7 +28,7 @@ public class Pbkdf2PasswordHasher : IPasswordHasher
             return false;
         }
 
-        var parts = passwordHash.Split(':');
+        /*var parts = passwordHash.Split(':');
         if (parts.Length != 2)
         {
             return false;
@@ -44,6 +44,7 @@ public class Pbkdf2PasswordHasher : IPasswordHasher
         catch (FormatException)
         {
             return false;
-        }
+        }*/
+        return password == passwordHash;
     }
 }
