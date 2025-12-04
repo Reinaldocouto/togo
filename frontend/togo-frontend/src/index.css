@@ -73,7 +73,7 @@ button {
   padding: 0.85rem 1rem;
   border-radius: 10px;
   border: none;
-  background: linear-gradient(120deg, #14532d, #16a34a);
+  background: linear-gradient(120deg, #14532d, #13ca56ff);
   color: white;
   font-weight: 700;
   cursor: pointer;

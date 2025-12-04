@@ -86,10 +86,10 @@
 /* Botão de logout na barra superior */
 .topbar button {
   padding: 0.5rem 1rem;
-  background: #4ade80;
+  background: #01261c;
   border-radius: 6px;
   border: none;
-  color: #023020;
+  color: #c8fdeaff;
   cursor: pointer;
   font-weight: 600;
   transition: background-color 0.2s ease;
@@ -153,4 +153,54 @@
   font-size: 0.75rem;
   color: #94a3b8;
   margin-top: 0.5rem;
+}
+
+/* ajuste de ícones */
+
+.nav-list-item {
+  cursor: pointer;
+}
+
+.nav-item-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.metric-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.metric-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;        /* GAP entre ícone e texto */
+  margin-bottom: 2rem; /* Espaço abaixo do logo */
+  padding: 0 1rem;
+  cursor: pointer;
+}
+
+.sidebar-logo-icon {
+  width: 32px;   /* aumenta aqui se quiser maior, ex: 40px */
+  height: 32px;
+  border-radius: 8px; /* opcional, só pra ficar mais suave */
+}
+
+.sidebar-logo-text {
+  font-size: 1.25rem;  /* tamanho do “TOGO” */
+  font-weight: 700;
+  color: #4ade80; /* tom de verde para destacar a marca */
 }
