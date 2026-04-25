@@ -8,7 +8,6 @@ A .NET 8 backend organized under `backend/` with Domain, Application, Infrastruc
 - `backend/src/Togo.Domain` – entidades e regras de negócio.
 - `backend/src/Togo.Application` – interfaces e casos de uso.
 - `backend/src/Togo.Infrastructure` – EF Core (MySQL), repositórios e segurança.
-- `backend/src/Togo.Infrastructure` – EF Core (SQLite), repositórios e segurança.
 - `backend/src/Togo.Api` – Web API com Swagger, login e endpoint de perfil.
 
 ## Pré-requisitos
