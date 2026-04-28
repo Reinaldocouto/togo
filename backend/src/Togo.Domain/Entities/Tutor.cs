@@ -4,13 +4,11 @@ public class Tutor
 {
     private Tutor() { }
 
-    private Tutor(long id, string name, string? document, string? email, string? phone, DateTime createdAt)
+    private Tutor(string name, string? document, string? email, string? phone, DateTime createdAt)
     {
-        ValidateId(id, nameof(id));
         ValidateName(name);
         ValidateDate(createdAt, nameof(createdAt));
 
-        Id = id;
         Name = name.Trim();
         Document = NormalizeOptional(document);
         Email = NormalizeOptional(email);
@@ -26,8 +24,8 @@ public class Tutor
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public static Tutor Create(long id, string name, string? document, string? email, string? phone, DateTime createdAt) =>
-        new(id, name, document, email, phone, createdAt);
+    public static Tutor Create(string name, string? document, string? email, string? phone, DateTime createdAt) =>
+        new(name, document, email, phone, createdAt);
 
     public void UpdateContact(string? document, string? email, string? phone, DateTime updatedAt)
     {
@@ -53,14 +51,6 @@ public class Tutor
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new ArgumentException("Name is required", nameof(name));
-        }
-    }
-
-    private static void ValidateId(long id, string paramName)
-    {
-        if (id <= 0)
-        {
-            throw new ArgumentOutOfRangeException(paramName, "Id must be greater than zero");
         }
     }
 

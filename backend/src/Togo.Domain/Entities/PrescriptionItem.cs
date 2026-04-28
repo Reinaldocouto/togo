@@ -4,9 +4,8 @@ public class PrescriptionItem
 {
     private PrescriptionItem() { }
 
-    private PrescriptionItem(long id, long prescriptionId, long? productId, decimal quantity, string unit, string dosage, int? durationDays)
+    private PrescriptionItem(long prescriptionId, long? productId, decimal quantity, string unit, string dosage, int? durationDays)
     {
-        ValidateId(id, nameof(id));
         ValidateId(prescriptionId, nameof(prescriptionId));
         if (productId.HasValue)
         {
@@ -18,7 +17,6 @@ public class PrescriptionItem
         ValidateRequired(dosage, nameof(dosage));
         ValidateDuration(durationDays);
 
-        Id = id;
         PrescriptionId = prescriptionId;
         ProductId = productId;
         Quantity = quantity;
@@ -35,8 +33,8 @@ public class PrescriptionItem
     public string Dosage { get; private set; } = string.Empty;
     public int? DurationDays { get; private set; }
 
-    public static PrescriptionItem Create(long id, long prescriptionId, long? productId, decimal quantity, string unit, string dosage, int? durationDays) =>
-        new(id, prescriptionId, productId, quantity, unit, dosage, durationDays);
+    public static PrescriptionItem Create(long prescriptionId, long? productId, decimal quantity, string unit, string dosage, int? durationDays) =>
+        new(prescriptionId, productId, quantity, unit, dosage, durationDays);
 
     public void Update(decimal quantity, string unit, string dosage, int? durationDays)
     {

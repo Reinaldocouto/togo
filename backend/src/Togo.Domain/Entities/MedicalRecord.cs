@@ -4,13 +4,11 @@ public class MedicalRecord
 {
     private MedicalRecord() { }
 
-    private MedicalRecord(long id, long patientId, string? generalNotes, string? flagsJson, DateTime updatedAt)
+    private MedicalRecord(long patientId, string? generalNotes, string? flagsJson, DateTime updatedAt)
     {
-        ValidateId(id, nameof(id));
         ValidateId(patientId, nameof(patientId));
         ValidateDate(updatedAt, nameof(updatedAt));
 
-        Id = id;
         PatientId = patientId;
         GeneralNotes = NormalizeOptional(generalNotes);
         FlagsJson = NormalizeOptional(flagsJson);
@@ -23,8 +21,8 @@ public class MedicalRecord
     public string? FlagsJson { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
-    public static MedicalRecord Create(long id, long patientId, string? generalNotes, string? flagsJson, DateTime updatedAt) =>
-        new(id, patientId, generalNotes, flagsJson, updatedAt);
+    public static MedicalRecord Create(long patientId, string? generalNotes, string? flagsJson, DateTime updatedAt) =>
+        new(patientId, generalNotes, flagsJson, updatedAt);
 
     public void UpdateNotes(string? generalNotes, string? flagsJson, DateTime updatedAt)
     {

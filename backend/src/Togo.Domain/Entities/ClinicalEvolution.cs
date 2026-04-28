@@ -6,14 +6,12 @@ public class ClinicalEvolution
 {
     private ClinicalEvolution() { }
 
-    private ClinicalEvolution(long id, long attendanceId, DateTime registeredAt, EvolutionType type, string text)
+    private ClinicalEvolution(long attendanceId, DateTime registeredAt, EvolutionType type, string text)
     {
-        ValidateId(id, nameof(id));
         ValidateId(attendanceId, nameof(attendanceId));
         ValidateDate(registeredAt, nameof(registeredAt));
         ValidateText(text);
 
-        Id = id;
         AttendanceId = attendanceId;
         RegisteredAt = registeredAt;
         Type = type;
@@ -26,8 +24,8 @@ public class ClinicalEvolution
     public EvolutionType Type { get; private set; }
     public string Text { get; private set; } = string.Empty;
 
-    public static ClinicalEvolution Create(long id, long attendanceId, DateTime registeredAt, EvolutionType type, string text) =>
-        new(id, attendanceId, registeredAt, type, text);
+    public static ClinicalEvolution Create(long attendanceId, DateTime registeredAt, EvolutionType type, string text) =>
+        new(attendanceId, registeredAt, type, text);
 
     public void UpdateText(string text)
     {
