@@ -1,76 +1,67 @@
-# Togo Backend
+# TOGO Backend
 
-A .NET 8 backend organized under `backend/` with Domain, Application, Infrastructure, and API projects. The API exposes authentication endpoints backed by Entity Framework Core and MySQL.
-A .NET 8 backend organized under `backend/` with Domain, Application, Infrastructure, and API projects. The API exposes authentication endpoints backed by SQLite and Entity Framework Core migrations.
+Backend do sistema TOGO, desenvolvido em .NET 8 com ASP.NET Core Web API, Entity Framework Core e MySQL. O projeto é organizado em camadas, separando domínio, aplicação, infraestrutura e API.
 
 ## Estrutura do projeto
-- `backend/Togo.sln` – solução contendo todos os projetos do back-end.
+- `backend/Togo.sln` – solução contendo todos os projetos do backend.
 - `backend/src/Togo.Domain` – entidades e regras de negócio.
 - `backend/src/Togo.Application` – interfaces e casos de uso.
 - `backend/src/Togo.Infrastructure` – EF Core (MySQL), repositórios e segurança.
-- `backend/src/Togo.Api` – Web API com Swagger, login e endpoint de perfil.
+- `backend/src/Togo.Api` – Web API com Swagger, autenticação e endpoint de perfil.
 
 ## Pré-requisitos
-- .NET SDK 8.0 ou superior
-- Servidor MySQL acessível em `localhost:3306` com o schema e usuário:
+- .NET SDK 8.0 ou superior.
+- Servidor MySQL acessível em `localhost:3306` com:
   - Database: `togo`
   - User: `togo_app`
   - Password: `Togo@12345`
-- (Opcional) Ferramenta `dotnet-ef` instalada globalmente para gerenciar migrations
+- (Opcional) Ferramenta `dotnet-ef` instalada globalmente para gerenciar migrations.
 
 ## Configuração do banco de dados (MySQL)
-A connection string padrão está definida em `backend/src/Togo.Api/appsettings.json` e `appsettings.Development.json`:
-```
+A connection string padrão está definida em `backend/src/Togo.Api/appsettings.json` e `backend/src/Togo.Api/appsettings.Development.json`:
+
+```txt
 Server=localhost;Port=3306;Database=togo;User=togo_app;Password=Togo@12345;SslMode=None;
 ```
 
-Na inicialização, a API aplica `Database.Migrate()` para garantir que as tabelas existam e faz seed do usuário administrador caso a tabela `Users` esteja vazia.
+Na inicialização, a API aplica `Database.Migrate()` para garantir que as tabelas existam e realiza seed do usuário administrador caso a tabela `Users` esteja vazia.
 
-1. Restaurar dependências e (opcional) aplicar migrations manualmente:
-- (Opcional) Ferramentas `dotnet-ef` instaladas globalmente para gerenciar migrations
-
-## Configuração do banco de dados
-O banco padrão usa SQLite em `togo.db` (ao lado do executável). As migrations já estão incluídas no projeto. Na inicialização, a API verifica se há migrations compiladas; se houver, ela as aplica automaticamente. Se nenhum script de migration estiver presente (por exemplo, em um build sem ferramentas `dotnet-ef`), a API cai para `EnsureCreated` e cria as tabelas a partir do modelo, evitando falhas de tabela ausente.
-O banco padrão usa SQLite em `togo.db` (ao lado do executável). As migrations já estão incluídas no projeto.
-
-1. Restaurar dependências e aplicar migrations manualmente (opcional quando executar a API, pois ela aplica automaticamente):
+## Setup inicial
+1. Restaurar dependências:
    ```bash
    dotnet restore backend/Togo.sln
+   ```
+
+2. Aplicar migrations (opcional, pois a API aplica automaticamente na inicialização):
+   ```bash
    dotnet ef database update --project backend/src/Togo.Infrastructure/Togo.Infrastructure.csproj --startup-project backend/src/Togo.Api/Togo.Api.csproj
    ```
 
-2. Usuário inicial de teste
+3. Usuário inicial de teste:
    - Email: `admin@togo.com`
-   - Email: `admin@togo.local`
    - Senha: `ChangeMe123!`
-
-   A aplicação aplica as migrations e cria esse usuário automaticamente na inicialização caso a tabela `Users` esteja vazia.
 
 ## Executando a API
 Dentro do repositório, execute:
+
 ```bash
 dotnet run --project backend/src/Togo.Api/Togo.Api.csproj
 ```
-A API ficará disponível em `http://localhost:5000` (HTTP) e `https://localhost:7000` (HTTPS por padrão do Kestrel).
+
+A API ficará disponível em `http://localhost:5000` (HTTP) e `https://localhost:7000` (HTTPS, padrão do Kestrel).
 
 ## Testes rápidos com curl/Postman
-- Autenticação (alias `/login` e rota principal `/api/auth/login`):
-  ```bash
-  curl -X POST http://localhost:5000/api/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"admin@togo.com","password":"ChangeMe123!"}'
-- Autenticação:
-  ```bash
-  curl -X POST http://localhost:5000/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"admin@togo.local","password":"ChangeMe123!"}'
-  ```
-  O token retornado é temporário e deve ser enviado em `Authorization: Bearer {token}`.
+1. Login:
+   ```bash
+   curl -X POST http://localhost:5000/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"admin@togo.com","password":"ChangeMe123!"}'
+   ```
 
-- Perfil do usuário autenticado:
-  ```bash
-  curl http://localhost:5000/api/user/me -H "Authorization: Bearer {token}"
-  ```
+   O token retornado deve ser enviado no header `Authorization: Bearer {token}`.
 
-## Limpeza de arquivos antigos
-Arquivos do projeto de console original foram removidos. Utilize apenas a solução em `backend/Togo.sln` e os projetos contidos em `backend/src/`.
+2. Perfil do usuário autenticado:
+   ```bash
+   curl http://localhost:5000/api/user/me \
+     -H "Authorization: Bearer {token}"
+   ```
