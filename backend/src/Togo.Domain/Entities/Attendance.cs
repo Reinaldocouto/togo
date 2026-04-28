@@ -6,9 +6,8 @@ public class Attendance
 {
     private Attendance() { }
 
-    private Attendance(long id, long patientId, string attendanceNumber, DateTime openedAt, DateTime? closedAt, AttendanceStatus status, AttendanceType type)
+    private Attendance(long patientId, string attendanceNumber, DateTime openedAt, DateTime? closedAt, AttendanceStatus status, AttendanceType type)
     {
-        ValidateId(id, nameof(id));
         ValidateId(patientId, nameof(patientId));
         ValidateRequired(attendanceNumber, nameof(attendanceNumber));
         ValidateDate(openedAt, nameof(openedAt));
@@ -17,7 +16,6 @@ public class Attendance
             ValidateDate(closedAt.Value, nameof(closedAt));
         }
 
-        Id = id;
         PatientId = patientId;
         AttendanceNumber = attendanceNumber.Trim();
         OpenedAt = openedAt;
@@ -34,8 +32,8 @@ public class Attendance
     public AttendanceStatus Status { get; private set; }
     public AttendanceType Type { get; private set; }
 
-    public static Attendance Create(long id, long patientId, string attendanceNumber, DateTime openedAt, DateTime? closedAt, AttendanceStatus status, AttendanceType type) =>
-        new(id, patientId, attendanceNumber, openedAt, closedAt, status, type);
+    public static Attendance Create(long patientId, string attendanceNumber, DateTime openedAt, DateTime? closedAt, AttendanceStatus status, AttendanceType type) =>
+        new(patientId, attendanceNumber, openedAt, closedAt, status, type);
 
     public void Close(DateTime closedAt)
     {

@@ -6,14 +6,12 @@ public class Patient
 {
     private Patient() { }
 
-    private Patient(long id, PatientType type, string name, DateOnly? birthDate, string status, DateTime createdAt)
+    private Patient(PatientType type, string name, DateOnly? birthDate, string status, DateTime createdAt)
     {
-        ValidateId(id, nameof(id));
         ValidateName(name);
         ValidateStatus(status);
         ValidateDate(createdAt, nameof(createdAt));
 
-        Id = id;
         Type = type;
         Name = name.Trim();
         BirthDate = birthDate;
@@ -29,8 +27,8 @@ public class Patient
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public static Patient Create(long id, PatientType type, string name, DateOnly? birthDate, string status, DateTime createdAt) =>
-        new(id, type, name, birthDate, status, createdAt);
+    public static Patient Create(PatientType type, string name, DateOnly? birthDate, string status, DateTime createdAt) =>
+        new(type, name, birthDate, status, createdAt);
 
     public void Update(string name, DateOnly? birthDate, string status, DateTime updatedAt)
     {
@@ -57,14 +55,6 @@ public class Patient
         if (string.IsNullOrWhiteSpace(status))
         {
             throw new ArgumentException("Status is required", nameof(status));
-        }
-    }
-
-    private static void ValidateId(long id, string paramName)
-    {
-        if (id <= 0)
-        {
-            throw new ArgumentOutOfRangeException(paramName, "Id must be greater than zero");
         }
     }
 
