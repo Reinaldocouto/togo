@@ -10,18 +10,18 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<Tutor> Tutors => Set<Tutor>();
+    public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<Pet> Pets => Set<Pet>();
+    public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
+    public DbSet<Attendance> Attendances => Set<Attendance>();
+    public DbSet<ClinicalEvolution> ClinicalEvolutions => Set<ClinicalEvolution>();
+    public DbSet<Prescription> Prescriptions => Set<Prescription>();
+    public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        var user = modelBuilder.Entity<User>();
-        user.ToTable("Users");
-        user.HasKey(u => u.Id);
-        user.Property(u => u.Id).ValueGeneratedNever();
-        user.Property(u => u.Name).IsRequired().HasMaxLength(200);
-        user.Property(u => u.Email).IsRequired().HasMaxLength(320);
-        user.HasIndex(u => u.Email).IsUnique();
-        user.Property(u => u.PasswordHash).IsRequired().HasMaxLength(200);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
