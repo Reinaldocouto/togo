@@ -1,0 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Togo.Domain.Entities;
+
+namespace Togo.Infrastructure.Persistence.Configurations;
+
+public class MedicalRecordConfiguration : IEntityTypeConfiguration<MedicalRecord>
+{
+    public void Configure(EntityTypeBuilder<MedicalRecord> builder)
+    {
+        builder.ToTable("MedicalRecords");
+
+        builder.HasKey(m => m.Id);
+        builder.Property(m => m.Id).ValueGeneratedOnAdd();
+
+        builder.Property(m => m.PatientId).IsRequired();
+        builder.Property(m => m.GeneralNotes).HasColumnType("text");
+        builder.Property(m => m.FlagsJson).HasColumnType("longtext");
+        builder.Property(m => m.UpdatedAt).IsRequired();
+
+        builder.HasOne<Patient>()
+            .WithMany()
+            .HasForeignKey(m => m.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(m => m.PatientId);
+    }
+}
