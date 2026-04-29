@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Togo.Application.Services;
+using Togo.Application.Tutors;
+using Togo.Application.Tutors.UseCases;
 using Togo.Domain.Interfaces;
 using Togo.Infrastructure.Persistence;
 using Togo.Infrastructure.Repositories;
@@ -8,17 +10,23 @@ using Togo.Infrastructure.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ====== CONEXÃO COM O BANCO ======
+// ====== DATABASE CONNECTION ======
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' not found.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// ====== INJEÇÃO DE DEPENDÊNCIAS ======
+// ====== DEPENDENCY INJECTION ======
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITutorRepository, TutorRepository>();
 builder.Services.AddScoped<IAuthenticateUser, AuthenticateUserService>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
+builder.Services.AddScoped<ListTutorsUseCase>();
+builder.Services.AddScoped<GetTutorByIdUseCase>();
+builder.Services.AddScoped<CreateTutorUseCase>();
+builder.Services.AddScoped<UpdateTutorUseCase>();
+builder.Services.AddScoped<DeleteTutorUseCase>();
 builder.Services.AddSingleton<ITokenService, InMemoryTokenService>();
 
 // ====== CORS ======
@@ -29,7 +37,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(AllowFrontendPolicy, policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173") // URL do front (Vite)
+            .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -49,13 +57,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// CORS ANTES de Auth/Authorization
 app.UseCors(AllowFrontendPolicy);
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
