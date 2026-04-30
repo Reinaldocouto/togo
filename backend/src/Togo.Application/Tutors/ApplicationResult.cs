@@ -28,5 +28,6 @@ public class ApplicationResult<T>
     public static ApplicationResult<T> NotFound(string error) => new(ApplicationResultType.NotFound, error: error);
     public static ApplicationResult<T> ValidationError(string error) => new(ApplicationResultType.ValidationError, error: error);
     public static ApplicationResult<T> Conflict(string error) => new(ApplicationResultType.Conflict, error: error);
-    public static ApplicationResult<T> Error(string error) => new(ApplicationResultType.Error, error: error);
+    public static ApplicationResult<T> Failure(string error) 
+        => new(ApplicationResultType.Error, error: error);
 }
