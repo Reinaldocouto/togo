@@ -71,3 +71,4 @@ A API ficará disponível em `http://localhost:5000` (HTTP) e `https://localhost
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [Diretrizes de Banco de Dados](docs/DATABASE_GUIDELINES.md)
 - [Diretrizes de Desenvolvimento](docs/DEVELOPMENT_GUIDELINES.md)
+- [Evolução do Projeto](docs/PROJECT_EVOLUTION.md)
