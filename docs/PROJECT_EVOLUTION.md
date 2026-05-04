@@ -424,3 +424,19 @@ Objetivo:
 ---
 
 Este documento deve crescer junto com o projeto e ser atualizado a cada avanço técnico relevante.
+
+### Fase 1.1.1 — Segurança JWT dos endpoints de Tutor
+
+- Foi identificado em teste manual que `GET /api/tutors` retornava `200 OK` sem token.
+- Isso indicava que o endpoint estava funcional, mas não protegido.
+- A solução adotada foi migrar de token em memória para JWT real.
+- Foi configurada autenticação JWT no `Program.cs` com validação de assinatura, issuer, audience e lifetime.
+- Swagger passou a expor botão `Authorize` com esquema Bearer JWT.
+- `TutorsController` passou a exigir `[Authorize]`.
+- `AuthController/Login` permaneceu público com `[AllowAnonymous]`.
+- Testes esperados:
+  - Sem token: `401 Unauthorized`.
+  - Com token válido: `200 OK`.
+  - Login público: `200 OK` com token JWT.
+- Estado atual do projeto: segurança JWT inicial implementada para o CRUD de Tutor.
+- Observação operacional: em produção, a secret JWT não deve ficar hardcoded em arquivo; deve ser carregada por variável de ambiente ou secret manager.

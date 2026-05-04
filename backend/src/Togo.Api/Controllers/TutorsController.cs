@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Togo.Application.Tutors;
 using Togo.Application.Tutors.Contracts;
@@ -5,6 +6,7 @@ using Togo.Application.Tutors.UseCases;
 
 namespace Togo.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/tutors")]
 public class TutorsController : ControllerBase
