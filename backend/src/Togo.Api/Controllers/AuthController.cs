@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Togo.Api.Models;
 using Togo.Domain.Interfaces;
@@ -17,6 +18,7 @@ public class AuthController : ControllerBase
         _tokenService = tokenService;
     }
 
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
