@@ -39,7 +39,7 @@ public class TutorTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => Tutor.Create(name, document, email, phone, createdAt));
-        Assert.Equal("Name is required", exception.Message);
+        Assert.StartsWith("Name is required", exception.Message);
         Assert.Equal("name", exception.ParamName);
     }
 
@@ -55,7 +55,7 @@ public class TutorTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => Tutor.Create(name, document, email, phone, createdAt));
-        Assert.Equal("Name is required", exception.Message);
+        Assert.StartsWith("Name is required", exception.Message);
         Assert.Equal("name", exception.ParamName);
     }
 
@@ -71,7 +71,7 @@ public class TutorTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => Tutor.Create(name, document, email, phone, createdAt));
-        Assert.Equal("Date is required", exception.Message);
+        Assert.StartsWith("Date is required", exception.Message);
         Assert.Equal("createdAt", exception.ParamName);
     }
 
@@ -172,7 +172,7 @@ public class TutorTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => tutor.UpdateContact("new", "new", "new", updatedAt));
-        Assert.Equal("Date is required", exception.Message);
+        Assert.StartsWith("Date is required", exception.Message);
         Assert.Equal("updatedAt", exception.ParamName);
     }
 
@@ -202,7 +202,7 @@ public class TutorTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => tutor.UpdateName(newName, updatedAt));
-        Assert.Equal("Name is required", exception.Message);
+        Assert.StartsWith("Name is required", exception.Message);
         Assert.Equal("name", exception.ParamName);
     }
 
@@ -216,7 +216,7 @@ public class TutorTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => tutor.UpdateName(newName, updatedAt));
-        Assert.Equal("Name is required", exception.Message);
+        Assert.StartsWith("Name is required", exception.Message);
         Assert.Equal("name", exception.ParamName);
     }
 
@@ -230,7 +230,7 @@ public class TutorTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => tutor.UpdateName(newName, updatedAt));
-        Assert.Equal("Date is required", exception.Message);
+        Assert.StartsWith("Date is required", exception.Message);
         Assert.Equal("updatedAt", exception.ParamName);
     }
 
