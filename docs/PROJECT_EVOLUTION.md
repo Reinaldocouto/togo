@@ -440,3 +440,18 @@ Este documento deve crescer junto com o projeto e ser atualizado a cada avanço 
   - Login público: `200 OK` com token JWT.
 - Estado atual do projeto: segurança JWT inicial implementada para o CRUD de Tutor.
 - Observação operacional: em produção, a secret JWT não deve ficar hardcoded em arquivo; deve ser carregada por variável de ambiente ou secret manager.
+
+### Fase 1.1.2 — Refatoração SOLID da regra de documento único do Tutor
+
+- Foi identificado em revisão humana que a regra de documento único estava diretamente nos use cases de criação e atualização.
+- Como a regra é reutilizável e tende a aparecer em múltiplos fluxos, ela foi extraída para `TutorDocumentUniquenessValidator`.
+- A mudança melhora o Single Responsibility Principle, reduz duplicação e centraliza a regra em um único ponto.
+- O comportamento funcional foi preservado: documento duplicado continua retornando `409 Conflict`.
+- Não houve alteração de banco, migration, frontend ou endpoint.
+
+Nota de arquitetura:
+- Nem todo `if` deve virar classe.
+- A extração é recomendada quando a regra se repete em mais de um use case.
+- A extração é recomendada quando a regra tende a evoluir.
+- A extração é recomendada quando a regra representa lógica relevante de negócio/aplicação.
+- A extração é recomendada quando a regra precisa ser reaproveitada.

@@ -1,4 +1,5 @@
 using Togo.Application.Tutors.Contracts;
+using Togo.Application.Tutors.Validators;
 using Togo.Domain.Entities;
 
 namespace Togo.Application.Tutors.UseCases;
@@ -6,10 +7,14 @@ namespace Togo.Application.Tutors.UseCases;
 public class CreateTutorUseCase
 {
     private readonly ITutorRepository _tutorRepository;
+    private readonly TutorDocumentUniquenessValidator _documentUniquenessValidator;
 
-    public CreateTutorUseCase(ITutorRepository tutorRepository)
+    public CreateTutorUseCase(
+        ITutorRepository tutorRepository,
+        TutorDocumentUniquenessValidator documentUniquenessValidator)
     {
         _tutorRepository = tutorRepository;
+        _documentUniquenessValidator = documentUniquenessValidator;
     }
 
     public async Task<ApplicationResult<TutorResponse>> ExecuteAsync(CreateTutorRequest request, CancellationToken cancellationToken)
@@ -19,10 +24,12 @@ public class CreateTutorUseCase
             return ApplicationResult<TutorResponse>.ValidationError("Name is required.");
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Document) &&
-            await _tutorRepository.ExistsByDocumentAsync(request.Document, null, cancellationToken))
+        var documentUniquenessValidation = await _documentUniquenessValidator
+            .ValidateAsync(request.Document, null, cancellationToken);
+
+        if (!documentUniquenessValidation.IsSuccess)
         {
-            return ApplicationResult<TutorResponse>.Conflict("A tutor with this document already exists.");
+            return ApplicationResult<TutorResponse>.Conflict(documentUniquenessValidation.Error!);
         }
 
         var tutor = Tutor.Create(request.Name, request.Document, request.Email, request.Phone, DateTime.UtcNow);

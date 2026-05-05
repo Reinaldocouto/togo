@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using Togo.Application.Services;
 using Togo.Application.Tutors;
 using Togo.Application.Tutors.UseCases;
+using Togo.Application.Tutors.Validators;
 using Togo.Domain.Interfaces;
 using Togo.Infrastructure.Persistence;
 using Togo.Infrastructure.Repositories;
@@ -38,6 +39,7 @@ builder.Services.AddScoped<ListTutorsUseCase>();
 builder.Services.AddScoped<GetTutorByIdUseCase>();
 builder.Services.AddScoped<CreateTutorUseCase>();
 builder.Services.AddScoped<UpdateTutorUseCase>();
+builder.Services.AddScoped<TutorDocumentUniquenessValidator>();
 builder.Services.AddScoped<DeleteTutorUseCase>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
