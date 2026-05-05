@@ -54,9 +54,9 @@ public class Tutor
         }
     }
 
-    private static void ValidateDate(DateTime date, string paramName)
+    private static void ValidateDate(DateTime dateCreateAt, string paramName)
     {
-        if (date == default)
+        if (dateCreateAt == default)
         {
             throw new ArgumentException("Date is required", paramName);
         }
