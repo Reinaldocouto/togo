@@ -342,7 +342,219 @@ Exemplos de cuidado:
 
 O log deve ajudar a diagnosticar o problema, mas não deve se tornar uma nova superfície de exposição de dados.
 
-## 10. Roadmap de implementação
+## 10. Fase 2.2 — Tratamento global de exceções inesperadas
+
+A Fase 2.2 define o padrão planejado para tratamento global de exceções inesperadas na API do TOGO. Esta seção é documental e não implementa middleware, não altera `Program.cs` e não modifica fluxos de aplicação existentes.
+
+### 10.1 Objetivo
+
+O objetivo do tratamento global de exceções é criar um ponto central da API para lidar com falhas técnicas não previstas no fluxo normal da aplicação.
+
+Esse tratamento deverá:
+
+- capturar erros inesperados em um ponto central da API;
+- registrar o erro técnico com `ILogger`;
+- retornar uma resposta HTTP 500 segura e padronizada;
+- evitar exposição de stack trace;
+- evitar vazamento de detalhes internos;
+- melhorar o diagnóstico e a observabilidade em desenvolvimento e produção.
+
+O tratamento global deve atuar como uma proteção técnica para exceções não tratadas, sem substituir os mecanismos já existentes para erros conhecidos de negócio ou aplicação.
+
+### 10.2 O que este tratamento resolve
+
+Um middleware global de exceções ajuda a reduzir problemas comuns em APIs quando ocorre uma falha inesperada, como:
+
+- respostas inconsistentes para erros inesperados;
+- repetição de blocos `try/catch` em controllers;
+- exposição acidental de detalhes internos da aplicação;
+- falta de log centralizado para exceções não tratadas;
+- dificuldade de investigar falhas em produção ou desenvolvimento.
+
+Esse padrão não elimina a necessidade de boas validações, tratamento correto de regras de negócio e testes. Ele apenas centraliza o comportamento para falhas técnicas que escaparem do fluxo esperado.
+
+### 10.3 O que este tratamento não deve fazer
+
+O tratamento global de exceções inesperadas não deve ser usado como substituto para regras de negócio, validações ou resultados esperados da aplicação.
+
+Portanto, ele não deve:
+
+- substituir o uso de `ApplicationResult`;
+- transformar erro de negócio em exception;
+- alterar status codes de erros esperados;
+- capturar validações comuns como se fossem falhas técnicas;
+- expor stack trace na resposta HTTP;
+- retornar a mensagem técnica da exception diretamente ao cliente;
+- criar exceptions customizadas nesta fase.
+
+Erros esperados devem continuar sendo tratados explicitamente pelos fluxos atuais da aplicação. O middleware global deve tratar somente exceções inesperadas.
+
+### 10.4 Separação entre erro esperado e erro inesperado
+
+O TOGO já utiliza `ApplicationResult` para representar erros esperados de negócio ou aplicação. Esse padrão deve continuar sendo usado para validações, conflitos, recursos não encontrados, autenticação inválida e demais regras previstas.
+
+Exemplos de erros esperados que continuam com `ApplicationResult`:
+
+| Situação | Resposta esperada |
+| --- | --- |
+| Tutor não encontrado | 404 |
+| Nome obrigatório | 400 |
+| Documento duplicado | 409 |
+| Login inválido | 401 |
+
+Exemplos de erros inesperados que serão tratados pelo middleware global na implementação futura:
+
+| Situação | Resposta esperada |
+| --- | --- |
+| `NullReferenceException` | 500 |
+| Falha inesperada no banco | 500 |
+| Exception não tratada | 500 |
+
+A diferença principal é que erros esperados fazem parte do fluxo conhecido da aplicação, enquanto erros inesperados indicam falhas técnicas não previstas que precisam ser registradas para diagnóstico.
+
+### 10.5 Resposta padronizada planejada
+
+A resposta planejada para exceções inesperadas deve ser simples, segura e consistente.
+
+Exemplo de resposta HTTP 500:
+
+```json
+{
+  "message": "An unexpected error occurred.",
+  "traceId": "..."
+}
+```
+
+Regras para a resposta:
+
+- `message` deve ser uma mensagem genérica e segura;
+- `traceId` deve ajudar a correlacionar a resposta recebida pelo cliente com os logs do servidor;
+- detalhes técnicos devem ficar apenas no log;
+- stack trace não deve ser exposto;
+- `exception.Message` não deve ser retornada diretamente ao cliente.
+
+Esse formato busca apoiar o diagnóstico sem revelar detalhes internos da aplicação, infraestrutura, banco de dados ou regras internas.
+
+### 10.6 Logging esperado
+
+Na implementação futura, o middleware deverá usar `ILogger<GlobalExceptionHandlingMiddleware>` para registrar exceções inesperadas no servidor.
+
+Exemplo conceitual de log esperado:
+
+```csharp
+_logger.LogError(
+    exception,
+    "Unhandled exception occurred. TraceId: {TraceId}",
+    traceId);
+```
+
+Regras para o logging do middleware:
+
+- logar a exception técnica no servidor;
+- incluir o `traceId` para correlação;
+- não logar payload completo;
+- não logar senha;
+- não logar token JWT;
+- não logar documento/CPF;
+- não retornar `exception.Message` diretamente ao cliente.
+
+O log deve conter informação técnica suficiente para diagnóstico interno, mas sem ampliar a superfície de exposição de dados sensíveis.
+
+### 10.7 Local planejado na arquitetura
+
+O middleware global deverá ficar na camada de API, pois sua responsabilidade estará ligada ao pipeline HTTP do ASP.NET Core.
+
+Local planejado:
+
+```text
+backend/src/Togo.Api
+```
+
+Estrutura planejada:
+
+```text
+backend/src/Togo.Api/
+  Middlewares/
+    GlobalExceptionHandlingMiddleware.cs
+```
+
+Caso seja necessário criar um modelo específico para a resposta de erro, a estrutura planejada poderá ser:
+
+```text
+backend/src/Togo.Api/
+  Models/
+    ErrorResponse.cs
+```
+
+Nesta Fase 2.2.1, esses arquivos não devem ser criados. O objetivo é apenas documentar o padrão planejado.
+
+### 10.8 Ordem planejada no pipeline HTTP
+
+Na futura implementação, o middleware deverá ser registrado no `Program.cs` em posição inicial do pipeline HTTP, antes dos endpoints/controllers, para capturar exceções não tratadas pelos componentes seguintes.
+
+Esta tarefa não altera `Program.cs`. A ordem exata será validada na Fase 2.2.3, junto com o registro do middleware e a validação do build.
+
+### 10.9 Plano de implementação da Fase 2.2
+
+#### Fase 2.2.1 — Documentar padrão de erro global
+
+- Documentar objetivo.
+- Documentar diferença entre erro esperado e inesperado.
+- Documentar resposta padronizada.
+- Documentar regras de segurança.
+
+#### Fase 2.2.2 — Criar GlobalExceptionHandlingMiddleware
+
+- Criar middleware na camada API.
+- Capturar exceptions inesperadas.
+- Logar com `ILogger`.
+- Retornar 500 padronizado.
+- Não expor stack trace.
+
+#### Fase 2.2.3 — Registrar middleware no Program.cs
+
+- Registrar middleware no pipeline.
+- Validar ordem de execução.
+- Garantir build.
+
+#### Fase 2.2.4 — Testar erro inesperado e revisar logs
+
+- Validar comportamento em erro inesperado.
+- Confirmar resposta 500 segura.
+- Confirmar log com exception.
+- Confirmar ausência de dados sensíveis.
+- Não criar endpoint fake de produção sem planejamento.
+
+### 10.10 Critérios para avançar da Fase 2.2.1
+
+A Fase 2.2.1 estará concluída quando:
+
+- `docs/OBSERVABILITY_STRATEGY.md` explicar o tratamento global de exceções;
+- estiver claro que `ApplicationResult` continua para erros esperados;
+- estiver claro que o middleware trata somente erros inesperados;
+- estiver definido o formato planejado da resposta 500;
+- estiver definido o uso de `traceId`;
+- estiver definido que stack trace não deve ser exposto;
+- estiver definido que não haverá exceptions customizadas nesta fase;
+- nenhuma alteração de código tiver sido feita.
+
+### 10.11 Próxima tarefa planejada
+
+A próxima tarefa planejada será:
+
+**Fase 2.2.2 — Criar GlobalExceptionHandlingMiddleware**
+
+Escopo previsto:
+
+- criar middleware;
+- usar `ILogger`;
+- retornar JSON seguro;
+- incluir `traceId`;
+- não alterar `ApplicationResult`;
+- não alterar regras de negócio;
+- não criar exceptions customizadas.
+
+## 11. Roadmap de implementação
 
 ### Fase 2.0 — Documentação da estratégia de observabilidade
 
@@ -359,7 +571,7 @@ O log deve ajudar a diagnosticar o problema, mas não deve se tornar uma nova su
 - Validar build.
 - Validar que comportamento da API não mudou.
 
-### Fase 2.2 — Tratamento global de exceções
+### Fase 2.2 — Tratamento global de exceções inesperadas
 
 - Criar middleware de exceções.
 - Logar erros inesperados.
@@ -390,7 +602,7 @@ O log deve ajudar a diagnosticar o problema, mas não deve se tornar uma nova su
 - Definir métricas críticas.
 - Definir alertas mínimos.
 
-## 11. Relação entre observabilidade e testes
+## 12. Relação entre observabilidade e testes
 
 Testes e observabilidade têm papéis diferentes e complementares.
 
@@ -401,7 +613,7 @@ Testes e observabilidade têm papéis diferentes e complementares.
 
 Observabilidade não substitui testes, e testes não substituem observabilidade. O TOGO deve manter os testes como mecanismo de validação do comportamento esperado e usar observabilidade para melhorar diagnóstico, operação e suporte em tempo de execução.
 
-## 12. Critérios para avançar da Fase 2.0
+## 13. Critérios para avançar da Fase 2.0
 
 A Fase 2.0 será considerada concluída quando:
 
@@ -413,7 +625,7 @@ A Fase 2.0 será considerada concluída quando:
 - o documento definir roadmap incremental;
 - nenhuma alteração de código tiver sido feita.
 
-## 13. Próxima tarefa planejada
+## 14. Próxima tarefa planejada
 
 A próxima tarefa planejada será:
 
