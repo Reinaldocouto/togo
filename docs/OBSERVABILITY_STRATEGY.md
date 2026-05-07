@@ -538,21 +538,29 @@ A Fase 2.2.1 estará concluída quando:
 - estiver definido que não haverá exceptions customizadas nesta fase;
 - nenhuma alteração de código tiver sido feita.
 
-### 10.11 Próxima tarefa planejada
+### 10.11 Fase 2.2.2 — Criar GlobalExceptionHandlingMiddleware
+
+- Middleware criado na camada API.
+- Captura exceções inesperadas que escaparem do fluxo normal.
+- Usa `ILogger` para `LogError` com exception e `traceId`.
+- Retorna resposta 500 segura com `message` genérica e `traceId`.
+- Não expõe stack trace nem `exception.Message` na resposta HTTP.
+- Ainda não foi registrado no `Program.cs`.
+- `ApplicationResult` continua responsável por erros esperados.
+
+### 10.12 Próxima tarefa planejada
 
 A próxima tarefa planejada será:
 
-**Fase 2.2.2 — Criar GlobalExceptionHandlingMiddleware**
+**Fase 2.2.3 — Registrar middleware no Program.cs**
 
 Escopo previsto:
 
-- criar middleware;
-- usar `ILogger`;
-- retornar JSON seguro;
-- incluir `traceId`;
-- não alterar `ApplicationResult`;
-- não alterar regras de negócio;
-- não criar exceptions customizadas.
+- registrar middleware no pipeline HTTP;
+- validar ordem de execução;
+- garantir que exceções inesperadas sejam capturadas;
+- confirmar resposta 500 segura;
+- garantir build.
 
 ## 11. Roadmap de implementação
 
@@ -629,22 +637,21 @@ A Fase 2.0 será considerada concluída quando:
 
 A próxima tarefa planejada será:
 
-**Fase 2.1 — Logging básico com ILogger**
+**Fase 2.2.3 — Registrar middleware no Program.cs**
 
 Escopo previsto:
 
-- adicionar `ILogger` em pontos controlados;
-- começar por Auth/Login e Tutor;
-- não alterar comportamento da API;
-- não instalar Serilog ainda;
-- não implementar OpenTelemetry ainda.
+- registrar `GlobalExceptionHandlingMiddleware` no pipeline HTTP;
+- validar ordem de execução;
+- confirmar resposta 500 segura para exceções inesperadas;
+- garantir build.
 
 Critérios esperados para essa próxima fase:
 
-- logs úteis e estruturados nos fluxos priorizados;
-- ausência de dados sensíveis nos logs;
-- build validado;
-- comportamento funcional da API preservado.
+- middleware registrado sem alterar regras de negócio;
+- `ApplicationResult` preservado para erros esperados;
+- ausência de dados sensíveis na resposta 500;
+- build validado.
 
 ## Status de implementação
 
