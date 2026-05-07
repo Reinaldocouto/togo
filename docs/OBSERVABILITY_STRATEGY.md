@@ -450,3 +450,12 @@ Critérios esperados para essa próxima fase:
 - Eventos de listagem, busca, criação, atualização, remoção, conflito e not found passaram a ser observáveis.
 - Documento/CPF completo não deve ser registrado.
 - Serilog/OpenTelemetry ainda não foram adotados.
+
+### Fase 2.1.3 — Revisão dos logs em regras/validators de Tutor
+
+- Logs do validator de unicidade de documento e dos use cases de criação/atualização de Tutor foram revisados.
+- Confirmado que documento/CPF completo ou parcial não é registrado.
+- Confirmado que payload completo não é registrado.
+- Confirmado que os logs usam placeholders estruturados e não concatenação manual.
+- O log de sucesso do validator foi ajustado de `Information` para `Debug` para reduzir ruído, mantendo `Warning` para falhas de regra e `Information` para eventos de operação dos use cases.
+- Serilog/OpenTelemetry ainda não foram adotados.
