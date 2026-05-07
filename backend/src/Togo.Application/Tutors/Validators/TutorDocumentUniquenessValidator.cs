@@ -33,7 +33,7 @@ public class TutorDocumentUniquenessValidator
             return ApplicationResult<bool>.Conflict("A tutor with this document already exists.");
         }
 
-        _logger.LogInformation("Tutor document uniqueness validation succeeded. IgnoreTutorId: {IgnoreTutorId}", ignoreTutorId);
+        _logger.LogDebug("Tutor document uniqueness validation succeeded. IgnoreTutorId: {IgnoreTutorId}", ignoreTutorId);
 
         return ApplicationResult<bool>.Success(true);
     }
