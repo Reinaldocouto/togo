@@ -433,3 +433,12 @@ Critérios esperados para essa próxima fase:
 - ausência de dados sensíveis nos logs;
 - build validado;
 - comportamento funcional da API preservado.
+
+## Status de implementação
+
+### Fase 2.1.1 — Logging básico no Auth/Login
+
+- `ILogger<AuthController>` adicionado.
+- Logs de tentativa, sucesso e falha de login.
+- Nenhum dado sensível deve ser registrado.
+- Serilog/OpenTelemetry ainda não foram adotados.
