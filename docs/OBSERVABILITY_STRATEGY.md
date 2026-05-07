@@ -442,3 +442,11 @@ Critérios esperados para essa próxima fase:
 - Logs de tentativa, sucesso e falha de login.
 - Nenhum dado sensível deve ser registrado.
 - Serilog/OpenTelemetry ainda não foram adotados.
+
+### Fase 2.1.2 — Logging básico no fluxo Tutor
+
+- `ILogger` adicionado ao fluxo Tutor.
+- Logs estruturados adicionados em controller, use cases e validator.
+- Eventos de listagem, busca, criação, atualização, remoção, conflito e not found passaram a ser observáveis.
+- Documento/CPF completo não deve ser registrado.
+- Serilog/OpenTelemetry ainda não foram adotados.

@@ -16,24 +16,29 @@ public class TutorsController : ControllerBase
     private readonly CreateTutorUseCase _createTutorUseCase;
     private readonly UpdateTutorUseCase _updateTutorUseCase;
     private readonly DeleteTutorUseCase _deleteTutorUseCase;
+    private readonly ILogger<TutorsController> _logger;
 
     public TutorsController(
         ListTutorsUseCase listTutorsUseCase,
         GetTutorByIdUseCase getTutorByIdUseCase,
         CreateTutorUseCase createTutorUseCase,
         UpdateTutorUseCase updateTutorUseCase,
-        DeleteTutorUseCase deleteTutorUseCase)
+        DeleteTutorUseCase deleteTutorUseCase,
+        ILogger<TutorsController> logger)
     {
         _listTutorsUseCase = listTutorsUseCase;
         _getTutorByIdUseCase = getTutorByIdUseCase;
         _createTutorUseCase = createTutorUseCase;
         _updateTutorUseCase = updateTutorUseCase;
         _deleteTutorUseCase = deleteTutorUseCase;
+        _logger = logger;
     }
 
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Tutor list request received");
+
         var result = await _listTutorsUseCase.ExecuteAsync(cancellationToken);
         return Ok(result.Data);
     }
@@ -41,6 +46,8 @@ public class TutorsController : ControllerBase
     [HttpGet("{id:long}")]
     public async Task<IActionResult> GetById(long id, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Tutor detail request received. TutorId: {TutorId}", id);
+
         var result = await _getTutorByIdUseCase.ExecuteAsync(id, cancellationToken);
         return ToActionResult(result);
     }
@@ -48,6 +55,8 @@ public class TutorsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateTutorRequest request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Tutor creation request received");
+
         var result = await _createTutorUseCase.ExecuteAsync(request, cancellationToken);
         if (!result.IsSuccess)
         {
@@ -60,6 +69,8 @@ public class TutorsController : ControllerBase
     [HttpPut("{id:long}")]
     public async Task<IActionResult> Update(long id, [FromBody] UpdateTutorRequest request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Tutor update request received. TutorId: {TutorId}", id);
+
         var result = await _updateTutorUseCase.ExecuteAsync(id, request, cancellationToken);
         return ToActionResult(result);
     }
@@ -67,6 +78,8 @@ public class TutorsController : ControllerBase
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Tutor delete request received. TutorId: {TutorId}", id);
+
         var result = await _deleteTutorUseCase.ExecuteAsync(id, cancellationToken);
         return result.Type switch
         {
