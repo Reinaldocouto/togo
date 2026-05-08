@@ -1,0 +1,33 @@
+name: TOGO Backend CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Restore, build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore backend/Togo.sln
+
+      - name: Build
+        run: dotnet build backend/Togo.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test backend/Togo.sln --configuration Release --no-build --verbosity normal
