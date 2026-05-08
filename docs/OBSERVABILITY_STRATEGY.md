@@ -572,6 +572,49 @@ Escopo previsto:
 - Nenhum endpoint fake de erro foi criado.
 - A próxima etapa será Fase 2.2.4 — Testar erro inesperado e revisar logs.
 
+## Conclusão da Fase 2.2 — Tratamento global de exceções inesperadas
+
+A Fase 2.2 foi concluída com o objetivo de centralizar o tratamento de exceções inesperadas da API do TOGO, melhorar a observabilidade técnica e preservar respostas HTTP seguras para falhas não previstas.
+
+O `GlobalExceptionHandlingMiddleware` foi implementado e registrado no pipeline HTTP para capturar exceções inesperadas, registrar o erro técnico com `ILogger.LogError` e retornar uma resposta 500 padronizada com `message` genérica e `traceId`. A resposta 500 permanece segura: não expõe `exception.Message`, stack trace, inner exception, tipo da exception, senha, hash, token JWT, documento completo, payloads internos ou outros dados sensíveis ao cliente.
+
+A separação entre erros esperados e inesperados foi preservada. Erros esperados continuam sendo tratados pelos fluxos de aplicação com `ApplicationResult`, mantendo seus status codes próprios, como 401, 404 e 409. Esses erros esperados não foram transformados em respostas 500, e o middleware global permanece reservado para exceções inesperadas que escapem do fluxo normal da aplicação.
+
+A validação automatizada da Fase 2.2.4.2 foi concluída com testes em memória para o middleware global. O cenário de exceção inesperada validou status 500, JSON seguro, mensagem genérica, `traceId`, ausência de detalhes técnicos na resposta e registro de log em nível `Error` com exception. O caminho feliz validou a preservação do status 204 e a ausência de logs de erro.
+
+A validação manual da Fase 2.2.4.3 também foi concluída, confirmando que os fluxos esperados de autenticação e tutores continuam funcionando sem serem convertidos em erro 500. Nenhum endpoint fake foi criado para esta validação.
+
+Também foram executados localmente:
+
+- `dotnet build backend/Togo.sln`: concluído com sucesso.
+- `dotnet test backend/Togo.sln`: concluído com sucesso.
+
+Resultado dos testes automatizados:
+
+- Total de testes: 17.
+- Testes passando: 17.
+- Testes falhando: 0.
+- Testes ignorados: 0.
+
+Permanece registrado como débito técnico futuro um warning relacionado a conflito de versões do `Microsoft.EntityFrameworkCore.Relational` entre `8.0.13` e `8.0.22`, associado ao ecossistema EF Core/Pomelo. Esse warning não bloqueou build nem testes e não faz parte da correção da Fase 2.2.
+
+Checklist final da validação:
+
+| Validação | Resultado |
+|---|---|
+| Login válido | 200 OK |
+| Login inválido | 401 Unauthorized |
+| GET tutors sem token | 401 Unauthorized |
+| GET tutors com token | 200 OK |
+| GET tutor inexistente | 404 Not Found |
+| POST tutor válido | 201 Created |
+| POST tutor duplicado | 409 Conflict |
+| DELETE tutor inexistente | 404 Not Found |
+| Build local | Sucesso |
+| Testes automatizados | 17/17 passando |
+
+Com isso, a Fase 2.2 — Tratamento global de exceções inesperadas fica documentada como concluída.
+
 ## 11. Roadmap de implementação
 
 ### Fase 2.0 — Documentação da estratégia de observabilidade
