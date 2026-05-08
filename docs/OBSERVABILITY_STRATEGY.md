@@ -492,7 +492,7 @@ Nesta Fase 2.2.1, esses arquivos não devem ser criados. O objetivo é apenas do
 
 Na futura implementação, o middleware deverá ser registrado no `Program.cs` em posição inicial do pipeline HTTP, antes dos endpoints/controllers, para capturar exceções não tratadas pelos componentes seguintes.
 
-Esta tarefa não altera `Program.cs`. A ordem exata será validada na Fase 2.2.3, junto com o registro do middleware e a validação do build.
+O registro efetivo foi realizado na Fase 2.2.3 logo após `builder.Build()`, mantendo os componentes seguintes do pipeline protegidos pelo tratamento global de exceções inesperadas.
 
 ### 10.9 Plano de implementação da Fase 2.2
 
@@ -545,22 +545,32 @@ A Fase 2.2.1 estará concluída quando:
 - Usa `ILogger` para `LogError` com exception e `traceId`.
 - Retorna resposta 500 segura com `message` genérica e `traceId`.
 - Não expõe stack trace nem `exception.Message` na resposta HTTP.
-- Ainda não foi registrado no `Program.cs`.
+- Durante a Fase 2.2.2, ainda não havia sido registrado no `Program.cs`; o registro foi realizado na Fase 2.2.3.
 - `ApplicationResult` continua responsável por erros esperados.
 
 ### 10.12 Próxima tarefa planejada
 
 A próxima tarefa planejada será:
 
-**Fase 2.2.3 — Registrar middleware no Program.cs**
+**Fase 2.2.4 — Testar erro inesperado e revisar logs**
 
 Escopo previsto:
 
-- registrar middleware no pipeline HTTP;
-- validar ordem de execução;
-- garantir que exceções inesperadas sejam capturadas;
+- testar erro inesperado em ambiente controlado;
+- revisar logs gerados pelo middleware;
 - confirmar resposta 500 segura;
+- confirmar ausência de dados sensíveis;
 - garantir build.
+
+### 10.13 Fase 2.2.3 — Registro do middleware no Program.cs
+
+- `GlobalExceptionHandlingMiddleware` foi registrado no pipeline HTTP.
+- O registro foi feito logo após `app.Build()`.
+- O objetivo é capturar exceções inesperadas dos componentes seguintes do pipeline.
+- `ApplicationResult` continua responsável por erros esperados.
+- Controllers, use cases e repositories não foram alterados.
+- Nenhum endpoint fake de erro foi criado.
+- A próxima etapa será Fase 2.2.4 — Testar erro inesperado e revisar logs.
 
 ## 11. Roadmap de implementação
 
@@ -637,20 +647,22 @@ A Fase 2.0 será considerada concluída quando:
 
 A próxima tarefa planejada será:
 
-**Fase 2.2.3 — Registrar middleware no Program.cs**
+**Fase 2.2.4 — Testar erro inesperado e revisar logs**
 
 Escopo previsto:
 
-- registrar `GlobalExceptionHandlingMiddleware` no pipeline HTTP;
-- validar ordem de execução;
+- testar erro inesperado em ambiente controlado;
+- revisar logs gerados pelo middleware;
 - confirmar resposta 500 segura para exceções inesperadas;
+- confirmar ausência de dados sensíveis;
 - garantir build.
 
 Critérios esperados para essa próxima fase:
 
-- middleware registrado sem alterar regras de negócio;
+- comportamento de erro inesperado validado sem alterar regras de negócio;
 - `ApplicationResult` preservado para erros esperados;
 - ausência de dados sensíveis na resposta 500;
+- logs revisados;
 - build validado.
 
 ## Status de implementação
