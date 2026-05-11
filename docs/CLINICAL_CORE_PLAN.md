@@ -430,6 +430,95 @@ Conclusão da fase: a Fase 3.2 está concluída, com `Patient` e `Pet` cobertos 
 
 Próxima fase recomendada: Fase 3.3 — Criar contratos de API/Application para Pet.
 
+## Fase 3.3 — Contratos de API/Application para Pet
+
+A Fase 3.3 consolidou os contratos de entrada e saída que serão usados futuramente pelo CRUD público de Pet. Esta etapa mantém a decisão arquitetural de expor Pet como recurso público da API, enquanto `Patient` continua sendo criado e atualizado internamente pela aplicação.
+
+### 3.3.1 — Contratos criados
+
+Foram criados os seguintes contratos na camada Application:
+
+- `CreatePetRequest`.
+- `UpdatePetRequest`.
+- `PetResponse`.
+- `PetListItemResponse`.
+
+#### CreatePetRequest
+
+`CreatePetRequest` será usado futuramente pelo endpoint `POST /api/pets`. Ele contém os dados necessários para criar internamente um `Patient` e um `Pet` no mesmo fluxo de aplicação.
+
+Este contrato não possui `PatientId` no body, pois o `Patient` será criado internamente e seu identificador será gerado durante a persistência.
+
+Campos previstos:
+
+- `TutorId`.
+- `Name`.
+- `BirthDate`.
+- `Status`.
+- `Species`.
+- `Breed`.
+- `Sex`.
+- `WeightKg`.
+- `Microchip`.
+
+#### UpdatePetRequest
+
+`UpdatePetRequest` será usado futuramente pelo endpoint `PUT /api/pets/{patientId}`. Ele não possui `PatientId` no body, porque o identificador público do recurso virá pela rota como `patientId`.
+
+O contrato contém os mesmos campos editáveis do create, permitindo atualizar os dados consolidados de `Patient` e `Pet` sem duplicar o identificador no payload.
+
+#### PetResponse
+
+`PetResponse` representa a resposta detalhada consolidada de `Patient` + `Pet`. Ele usa `PatientId` como identificador público inicial do pet, refletindo a modelagem atual em que `Pet` não possui `Id` próprio.
+
+A resposta detalhada também contém `CreatedAt` e `UpdatedAt` vindos de `Patient`, preservando os metadados temporais da entidade clínica base.
+
+#### PetListItemResponse
+
+`PetListItemResponse` representa a resposta resumida para listagem de pets. Ele também usa `PatientId` como identificador público inicial.
+
+Por ser um item de listagem, este contrato não traz dados de Tutor, prontuário, atendimentos ou outros dados pesados. O objetivo é manter a listagem leve e adequada para telas e consultas resumidas.
+
+### 3.3.2 — Decisões técnicas dos contratos
+
+As decisões técnicas registradas para os contratos de Pet são:
+
+- Os contratos ficam no namespace `Togo.Application.Pets.Contracts`.
+- Os contratos ficam na camada Application.
+- Os contratos não possuem validação.
+- As validações serão implementadas futuramente em validators e/ou use cases.
+- Os contratos não dependem de EF Core.
+- Os contratos não representam tabelas do banco de dados.
+- Os contratos não possuem comportamento de domínio.
+- Os contratos são DTOs de entrada e saída da aplicação/API.
+- O campo `Sex` usa `PetSex` do domínio, e não `string`.
+- `PatientId` não entra em `CreatePetRequest` nem em `UpdatePetRequest`.
+- `PatientId` entra nas responses, como `PetResponse` e `PetListItemResponse`.
+- No update, get by id e delete futuros, o `patientId` deverá ser recebido pela rota.
+
+Essa decisão evita inconsistência entre body e rota, mantém a criação de `Patient` encapsulada no fluxo de aplicação e preserva `PatientId` como identificador público inicial enquanto `Pet` não tiver um identificador próprio.
+
+### Pontos de atenção para próximas fases
+
+Nas próximas fases, os seguintes pontos devem ser observados:
+
+- Os use cases deverão mapear `CreatePetRequest` para a criação interna de `Patient` + `Pet`.
+- O repository deverá persistir `Patient` + `Pet` de forma transacional.
+- Os validators deverão validar se o Tutor informado existe.
+- Os validators deverão validar microchip duplicado, se `Microchip` for informado e a regra de unicidade for adotada.
+- O controller deverá receber `patientId` pela rota nos fluxos de update, delete e get by id.
+- Logs futuros devem evitar payload completo.
+- Logs futuros devem evitar microchip completo, preferindo identificadores, flags e dados mínimos necessários.
+- A conversão de resultados para HTTP deve manter consistência com `ApplicationResult`.
+
+### Conclusão da Fase 3.3
+
+A Fase 3.3 está concluída do ponto de vista de contratos. Os DTOs de entrada e saída para o futuro CRUD público de Pet foram criados e a decisão técnica foi documentada: requests não carregam `PatientId`, responses usam `PatientId`, e o `patientId` será fornecido pela rota nos endpoints que operam sobre um pet existente.
+
+É seguro avançar para a próxima etapa planejada:
+
+Fase 3.4 — Criar interface de repository para Pet/Patient.
+
 ## 12. Conclusão técnica
 
 A recomendação é seguir com CRUD público de Pet, criando e atualizando `Patient` internamente, mantendo `Patient` como entidade clínica base e `Pet` como especialização veterinária.
