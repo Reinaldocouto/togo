@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Togo.Api.Middlewares;
 using Togo.Application.Services;
+using Togo.Application.Pets;
 using Togo.Application.Tutors;
 using Togo.Application.Tutors.UseCases;
 using Togo.Application.Tutors.Validators;
@@ -34,6 +35,7 @@ var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 // ====== DEPENDENCY INJECTION ======
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITutorRepository, TutorRepository>();
+builder.Services.AddScoped<IPetRepository, PetRepository>();
 builder.Services.AddScoped<IAuthenticateUser, AuthenticateUserService>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ListTutorsUseCase>();
