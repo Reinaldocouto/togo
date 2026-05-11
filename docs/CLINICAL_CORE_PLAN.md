@@ -534,3 +534,110 @@ O modelo atual está adequado para iniciar as próximas fases, desde que a imple
 - regras como unicidade de microchip e status tipado devem ser avaliadas nas fases seguintes, sem alteração nesta etapa.
 
 Próxima fase recomendada: Fase 3.4 — Criar interface de repository para Pet/Patient.
+
+## Fase 3.4 — Interface de repository para Pet/Patient
+
+A Fase 3.4 define a fronteira de persistência e leitura necessária para o futuro CRUD público de Pet/Patient. Esta etapa continua sem implementação concreta, sem EF Core, sem `AppDbContext`, sem transação implementada, sem use case, sem validator e sem controller.
+
+O objetivo da fase é registrar o contrato que os use cases de Pet utilizarão futuramente, mantendo a camada Application independente da infraestrutura e preservando `PatientId` como identificador público inicial do recurso Pet.
+
+### 3.4.1 — Abstrações criadas
+
+Foram criadas as seguintes abstrações na camada Application:
+
+- `backend/src/Togo.Application/Pets/IPetRepository.cs`.
+- `backend/src/Togo.Application/Pets/Contracts/PetDetailsProjection.cs`.
+- `backend/src/Togo.Application/Pets/Contracts/PetListItemProjection.cs`.
+- `backend/src/Togo.Application/Pets/Contracts/CreatePetRepositoryData.cs`.
+- `backend/src/Togo.Application/Pets/Contracts/UpdatePetRepositoryData.cs`.
+
+#### IPetRepository
+
+`IPetRepository` fica no namespace `Togo.Application.Pets` e será usado futuramente pelos use cases de Pet. Ele define o contrato de persistência e leitura para operações consolidadas de `Patient` + `Pet`.
+
+A interface não possui implementação EF Core nesta fase e não expõe detalhes de infraestrutura como `IQueryable`, `DbSet` ou `AppDbContext`. Essa decisão mantém a camada Application desacoplada da persistência concreta e permite que a implementação seja criada posteriormente na camada Infrastructure.
+
+O identificador público usado pelo contrato é `PatientId`. Não há uso de `PetId` neste momento, pois a modelagem atual define `Pet.PatientId` como chave primária de `Pets` e chave estrangeira para `Patients`.
+
+#### PetDetailsProjection
+
+`PetDetailsProjection` representa uma leitura detalhada consolidada de `Patient` + `Pet`. Ela será usada futuramente em fluxos como `GetByPatientId`, `Create` e `Update`, nos quais a aplicação precisará retornar a visão completa do pet criado, consultado ou atualizado.
+
+A projection inclui os dados clínicos e veterinários relevantes para a resposta detalhada, incluindo `CreatedAt` e `UpdatedAt`, que pertencem à base clínica `Patient`.
+
+#### PetListItemProjection
+
+`PetListItemProjection` representa uma leitura resumida para listagem de pets. Ela carrega apenas os dados necessários para telas e consultas resumidas, evitando trazer prontuário, atendimento, tutor completo ou dados pesados.
+
+Essa separação evita que a listagem dependa da mesma carga de dados da consulta detalhada e mantém a leitura mais leve para os futuros endpoints de listagem.
+
+#### CreatePetRepositoryData
+
+`CreatePetRepositoryData` é um modelo interno para criação futura de `Patient` + `Pet`. Ele não é request público de API e não deve ser confundido com `CreatePetRequest`.
+
+Esse record contém os dados já preparados pela aplicação para persistência, incluindo `PatientType` e `CreatedAt`. Ele será usado futuramente para permitir que o repository concreto crie `Patient` e `Pet` de forma transacional, garantindo que o `PatientId` gerado pelo `Patient` seja usado na criação do `Pet`.
+
+#### UpdatePetRepositoryData
+
+`UpdatePetRepositoryData` é um modelo interno para atualização futura de `Patient` + `Pet`. Ele não é request público de API e não deve ser confundido com `UpdatePetRequest`.
+
+Esse record contém o `PatientId` do recurso a ser atualizado e o `UpdatedAt` definido pelo fluxo de aplicação. Ele concentra os dados necessários para atualizar a visão consolidada de `Patient` + `Pet` sem acoplar o repository aos DTOs públicos da API.
+
+### 3.4.2 — Decisões técnicas
+
+As decisões técnicas da Fase 3.4 são:
+
+- A interface `IPetRepository` pertence à camada Application.
+- A implementação concreta ficará para a camada Infrastructure na Fase 3.5.
+- A transação de criação/atualização coordenada com EF Core ficará para a Fase 3.5.
+- Os use cases de Pet virão depois desta fase.
+- Os validators de Pet virão depois desta fase.
+- O controller de Pet virá depois desta fase.
+- O repository não recebe DTO público de API, como `CreatePetRequest` ou `UpdatePetRequest`.
+- O repository trabalha com dados internos de persistência, representados por `CreatePetRepositoryData` e `UpdatePetRepositoryData`.
+- Essa separação diferencia o contrato público da API, a regra de aplicação e a persistência concreta.
+- `PatientId` segue como identificador público inicial do recurso Pet.
+- `PetId` não será usado neste momento.
+- Não houve implementação concreta nesta fase.
+- Não houve EF Core nesta fase.
+- Não houve uso de `AppDbContext` nesta fase.
+- Não houve migration, `database update` ou instalação de pacotes nesta fase.
+
+A decisão central é manter a Application com um contrato estável e independente de infraestrutura, deixando a camada Infrastructure responsável por detalhes como EF Core, `AppDbContext`, transação, ordem de persistência e consistência entre `Patients` e `Pets`.
+
+### Métodos planejados em IPetRepository
+
+Os métodos planejados em `IPetRepository` são:
+
+- `ListAsync`: lista pets em formato resumido por meio de `PetListItemProjection`, adequado para consultas e telas de listagem.
+- `GetByPatientIdAsync`: busca a leitura detalhada consolidada de `Patient` + `Pet` a partir do `PatientId` público.
+- `TutorExistsAsync`: verifica se o tutor informado existe antes de permitir a criação ou atualização de vínculo do pet.
+- `MicrochipExistsAsync`: verifica se um microchip já está associado a outro pet; no update, deve permitir ignorar o próprio `PatientId`.
+- `CreateAsync`: recebe `CreatePetRepositoryData` e cria futuramente `Patient` + `Pet`, retornando `PetDetailsProjection` com a visão consolidada criada.
+- `UpdateAsync`: recebe `UpdatePetRepositoryData` e atualiza futuramente os dados consolidados de `Patient` + `Pet`, retornando `PetDetailsProjection` quando o recurso existir.
+- `DeleteAsync`: remove futuramente o recurso identificado por `PatientId`, retornando indicação de sucesso quando a exclusão ocorrer.
+
+Esses métodos representam o contrato necessário para os próximos use cases sem expor detalhes de banco de dados e sem assumir a implementação EF nesta fase.
+
+### Pontos de atenção para Fase 3.5
+
+Na Fase 3.5, os seguintes pontos deverão ser observados:
+
+- A implementação EF deverá usar `AppDbContext` na camada Infrastructure.
+- A criação de `Patient` + `Pet` deverá ser transacional.
+- O `Patient` deverá ser salvo antes de criar `Pet`, para obter o `PatientId` gerado.
+- A implementação deve evitar que sobre `Patient` órfão caso a criação de `Pet` falhe.
+- `MicrochipExistsAsync` deve ignorar o próprio `PatientId` no fluxo de update.
+- `DeleteAsync` ainda deve ser tratado com cuidado por causa de histórico clínico futuro, incluindo atendimento, prontuário, evoluções e prescrições.
+- Não deve ser implementado soft delete agora sem uma decisão própria e documentada.
+- Deve ser mantida a ausência de `PetId`; o identificador operacional continua sendo `PatientId`.
+
+Esses pontos reforçam que a Fase 3.5 deverá tratar consistência transacional e integração com EF Core sem alterar a decisão pública de identificação por `PatientId`.
+
+### Conclusão da Fase 3.4
+
+A Fase 3.4 está concluída do ponto de vista de abstração. O contrato `IPetRepository`, as projections de leitura e os records internos de persistência foram definidos para suportar os futuros fluxos de Pet/Patient sem acoplar a Application à Infrastructure.
+
+É seguro avançar para a próxima etapa planejada:
+
+Fase 3.5 — Implementar repository EF com transação.
