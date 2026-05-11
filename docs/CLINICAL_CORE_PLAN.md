@@ -533,4 +533,4 @@ O modelo atual está adequado para iniciar as próximas fases, desde que a imple
 - exclusões devem ser avaliadas cuidadosamente por causa do histórico clínico futuro;
 - regras como unicidade de microchip e status tipado devem ser avaliadas nas fases seguintes, sem alteração nesta etapa.
 
-Próxima fase recomendada: Fase 3.3 — Criar contratos de API/Application para Pet.
+Próxima fase recomendada: Fase 3.4 — Criar interface de repository para Pet/Patient.
