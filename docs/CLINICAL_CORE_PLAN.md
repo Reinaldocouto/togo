@@ -353,6 +353,83 @@ Nesta fase não será decidido nem implementado:
 
 - Registrar decisões, endpoints, testes e validações.
 
+
+## Fase 3.2 — Testes de domínio Patient/Pet
+
+A Fase 3.2 foi executada como etapa de validação do domínio clínico antes da implementação do CRUD público de Pet. A fase foi dividida em criação dos testes de `Patient`, criação dos testes de `Pet` e validação local por build/test.
+
+### 3.2.1 — PatientTests
+
+Foram criados testes unitários de domínio em `backend/src/Togo.Domain.Tests/PatientTests.cs` para validar o comportamento da entidade `Patient`.
+
+Os testes cobrem:
+
+- criação válida;
+- normalização de `Name` com `Trim()`;
+- normalização de `Status` com `Trim()`;
+- `BirthDate` preenchido;
+- `BirthDate` `null`;
+- `CreatedAt` obrigatório;
+- `UpdatedAt` `null` inicialmente;
+- atualização válida;
+- atualização com `BirthDate` `null`;
+- preservação de `Type`;
+- preservação de `CreatedAt`;
+- validação de `Name` obrigatório;
+- validação de `Status` obrigatório;
+- validação de `UpdatedAt` obrigatório.
+
+### 3.2.2 — PetTests
+
+Foram criados testes unitários de domínio em `backend/src/Togo.Domain.Tests/PetTests.cs` para validar o comportamento da entidade `Pet`.
+
+Os testes cobrem:
+
+- criação válida;
+- normalização de `Species`, `Breed` e `Microchip`;
+- campos opcionais `null`;
+- campos opcionais vazios normalizados para `null`;
+- `PatientId` obrigatório maior que zero;
+- `TutorId` obrigatório maior que zero;
+- `Species` obrigatório;
+- `WeightKg` zero inválido;
+- `WeightKg` negativo inválido;
+- `UpdateProfile` válido;
+- `UpdateProfile` com campos opcionais `null`;
+- `UpdateProfile` normalizando campos opcionais vazios;
+- preservação de `PatientId`;
+- preservação de `TutorId`.
+
+### 3.2.3 — Validação local
+
+A validação local foi executada manualmente com os seguintes comandos:
+
+```bash
+dotnet build backend/Togo.sln
+dotnet test backend/Togo.sln
+```
+
+Resultado registrado:
+
+- build: sucesso;
+- testes: 45 total, 45 passaram, 0 falharam, 0 ignorados.
+
+Também foi registrado que:
+
+- nenhum código de produção foi alterado nesta fase documental;
+- nenhuma migration foi criada;
+- nenhum `database update` foi executado;
+- nenhum pacote foi instalado;
+- os testes são de domínio puro;
+- os testes não acessam banco;
+- os testes não dependem de EF Core;
+- os testes não criam mocks;
+- os testes validam o comportamento das entidades antes da implementação do CRUD.
+
+Conclusão da fase: a Fase 3.2 está concluída, com `Patient` e `Pet` cobertos por testes unitários de domínio suficientes para avançar para a Fase 3.3.
+
+Próxima fase recomendada: Fase 3.3 — Criar contratos de API/Application para Pet.
+
 ## 12. Conclusão técnica
 
 A recomendação é seguir com CRUD público de Pet, criando e atualizando `Patient` internamente, mantendo `Patient` como entidade clínica base e `Pet` como especialização veterinária.
@@ -367,4 +444,4 @@ O modelo atual está adequado para iniciar as próximas fases, desde que a imple
 - exclusões devem ser avaliadas cuidadosamente por causa do histórico clínico futuro;
 - regras como unicidade de microchip e status tipado devem ser avaliadas nas fases seguintes, sem alteração nesta etapa.
 
-Próxima fase recomendada: Fase 3.2 — Testar domínio Patient/Pet.
+Próxima fase recomendada: Fase 3.3 — Criar contratos de API/Application para Pet.
