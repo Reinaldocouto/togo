@@ -6,7 +6,7 @@ A Fase 3.5 implementa a persistência concreta EF Core para Pet/Patient na camad
 
 Essa implementação estabelece o ponto de acesso a dados para as operações de leitura, criação, atualização e remoção de Pet/Patient, sem acoplar a camada Application ao EF Core ou ao `AppDbContext`.
 
-Esta fase ainda não expõe endpoint HTTP e ainda não registra a implementação no container de DI. Portanto, nenhuma rota pública passa a existir como resultado desta fase, e nenhuma alteração em `Program.cs` foi realizada.
+A implementação inicial da Fase 3.5.1 ainda não expôs endpoint HTTP e ainda não registrou a implementação no container de DI. O registro de DI foi realizado posteriormente na Fase 3.5.3, mantendo a ausência de rotas públicas de Pet/Patient nesta fase.
 
 ## 2. Arquivo criado
 
@@ -154,7 +154,7 @@ Decisões registradas nesta fase:
 - projections são usadas para leitura;
 - EF Core fica restrito à camada Infrastructure;
 - a camada Application continua desacoplada da Infrastructure;
-- DI não foi registrado nesta fase;
+- DI foi registrado na Fase 3.5.3;
 - use cases ainda não existem;
 - controller ainda não existe;
 - validators ainda não existem.
@@ -169,12 +169,11 @@ Pontos que devem ser observados nas próximas fases:
 - microchip deve ser normalizado antes de chegar em `MicrochipExistsAsync`;
 - `DeleteAsync` usa delete físico por enquanto;
 - delete físico deve ser reavaliado antes de Atendimento/Prontuário;
-- ainda falta registrar `IPetRepository`/`PetRepository` no DI em fase posterior;
 - ainda falta criar validators para tutor existente e microchip duplicado;
 - ainda falta criar use cases;
 - ainda falta criar controller.
 
-Esses pontos não bloqueiam a Fase 3.5.2, pois esta fase é documental e não altera comportamento de runtime.
+Esses pontos não bloqueiam o fechamento da Fase 3.5, pois o repository já foi implementado, documentado e registrado no DI, sem exposição pública de endpoints de Pet/Patient.
 
 ## 7. Validação esperada
 
@@ -191,9 +190,9 @@ Resultado esperado:
 - testes existentes continuam passando;
 - total esperado atual: 45 testes passando.
 
-O resultado acima é a expectativa de validação local. Esta documentação não deve inventar resultado de build/test caso os comandos não tenham sido executados pelo Codex nesta tarefa.
+O resultado acima foi confirmado na validação local executada pelo desenvolvedor humano após o registro de DI da Fase 3.5.3.
 
-Para esta Fase 3.5.2, a validação obrigatória executada pelo Codex é apenas:
+Para esta Fase 3.5.4 documental, a validação obrigatória executada pelo Codex é apenas:
 
 ```bash
 git diff --check
@@ -205,6 +204,77 @@ A Fase 3.5.1 implementou corretamente o repository EF Core de Pet/Patient na cam
 
 A Fase 3.5.2 documentou a decisão técnica, as responsabilidades do `PetRepository`, o comportamento de cada método implementado, as decisões arquiteturais relevantes e os pontos de atenção para as próximas fases.
 
+A Fase 3.5.3 registrou `IPetRepository`/`PetRepository` no container de DI da API, habilitando a resolução do repository concreto sem alterar endpoints, use cases, controllers ou validators.
+
+## 9. Fase 3.5.3 — Registro no Dependency Injection
+
+A Fase 3.5.3 conectou o contrato `IPetRepository`, da camada Application, à implementação concreta `PetRepository`, da camada Infrastructure, no container de Dependency Injection da API.
+
+O registro foi realizado em `backend/src/Togo.Api/Program.cs` com `AddScoped`, dentro da seção `DEPENDENCY INJECTION`, próximo dos registros já existentes de `IUserRepository` e `ITutorRepository`.
+
+Também foi adicionado o `using Togo.Application.Pets;` para permitir a referência ao contrato `IPetRepository` no arquivo de composição da API.
+
+Trecho conceitual do registro:
+
+```csharp
+builder.Services.AddScoped<IPetRepository, PetRepository>();
+```
+
+Essa alteração apenas disponibiliza a implementação concreta para resolução via DI. Ela não altera o desenho público da API nesta fase.
+
+Não houve nesta etapa:
+
+- criação de endpoint de Pet;
+- criação de use case de Pet;
+- criação de controller de Pet;
+- criação de validator de Pet;
+- alteração de autenticação;
+- alteração de Swagger;
+- alteração de CORS;
+- alteração de middleware.
+
+## 10. Validação local da Fase 3.5
+
+Após o registro de DI da Fase 3.5.3, o desenvolvedor humano executou localmente os comandos:
+
+```bash
+dotnet build backend/Togo.sln
+dotnet test backend/Togo.sln
+```
+
+Resultado registrado:
+
+- build concluído com sucesso;
+- testes concluídos com sucesso;
+- total de 45 testes;
+- 45 testes passaram;
+- 0 testes falharam;
+- 0 testes ignorados.
+
+Nesta Fase 3.5.4, a alteração é exclusivamente documental. Por isso, não foi necessário executar novamente `dotnet build` ou `dotnet test` pelo Codex.
+
+## 11. Fechamento da Fase 3.5
+
+A Fase 3.5 está concluída com:
+
+- `PetRepository` implementado na Infrastructure;
+- transação explícita em `CreateAsync`;
+- transação explícita em `UpdateAsync`;
+- `DeleteAsync` ainda físico e provisório;
+- `IPetRepository` registrado no DI com `PetRepository`;
+- camada Application permanecendo desacoplada da Infrastructure;
+- camada Infrastructure concentrando a implementação EF Core;
+- nenhum endpoint público de Pet criado ainda.
+
+Permanecem pendentes para próximas fases:
+
+- criar validators de Pet;
+- criar use cases de Pet;
+- criar controller de Pet;
+- aplicar logs no fluxo Pet;
+- criar testes de use cases/API;
+- testar manualmente endpoints quando existirem.
+
 Próxima fase recomendada:
 
-**Fase 3.5.3 — Registrar IPetRepository/PetRepository no DI.**
+**Fase 3.6 — Criar validators de Pet.**
