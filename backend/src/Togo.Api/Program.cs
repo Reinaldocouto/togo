@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using Togo.Api.Middlewares;
 using Togo.Application.Services;
 using Togo.Application.Pets;
+using Togo.Application.Pets.Validators;
 using Togo.Application.Tutors;
 using Togo.Application.Tutors.UseCases;
 using Togo.Application.Tutors.Validators;
@@ -43,6 +44,8 @@ builder.Services.AddScoped<GetTutorByIdUseCase>();
 builder.Services.AddScoped<CreateTutorUseCase>();
 builder.Services.AddScoped<UpdateTutorUseCase>();
 builder.Services.AddScoped<TutorDocumentUniquenessValidator>();
+builder.Services.AddScoped<PetTutorExistsValidator>();
+builder.Services.AddScoped<PetMicrochipUniquenessValidator>();
 builder.Services.AddScoped<DeleteTutorUseCase>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
