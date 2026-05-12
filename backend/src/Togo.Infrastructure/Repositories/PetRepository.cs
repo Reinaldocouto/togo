@@ -17,22 +17,20 @@ public class PetRepository : IPetRepository
 
     public async Task<IReadOnlyList<PetListItemProjection>> ListAsync(CancellationToken cancellationToken)
     {
-        return await _context.Pets
-            .AsNoTracking()
-            .Join(
-                _context.Patients.AsNoTracking(),
-                pet => pet.PatientId,
-                patient => patient.Id,
-                (pet, patient) => new PetListItemProjection(
-                    patient.Id,
-                    pet.TutorId,
-                    patient.Name,
-                    pet.Species,
-                    pet.Breed,
-                    pet.Sex,
-                    patient.Status,
-                    pet.Microchip))
-            .OrderBy(pet => pet.Name)
+        return await (
+            from pet in _context.Pets.AsNoTracking()
+            join patient in _context.Patients.AsNoTracking()
+                on pet.PatientId equals patient.Id
+            orderby patient.Name
+            select new PetListItemProjection(
+                patient.Id,
+                pet.TutorId,
+                patient.Name,
+                pet.Species,
+                pet.Breed,
+                pet.Sex,
+                patient.Status,
+                pet.Microchip))
             .ToListAsync(cancellationToken);
     }
 
