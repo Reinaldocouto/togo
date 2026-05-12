@@ -36,8 +36,25 @@ public class PetRepository : IPetRepository
 
     public async Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken)
     {
-        return await GetDetailsQuery()
-            .FirstOrDefaultAsync(pet => pet.PatientId == patientId, cancellationToken);
+        return await (
+            from pet in _context.Pets.AsNoTracking()
+            join patient in _context.Patients.AsNoTracking()
+                on pet.PatientId equals patient.Id
+            where patient.Id == patientId
+            select new PetDetailsProjection(
+                patient.Id,
+                pet.TutorId,
+                patient.Name,
+                patient.BirthDate,
+                patient.Status,
+                pet.Species,
+                pet.Breed,
+                pet.Sex,
+                pet.WeightKg,
+                pet.Microchip,
+                patient.CreatedAt,
+                patient.UpdatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<bool> TutorExistsAsync(long tutorId, CancellationToken cancellationToken)
