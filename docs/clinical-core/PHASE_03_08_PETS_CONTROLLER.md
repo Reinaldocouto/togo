@@ -154,13 +154,24 @@ Nesta revisão documental, também deve ser executado:
 git diff --check
 ```
 
-Resultado registrado pela Fase 3.8.2:
+Resultado registrado pela Fase 3.8.2 no ambiente Codex:
 
 - `git diff --check`: executado para validar ausência de problemas de whitespace no diff.
-- `dotnet build backend/Togo.sln`: não executado com sucesso neste ambiente porque o comando `dotnet` não está disponível (`dotnet: command not found`).
-- `dotnet test backend/Togo.sln`: não executado com sucesso neste ambiente porque o comando `dotnet` não está disponível (`dotnet: command not found`).
+- `dotnet build backend/Togo.sln`: não executado com sucesso no ambiente Codex porque o comando `dotnet` não está disponível (`dotnet: command not found`).
+- `dotnet test backend/Togo.sln`: não executado com sucesso no ambiente Codex porque o comando `dotnet` não está disponível (`dotnet: command not found`).
 
-Não houve informação de validação humana local adicional para registrar nesta fase.
+Após a revisão documental, o desenvolvedor humano executou validação local em ambiente com .NET disponível, confirmando build e testes com sucesso.
+
+Validação humana local registrada:
+
+- `dotnet build backend/Togo.sln`
+  - Resultado: sucesso.
+- `dotnet test backend/Togo.sln`
+  - Resultado: sucesso.
+  - Total: 45 testes.
+  - Falhou: 0.
+  - Bem-sucedido: 45.
+  - Ignorado: 0.
 
 ## 10. Pontos de atenção futuros
 
@@ -186,6 +197,8 @@ A revisão técnica da Fase 3.8.2 confirmou:
 - logs sem exposição de microchip completo/parcial ou payload completo;
 - ausência de acesso direto a repository ou `AppDbContext` no controller;
 - manutenção da lógica de negócio nos use cases.
+
+A Fase 3.8 também foi validada localmente pelo desenvolvedor humano em ambiente com .NET disponível, com `dotnet build backend/Togo.sln` bem-sucedido e `dotnet test backend/Togo.sln` concluído com 45/45 testes passando.
 
 Próxima etapa recomendada:
 
