@@ -18,4 +18,18 @@ public static class PetMappings
             pet.Microchip,
             pet.CreatedAt,
             pet.UpdatedAt);
+
+    public static PetListItemResponse ToListItemResponse(PetListItemProjection pet) =>
+        new(
+            pet.PatientId,
+            pet.TutorId,
+            pet.Name,
+            pet.Species,
+            pet.Breed,
+            pet.Sex,
+            pet.Status,
+            pet.Microchip);
+
+    public static IReadOnlyList<PetListItemResponse> ToListItemResponses(IReadOnlyList<PetListItemProjection> pets) =>
+        pets.Select(ToListItemResponse).ToList().AsReadOnly();
 }
