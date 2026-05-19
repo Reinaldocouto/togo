@@ -33,6 +33,11 @@ public class Attendance
 
     public void Close(DateTime closedAt)
     {
+        if (Status == AttendanceStatus.Canceled)
+        {
+            throw new InvalidOperationException("Canceled attendance cannot be closed");
+        }
+
         if (Status == AttendanceStatus.Closed)
         {
             throw new InvalidOperationException("Attendance is already closed");
@@ -47,6 +52,22 @@ public class Attendance
 
         ClosedAt = closedAt;
         Status = AttendanceStatus.Closed;
+    }
+
+    public void Cancel()
+    {
+        if (Status == AttendanceStatus.Closed)
+        {
+            throw new InvalidOperationException("Closed attendance cannot be canceled");
+        }
+
+        if (Status == AttendanceStatus.Canceled)
+        {
+            throw new InvalidOperationException("Attendance is already canceled");
+        }
+
+        Status = AttendanceStatus.Canceled;
+        ClosedAt = null;
     }
 
     private static void ValidateId(long id, string paramName)

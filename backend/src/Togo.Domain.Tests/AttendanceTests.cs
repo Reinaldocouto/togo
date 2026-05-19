@@ -137,4 +137,57 @@ public class AttendanceTests
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => attendance.Close(secondClosedAt));
     }
+
+    [Fact]
+    public void Cancel_ShouldCancelAttendance_WhenAttendanceIsOpen()
+    {
+        // Arrange
+        var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
+        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation);
+
+        // Act
+        attendance.Cancel();
+
+        // Assert
+        Assert.Equal(AttendanceStatus.Canceled, attendance.Status);
+        Assert.Null(attendance.ClosedAt);
+    }
+
+    [Fact]
+    public void Cancel_ShouldThrowInvalidOperationException_WhenAttendanceIsClosed()
+    {
+        // Arrange
+        var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
+        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation);
+        var closedAt = new DateTime(2026, 5, 11, 11, 30, 0, DateTimeKind.Utc);
+        attendance.Close(closedAt);
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => attendance.Cancel());
+    }
+
+    [Fact]
+    public void Cancel_ShouldThrowInvalidOperationException_WhenAttendanceIsAlreadyCanceled()
+    {
+        // Arrange
+        var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
+        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation);
+        attendance.Cancel();
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => attendance.Cancel());
+    }
+
+    [Fact]
+    public void Close_ShouldThrowInvalidOperationException_WhenAttendanceIsCanceled()
+    {
+        // Arrange
+        var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
+        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation);
+        var closedAt = new DateTime(2026, 5, 11, 11, 30, 0, DateTimeKind.Utc);
+        attendance.Cancel();
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => attendance.Close(closedAt));
+    }
 }
