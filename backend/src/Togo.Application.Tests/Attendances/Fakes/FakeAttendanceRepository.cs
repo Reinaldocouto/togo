@@ -11,10 +11,12 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
     public string? LastExistsByAttendanceNumberInput { get; private set; }
     public long? LastHasOpenAttendancePatientIdInput { get; private set; }
     public int AddCallsCount { get; private set; }
+    public int GetByIdCallsCount { get; private set; }
 
     public Task<Attendance?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        GetByIdCallsCount++;
         var value = _items.FirstOrDefault(a => a.Id == id);
         return Task.FromResult(value);
     }
