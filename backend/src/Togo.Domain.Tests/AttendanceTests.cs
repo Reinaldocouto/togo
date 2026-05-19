@@ -101,7 +101,7 @@ public class AttendanceTests
                 patientId: 10,
                 attendanceNumber: "ATD-0001",
                 openedAt: openedAt,
-                closedAt: default,
+                closedAt: default(DateTime),
                 status: AttendanceStatus.Open,
                 type: AttendanceType.Consultation));
         Assert.StartsWith("Date is required", exception.Message);
