@@ -102,6 +102,23 @@ public sealed class CreateAttendanceUseCaseTests
         Assert.Equal(0, attendanceRepository.AddCallsCount);
     }
 
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnValidationError_WhenDomainThrowsArgumentException()
+    {
+        var attendanceRepository = new FakeAttendanceRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var useCase = CreateUseCase(attendanceRepository, petRepository);
+        var request = CreateValidRequest(patientId: patientId, openedAt: default);
+
+        var result = await useCase.ExecuteAsync(request, CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.ValidationError, result.Type);
+        Assert.Equal("OpenedAt must be provided.", result.Error);
+        Assert.Equal(0, attendanceRepository.AddCallsCount);
+    }
+
     [Fact]
     public async Task ExecuteAsync_ShouldTrimAttendanceNumber_WhenCreatingAttendance()
     {
