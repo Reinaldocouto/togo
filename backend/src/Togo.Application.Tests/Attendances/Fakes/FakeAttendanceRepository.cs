@@ -9,6 +9,8 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
     private readonly HashSet<string> _existingNumbers = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<long> _patientsWithOpenAttendance = [];
     public string? LastExistsByAttendanceNumberInput { get; private set; }
+    public long? LastHasOpenAttendancePatientIdInput { get; private set; }
+    public int AddCallsCount { get; private set; }
 
     public Task<Attendance?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
@@ -33,6 +35,7 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
     public Task AddAsync(Attendance attendance, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        AddCallsCount++;
         _items.Add(attendance);
         _existingNumbers.Add(attendance.AttendanceNumber);
         return Task.CompletedTask;
@@ -49,6 +52,7 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
             return Task.CompletedTask;
         }
 
+        AddCallsCount++;
         _items.Add(attendance);
         return Task.CompletedTask;
     }
@@ -63,6 +67,7 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
     public Task<bool> HasOpenAttendanceForPatientAsync(long patientId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        LastHasOpenAttendancePatientIdInput = patientId;
         return Task.FromResult(_patientsWithOpenAttendance.Contains(patientId));
     }
 
