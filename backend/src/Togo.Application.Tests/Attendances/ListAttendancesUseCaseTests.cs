@@ -43,13 +43,13 @@ public sealed class ListAttendancesUseCaseTests
         Assert.NotNull(result.Data);
         Assert.Equal(2, result.Data.Count);
 
-        var firstResponse = result.Data.Single(x => x.Id == first.Id);
+        var firstResponse = result.Data.Single(x => x.AttendanceNumber == "ATT-LIST-001");
         Assert.Equal(100, firstResponse.PatientId);
         Assert.Equal("ATT-LIST-001", firstResponse.AttendanceNumber);
         Assert.Equal(AttendanceStatus.Open, firstResponse.Status);
         Assert.Equal(AttendanceType.Consultation, firstResponse.Type);
 
-        var secondResponse = result.Data.Single(x => x.Id == second.Id);
+        var secondResponse = result.Data.Single(x => x.AttendanceNumber == "ATT-LIST-002");
         Assert.Equal(200, secondResponse.PatientId);
         Assert.Equal("ATT-LIST-002", secondResponse.AttendanceNumber);
         Assert.Equal(AttendanceStatus.Open, secondResponse.Status);

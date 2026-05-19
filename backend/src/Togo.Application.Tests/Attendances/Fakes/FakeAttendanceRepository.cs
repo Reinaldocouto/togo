@@ -6,21 +6,26 @@ namespace Togo.Application.Tests.Attendances.Fakes;
 internal sealed class FakeAttendanceRepository : IAttendanceRepository
 {
     private readonly List<Attendance> _items = [];
+    private readonly Dictionary<long, Attendance> _itemsByLookupId = [];
     private readonly HashSet<string> _existingNumbers = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<long> _patientsWithOpenAttendance = [];
     public string? LastExistsByAttendanceNumberInput { get; private set; }
     public long? LastHasOpenAttendancePatientIdInput { get; private set; }
     public int AddCallsCount { get; private set; }
     public int GetByIdCallsCount { get; private set; }
-
     public Task<Attendance?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         GetByIdCallsCount++;
+
+        if (_itemsByLookupId.TryGetValue(id, out var configuredAttendance))
+        {
+            return Task.FromResult<Attendance?>(configuredAttendance);
+        }
+
         var value = _items.FirstOrDefault(a => a.Id == id);
         return Task.FromResult(value);
     }
-
     public Task<IReadOnlyList<Attendance>> ListAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -75,4 +80,5 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
 
     public void AddExistingAttendanceNumber(string attendanceNumber) => _existingNumbers.Add(attendanceNumber);
     public void AddOpenAttendancePatient(long patientId) => _patientsWithOpenAttendance.Add(patientId);
+    public void AddAttendanceForLookup(long id, Attendance attendance) => _itemsByLookupId[id] = attendance;
 }

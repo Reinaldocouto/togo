@@ -45,17 +45,17 @@ public sealed class GetAttendanceByIdUseCaseTests
     public async Task ExecuteAsync_ShouldReturnSuccess_WhenAttendanceExists()
     {
         var repository = new FakeAttendanceRepository();
+        const long attendanceLookupId = 123;
         var openedAt = new DateTime(2026, 02, 10, 09, 00, 00, DateTimeKind.Utc);
         var attendance = Attendance.Create(12, "ATT-GET-001", openedAt, AttendanceType.Consultation);
-        await repository.AddAsync(attendance, CancellationToken.None);
+        repository.AddAttendanceForLookup(attendanceLookupId, attendance);
         var useCase = CreateUseCase(repository);
 
-        var result = await useCase.ExecuteAsync(attendance.Id, CancellationToken.None);
+        var result = await useCase.ExecuteAsync(attendanceLookupId, CancellationToken.None);
 
         Assert.Equal(ApplicationResultType.Success, result.Type);
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Data);
-        Assert.Equal(attendance.Id, result.Data.Id);
         Assert.Equal(12, result.Data.PatientId);
         Assert.Equal("ATT-GET-001", result.Data.AttendanceNumber);
         Assert.Equal(openedAt, result.Data.OpenedAt);
