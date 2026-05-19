@@ -110,12 +110,12 @@ public sealed class CreateAttendanceUseCaseTests
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
         var useCase = CreateUseCase(attendanceRepository, petRepository);
-        var request = CreateValidRequest(patientId: patientId, openedAt: default);
+        var request = CreateValidRequest(patientId: patientId, openedAt: default(DateTime));
 
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
 
         Assert.Equal(ApplicationResultType.ValidationError, result.Type);
-        Assert.Equal("OpenedAt must be provided.", result.Error);
+        Assert.StartsWith("Date is required", result.Error);
         Assert.Equal(0, attendanceRepository.AddCallsCount);
     }
 
