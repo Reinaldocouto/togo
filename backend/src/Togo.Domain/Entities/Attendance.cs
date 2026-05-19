@@ -6,21 +6,17 @@ public class Attendance
 {
     private Attendance() { }
 
-    private Attendance(long patientId, string attendanceNumber, DateTime openedAt, DateTime? closedAt, AttendanceStatus status, AttendanceType type)
+    private Attendance(long patientId, string attendanceNumber, DateTime openedAt, AttendanceType type)
     {
         ValidateId(patientId, nameof(patientId));
         ValidateRequired(attendanceNumber, nameof(attendanceNumber));
         ValidateDate(openedAt, nameof(openedAt));
-        if (closedAt.HasValue)
-        {
-            ValidateDate(closedAt.Value, nameof(closedAt));
-        }
 
         PatientId = patientId;
         AttendanceNumber = attendanceNumber.Trim();
         OpenedAt = openedAt;
-        ClosedAt = closedAt;
-        Status = status;
+        ClosedAt = null;
+        Status = AttendanceStatus.Open;
         Type = type;
     }
 
@@ -32,12 +28,23 @@ public class Attendance
     public AttendanceStatus Status { get; private set; }
     public AttendanceType Type { get; private set; }
 
-    public static Attendance Create(long patientId, string attendanceNumber, DateTime openedAt, DateTime? closedAt, AttendanceStatus status, AttendanceType type) =>
-        new(patientId, attendanceNumber, openedAt, closedAt, status, type);
+    public static Attendance Create(long patientId, string attendanceNumber, DateTime openedAt, AttendanceType type) =>
+        new(patientId, attendanceNumber, openedAt, type);
 
     public void Close(DateTime closedAt)
     {
+        if (Status == AttendanceStatus.Closed)
+        {
+            throw new InvalidOperationException("Attendance is already closed");
+        }
+
         ValidateDate(closedAt, nameof(closedAt));
+
+        if (closedAt < OpenedAt)
+        {
+            throw new ArgumentException("ClosedAt cannot be before OpenedAt", nameof(closedAt));
+        }
+
         ClosedAt = closedAt;
         Status = AttendanceStatus.Closed;
     }

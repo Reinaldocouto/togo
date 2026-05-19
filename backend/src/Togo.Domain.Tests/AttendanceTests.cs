@@ -11,22 +11,19 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var closedAt = new DateTime(2026, 5, 11, 11, 30, 0, DateTimeKind.Utc);
 
         // Act
         var attendance = Attendance.Create(
             patientId: 10,
             attendanceNumber: "  ATD-0001  ",
             openedAt: openedAt,
-            closedAt: closedAt,
-            status: AttendanceStatus.Open,
             type: AttendanceType.Consultation);
 
         // Assert
         Assert.Equal(10, attendance.PatientId);
         Assert.Equal("ATD-0001", attendance.AttendanceNumber);
         Assert.Equal(openedAt, attendance.OpenedAt);
-        Assert.Equal(closedAt, attendance.ClosedAt);
+        Assert.Null(attendance.ClosedAt);
         Assert.Equal(AttendanceStatus.Open, attendance.Status);
         Assert.Equal(AttendanceType.Consultation, attendance.Type);
     }
@@ -45,8 +42,6 @@ public class AttendanceTests
                 patientId: patientId,
                 attendanceNumber: "ATD-0001",
                 openedAt: openedAt,
-                closedAt: null,
-                status: AttendanceStatus.Open,
                 type: AttendanceType.Consultation));
         Assert.StartsWith("Id must be greater than zero", exception.Message);
         Assert.Equal("patientId", exception.ParamName);
@@ -66,8 +61,6 @@ public class AttendanceTests
                 patientId: 10,
                 attendanceNumber: attendanceNumber,
                 openedAt: openedAt,
-                closedAt: null,
-                status: AttendanceStatus.Open,
                 type: AttendanceType.Consultation));
         Assert.StartsWith("Value is required", exception.Message);
         Assert.Equal("attendanceNumber", exception.ParamName);
@@ -82,30 +75,9 @@ public class AttendanceTests
                 patientId: 10,
                 attendanceNumber: "ATD-0001",
                 openedAt: default,
-                closedAt: null,
-                status: AttendanceStatus.Open,
                 type: AttendanceType.Consultation));
         Assert.StartsWith("Date is required", exception.Message);
         Assert.Equal("openedAt", exception.ParamName);
-    }
-
-    [Fact]
-    public void Create_ShouldThrowArgumentException_WhenClosedAtIsDefaultAndProvided()
-    {
-        // Arrange
-        var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentException>(() =>
-            Attendance.Create(
-                patientId: 10,
-                attendanceNumber: "ATD-0001",
-                openedAt: openedAt,
-                closedAt: default(DateTime),
-                status: AttendanceStatus.Open,
-                type: AttendanceType.Consultation));
-        Assert.StartsWith("Date is required", exception.Message);
-        Assert.Equal("closedAt", exception.ParamName);
     }
 
     [Fact]
@@ -113,7 +85,7 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, null, AttendanceStatus.Open, AttendanceType.Consultation);
+        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation);
         var closedAt = new DateTime(2026, 5, 11, 11, 30, 0, DateTimeKind.Utc);
 
         // Act
@@ -129,11 +101,40 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, null, AttendanceStatus.Open, AttendanceType.Consultation);
+        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => attendance.Close(default));
         Assert.StartsWith("Date is required", exception.Message);
         Assert.Equal("closedAt", exception.ParamName);
+    }
+
+    [Fact]
+    public void Close_ShouldThrowArgumentException_WhenClosedAtIsBeforeOpenedAt()
+    {
+        // Arrange
+        var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
+        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation);
+        var invalidClosedAt = new DateTime(2026, 5, 11, 9, 59, 59, DateTimeKind.Utc);
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => attendance.Close(invalidClosedAt));
+        Assert.StartsWith("ClosedAt cannot be before OpenedAt", exception.Message);
+        Assert.Equal("closedAt", exception.ParamName);
+    }
+
+    [Fact]
+    public void Close_ShouldThrowInvalidOperationException_WhenAttendanceIsAlreadyClosed()
+    {
+        // Arrange
+        var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
+        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation);
+        var firstClosedAt = new DateTime(2026, 5, 11, 11, 30, 0, DateTimeKind.Utc);
+        var secondClosedAt = new DateTime(2026, 5, 11, 12, 0, 0, DateTimeKind.Utc);
+
+        attendance.Close(firstClosedAt);
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => attendance.Close(secondClosedAt));
     }
 }
