@@ -64,7 +64,7 @@ public class CreateAttendanceUseCase
             _logger.LogInformation("Attendance created successfully. PatientId: {PatientId}. AttendanceId: {AttendanceId}", request.PatientId, attendance.Id);
             return ApplicationResult<AttendanceResponse>.Success(ToResponse(attendance));
         }
-        catch (ArgumentOutOfRangeException ex)
+        catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Attendance creation failed due to domain validation error");
             return ApplicationResult<AttendanceResponse>.ValidationError(ex.Message);
