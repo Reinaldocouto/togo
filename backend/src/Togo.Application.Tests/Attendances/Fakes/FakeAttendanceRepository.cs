@@ -5,7 +5,7 @@ namespace Togo.Application.Tests.Attendances.Fakes;
 
 internal sealed class FakeAttendanceRepository : IAttendanceRepository
 {
-    private readonly Dictionary<long, Attendance> _itemsById = [];
+    private readonly List<Attendance> _items = [];
     private readonly HashSet<string> _existingNumbers = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<long> _patientsWithOpenAttendance = [];
     public string? LastExistsByAttendanceNumberInput { get; private set; }
@@ -13,27 +13,27 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
     public Task<Attendance?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        _itemsById.TryGetValue(id, out var value);
+        var value = _items.FirstOrDefault(a => a.Id == id);
         return Task.FromResult(value);
     }
 
     public Task<IReadOnlyList<Attendance>> ListAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult<IReadOnlyList<Attendance>>(_itemsById.Values.ToList());
+        return Task.FromResult<IReadOnlyList<Attendance>>(_items.ToList());
     }
 
     public Task<IReadOnlyList<Attendance>> ListByPatientIdAsync(long patientId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var list = _itemsById.Values.Where(a => a.PatientId == patientId).ToList();
+        var list = _items.Where(a => a.PatientId == patientId).ToList();
         return Task.FromResult<IReadOnlyList<Attendance>>(list);
     }
 
     public Task AddAsync(Attendance attendance, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        _itemsById[attendance.Id] = attendance;
+        _items.Add(attendance);
         _existingNumbers.Add(attendance.AttendanceNumber);
         return Task.CompletedTask;
     }
@@ -41,7 +41,15 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
     public Task UpdateAsync(Attendance attendance, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        _itemsById[attendance.Id] = attendance;
+        var existingIndex = _items.FindIndex(a => a.Id == attendance.Id);
+
+        if (existingIndex >= 0)
+        {
+            _items[existingIndex] = attendance;
+            return Task.CompletedTask;
+        }
+
+        _items.Add(attendance);
         return Task.CompletedTask;
     }
 
