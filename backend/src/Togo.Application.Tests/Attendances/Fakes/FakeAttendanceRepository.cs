@@ -13,6 +13,7 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
     public long? LastHasOpenAttendancePatientIdInput { get; private set; }
     public int AddCallsCount { get; private set; }
     public int GetByIdCallsCount { get; private set; }
+    public int UpdateCallsCount { get; private set; }
     public Task<Attendance?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -51,6 +52,7 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
     public Task UpdateAsync(Attendance attendance, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        UpdateCallsCount++;
         var existingIndex = _items.FindIndex(a => a.Id == attendance.Id);
 
         if (existingIndex >= 0)
