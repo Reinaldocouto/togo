@@ -76,7 +76,7 @@ public sealed class CancelAttendanceUseCaseTests
 
         Assert.Equal(ApplicationResultType.Conflict, result.Type);
         Assert.False(result.IsSuccess);
-        Assert.Equal("Only open attendance can be canceled.", result.Error);
+        Assert.Equal("Closed attendance cannot be canceled", result.Error);
         Assert.Equal(0, repository.UpdateCallsCount);
     }
 
@@ -94,7 +94,7 @@ public sealed class CancelAttendanceUseCaseTests
 
         Assert.Equal(ApplicationResultType.Conflict, result.Type);
         Assert.False(result.IsSuccess);
-        Assert.Equal("Only open attendance can be canceled.", result.Error);
+        Assert.Equal("Attendance is already canceled", result.Error);
         Assert.Equal(0, repository.UpdateCallsCount);
     }
 

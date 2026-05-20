@@ -105,7 +105,7 @@ public sealed class CloseAttendanceUseCaseTests
 
         Assert.Equal(ApplicationResultType.ValidationError, result.Type);
         Assert.False(result.IsSuccess);
-        Assert.Equal("Close date cannot be earlier than open date.", result.Error);
+        Assert.StartsWith("ClosedAt cannot be before OpenedAt", result.Error);
         Assert.Equal(0, repository.UpdateCallsCount);
     }
 
@@ -127,7 +127,7 @@ public sealed class CloseAttendanceUseCaseTests
 
         Assert.Equal(ApplicationResultType.Conflict, result.Type);
         Assert.False(result.IsSuccess);
-        Assert.Equal("Only open attendance can be closed.", result.Error);
+        Assert.Equal("Attendance is already closed", result.Error);
         Assert.Equal(0, repository.UpdateCallsCount);
     }
 
@@ -149,7 +149,7 @@ public sealed class CloseAttendanceUseCaseTests
 
         Assert.Equal(ApplicationResultType.Conflict, result.Type);
         Assert.False(result.IsSuccess);
-        Assert.Equal("Only open attendance can be closed.", result.Error);
+        Assert.Equal("Canceled attendance cannot be closed", result.Error);
         Assert.Equal(0, repository.UpdateCallsCount);
     }
 
