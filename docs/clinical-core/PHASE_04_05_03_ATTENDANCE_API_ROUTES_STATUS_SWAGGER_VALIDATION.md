@@ -172,8 +172,11 @@ Comandos executados nesta fase:
 
 Observações:
 
-- Tentativa de sincronização com remoto (`git fetch origin` / `git pull origin main`) não foi possível no ambiente porque o remoto `origin` não está configurado.
-- Build/test foram executados localmente neste ambiente.
+- `git diff --check` foi executado com sucesso, sem apontar problemas de whitespace/conflitos no diff desta fase.
+- `dotnet build backend/Togo.sln` foi tentado neste ambiente Codex, mas falhou por limitação de runtime: `dotnet: command not found`.
+- `dotnet test backend/Togo.sln` foi tentado neste ambiente Codex, mas falhou pela mesma limitação: `dotnet: command not found`.
+- O workflow de CI Backend da PR 99 foi registrado como concluído com sucesso.
+- Execução de build/test local por humano fora do ambiente Codex pode ser realizada em fase apropriada, mas não deve ser declarada como executada aqui sem registro explícito nesta fase.
 
 ## 14. Próxima fase recomendada
 
