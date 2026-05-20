@@ -9,11 +9,13 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
     private readonly Dictionary<long, Attendance> _itemsByLookupId = [];
     private readonly HashSet<string> _existingNumbers = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<long> _patientsWithOpenAttendance = [];
+
     public string? LastExistsByAttendanceNumberInput { get; private set; }
     public long? LastHasOpenAttendancePatientIdInput { get; private set; }
     public int AddCallsCount { get; private set; }
     public int GetByIdCallsCount { get; private set; }
     public int UpdateCallsCount { get; private set; }
+
     public Task<Attendance?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -27,6 +29,7 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
         var value = _items.FirstOrDefault(a => a.Id == id);
         return Task.FromResult(value);
     }
+
     public Task<IReadOnlyList<Attendance>> ListAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -59,19 +62,26 @@ internal sealed class FakeAttendanceRepository : IAttendanceRepository
             _itemsByLookupId[lookup.Key] = attendance;
         }
 
-        var existingIndex = _items.FindIndex(a => a.Id == attendance.Id);
+        var existingReferenceIndex = _items.FindIndex(a => ReferenceEquals(a, attendance));
 
-        if (existingIndex >= 0)
+        if (existingReferenceIndex >= 0)
         {
-            _items[existingIndex] = attendance;
+            _items[existingReferenceIndex] = attendance;
             return Task.CompletedTask;
         }
 
-        if (!_items.Contains(attendance))
+        if (attendance.Id > 0)
         {
-            _items.Add(attendance);
+            var existingIdIndex = _items.FindIndex(a => a.Id == attendance.Id);
+
+            if (existingIdIndex >= 0)
+            {
+                _items[existingIdIndex] = attendance;
+                return Task.CompletedTask;
+            }
         }
 
+        _items.Add(attendance);
         return Task.CompletedTask;
     }
 
