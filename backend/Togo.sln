@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Togo.Api.Tests", "src\Togo.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Togo.Application.Tests", "src\Togo.Application.Tests\Togo.Application.Tests.csproj", "{3D7D889A-8B22-4CFD-AA8D-FD6DCB0A3DD4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Togo.Infrastructure.Tests", "src\Togo.Infrastructure.Tests\Togo.Infrastructure.Tests.csproj", "{B41B2549-8A23-47EB-A877-1FF8034D5B90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -113,6 +115,18 @@ Global
 		{3D7D889A-8B22-4CFD-AA8D-FD6DCB0A3DD4}.Release|x64.Build.0 = Release|Any CPU
 		{3D7D889A-8B22-4CFD-AA8D-FD6DCB0A3DD4}.Release|x86.ActiveCfg = Release|Any CPU
 		{3D7D889A-8B22-4CFD-AA8D-FD6DCB0A3DD4}.Release|x86.Build.0 = Release|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Debug|x64.Build.0 = Debug|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Debug|x86.Build.0 = Debug|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Release|x64.ActiveCfg = Release|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Release|x64.Build.0 = Release|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Release|x86.ActiveCfg = Release|Any CPU
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -121,6 +135,7 @@ Global
 		{8C0998E5-11BB-44A2-9464-5E76F538342A} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{BB2756EC-3BE2-411B-B9C4-A30D15E85CF5} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{3D7D889A-8B22-4CFD-AA8D-FD6DCB0A3DD4} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{B41B2549-8A23-47EB-A877-1FF8034D5B90} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DED52AAB-17C9-4A03-85A9-166ECF1CEDF1}
