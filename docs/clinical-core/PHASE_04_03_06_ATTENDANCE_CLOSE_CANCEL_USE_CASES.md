@@ -1,4 +1,3 @@
-
 # TOGO — Fase 4.3.6: Close/Cancel Attendance Use Cases
 
 ## 1. Objetivo
@@ -70,18 +69,74 @@ Esta fase cria os use cases de fechamento e cancelamento de Attendance na camada
 - Sem acesso direto a EF/banco.
 - Sem eventos/RabbitMQ.
 
-## 6. Notas de estabilização das PRs 84, 85 e 86
+## 6. Incidentes e aprendizados da Fase 4.3
 
-- PR 84 teve falha inicial por ordem incorreta de catch.
-- Em C#, catch de exceção base antes de derivada torna o catch derivado inalcançável.
-- PR 85 corrigiu o tratamento para catch `ArgumentException` e também revelou cuidado com default em parâmetro nullable.
-- Em testes, `default` em `DateTime?` vira `null`; usar `default(DateTime)` quando a intenção for `DateTime.MinValue`.
-- PR 86 revelou que `Attendance.Id` permanece 0 em entidades criadas por factory antes da persistência real.
-- Em testes de Application, não usar `attendance.Id` como lookup quando a entidade não passou por infraestrutura.
-- Foi criado `AddAttendanceForLookup` no `FakeAttendanceRepository` para simular busca por id.
-- Testes de lista devem preferir campos controlados, como `AttendanceNumber`, em vez de `Id` default.
-- `git diff --check` pegou trailing whitespace no `FakeAttendanceRepository`, mesmo com build/test passando.
-- Build/test não substituem validação de whitespace.
+### 6.1 `default(DateTime)` vs `default` em nullable
+
+- Em C#, `default` em parâmetro `DateTime?` pode ser interpretado como `null`.
+- Quando a intenção do teste for validar `DateTime.MinValue`, usar `default(DateTime)` ou variável tipada.
+- Esse erro apareceu nos testes de `CreateAttendanceUseCase`.
+
+### 6.2 `Attendance.Id = 0` antes da persistência
+
+- Entidades criadas por `Attendance.Create(...)` nascem com `Id = 0`.
+- O ID real será atribuído pela infraestrutura/persistência no futuro.
+- Testes de Application não devem usar `attendance.Id` como chave de lookup quando a entidade ainda não foi persistida.
+- O padrão correto nos testes é usar `FakeAttendanceRepository.AddAttendanceForLookup(long id, Attendance attendance)`.
+
+### 6.3 Mensagens reais do domínio
+
+- Os use cases retornam `ex.Message` das exceções do domínio.
+- Os testes devem alinhar suas assertions com as mensagens reais lançadas por `Attendance`.
+- A PR 87 falhou inicialmente porque alguns testes esperavam mensagens genéricas diferentes das mensagens reais.
+- Quando a mensagem vier de `ArgumentException` e puder incluir parâmetro, usar `Assert.StartsWith(...)` ou `Assert.Contains(...)` quando apropriado.
+
+### 6.4 Branch correta antes de alterar arquivo
+
+- Antes de alterar qualquer arquivo, confirmar a branch com:
+  - `git branch --show-current`
+  - `git status`
+- Correções em branch errada atrasam o fluxo e podem não impactar a PR correta.
+- Esse problema aconteceu durante a correção entre PRs 86/87.
+
+### 6.5 Codex sem `dotnet`
+
+- O ambiente Codex usado em várias PRs não tinha CLI .NET disponível.
+- Quando `dotnet build` ou `dotnet test` falharem por `dotnet: command not found`, isso deve ser registrado como limitação de ambiente, não como sucesso.
+- A validação final precisa ocorrer localmente ou via GitHub Actions.
+
+### 6.6 CI como gate obrigatório
+
+- GitHub Actions deve ser tratado como gate obrigatório.
+- PR só deve ser considerada concluída quando CI passar.
+- Validação local ajuda, mas CI é a referência final antes do merge.
+
+### 6.7 `git diff --check`
+
+- Build/test não detectam trailing whitespace.
+- `git diff --check` detecta espaços residuais e deve ser executado antes do commit.
+- Esse problema ocorreu no `FakeAttendanceRepository`.
+
+### 6.8 Fake repository testado
+
+- `FakeAttendanceRepository` precisou evoluir para suportar:
+  - múltiplas entidades com `Id = 0`;
+  - lookup artificial por id;
+  - contadores de chamadas;
+  - atualização sem colapsar lista indevidamente.
+- Sempre que o fake ganhar comportamento novo, deve ganhar teste próprio.
+
+### 6.9 Evitar PR auxiliar contra branch errada
+
+- A PR 88 foi criada como auditoria, mas foi mergeada contra `main`, não contra a branch da PR 87.
+- Isso não corrigiu diretamente a PR 87.
+- Quando a intenção for corrigir uma PR aberta, a nova branch/PR deve ser baseada na branch da PR problemática ou a correção deve ser feita diretamente nela.
+
+### 6.10 Cuidado com conflito documental
+
+- Conflitos em arquivos `.md` também precisam de revisão.
+- Marcadores como `<<<<<<<`, `=======` e `>>>>>>>` nunca devem permanecer.
+- O documento da Fase 4.3.6 ficou com um `=======` residual e esta fase 4.3.6.1 corrige isso.
 
 ## 7. Fora do escopo
 
@@ -107,24 +162,4 @@ Esta fase cria os use cases de fechamento e cancelamento de Attendance na camada
 **Fase 4.3.7 — Documentar Application Attendance implementado/testado.**
 
 **Objetivo:**
-Consolidar a camada Application de Attendance, documentando contracts, repository interface, validators, use cases, testes, correções manuais e aprendizados das PRs 84–86.
-=======
-# PHASE 04.03.06 — Attendance Close/Cancel Use Cases (Audit Addendum)
-
-## Notas de auditoria e estabilização dos testes
-
-- PR 84 falhou por ordem incorreta de `catch` (exceção base antes da derivada), gerando tratamento inconsistente.
-- PR 85 expôs cuidado com uso de `default` em parâmetro nullable: quando a intenção é `DateTime.MinValue`, o teste deve deixar isso explícito com `default(DateTime)` ou variável tipada.
-- PR 86 expôs cuidado com `Attendance.Id = 0` em entidades criadas por factory (`Attendance.Create(...)`) e a necessidade de lookup artificial em testes de aplicação.
-- PR 86 também mostrou que build/test não substituem `git diff --check`, que detecta trailing whitespace.
-- PR 87 expôs desalinhamento entre mensagens esperadas nos testes e mensagens reais do domínio/use case.
-- A correção definitiva desta trilha foi auditar testes, fake repository, mensagens esperadas, lookup artificial por id e tratamento de exceções esperado.
-
-### Regras práticas para próximos testes
-
-- Não usar `Id` não persistido como chave de lookup em testes de aplicação.
-- Não usar `default` solto em nullable quando a intenção for `DateTime.MinValue`.
-- Não escrever assertion de mensagem sem conferir a origem real (domínio, validator ou use case).
-- Executar `git diff --check` antes do commit para prevenir whitespace residual.
-- Rodar `dotnet build` e `dotnet test` localmente quando possível antes de abrir PR.
-
+Consolidar a camada Application de Attendance, documentando contratos, interface de repositório, validators, use cases, testes, correções manuais, validações locais/CI e aprendizados da Fase 4.3.
