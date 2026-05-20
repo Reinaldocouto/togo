@@ -26,7 +26,25 @@ public sealed class AttendancesControllerTests
         Assert.Single(body);
     }
 
-    [Fact] public async Task GetById_ShouldReturnOk_WhenAttendanceExists() { var context = CreateControllerContext(); var attendance = CreateAttendance("ATT-001"); context.Repository.MapAttendance(10, attendance); var result = await context.Controller.GetById(10, CancellationToken.None); var ok = Assert.IsType<OkObjectResult>(result); var body = Assert.IsType<AttendanceResponse>(ok.Value); Assert.Equal(10, body.Id); }
+    [Fact]
+    public async Task GetById_ShouldReturnOk_WhenAttendanceExists()
+    {
+        var context = CreateControllerContext();
+        var attendance = CreateAttendance("ATT-001");
+
+        context.Repository.MapAttendance(10, attendance);
+
+        var result = await context.Controller.GetById(10, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var body = Assert.IsType<AttendanceResponse>(ok.Value);
+
+        Assert.Equal(attendance.Id, body.Id);
+        Assert.Equal(attendance.PatientId, body.PatientId);
+        Assert.Equal("ATT-001", body.AttendanceNumber);
+        Assert.Equal(AttendanceStatus.Open, body.Status);
+        Assert.Equal(AttendanceType.Consultation, body.Type);
+    }
     [Fact] public async Task GetById_ShouldReturnBadRequest_WhenIdIsInvalid() { var context = CreateControllerContext(); var result = await context.Controller.GetById(0, CancellationToken.None); Assert.IsType<BadRequestObjectResult>(result); }
     [Fact] public async Task GetById_ShouldReturnNotFound_WhenAttendanceDoesNotExist() { var context = CreateControllerContext(); var result = await context.Controller.GetById(999, CancellationToken.None); Assert.IsType<NotFoundObjectResult>(result); }
 
@@ -88,11 +106,32 @@ public sealed class AttendancesControllerTests
         public Task<bool> ExistsByAttendanceNumberAsync(string attendanceNumber, CancellationToken cancellationToken = default) => Task.FromResult(ExistingAttendanceNumbers.Contains(attendanceNumber));
         public Task<bool> HasOpenAttendanceForPatientAsync(long patientId, CancellationToken cancellationToken = default) => Task.FromResult(PatientsWithOpenAttendance.Contains(patientId));
     }
-
     private sealed class FakePetRepository(bool patientExists) : IPetRepository
     {
         public Task<IReadOnlyList<PetListItemProjection>> ListAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<PetListItemProjection>>([]);
-        public Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken) => Task.FromResult(patientExists ? new PetDetailsProjection(patientId, 1, "Pet", "Dog", "Breed", 1, DateTime.UtcNow.AddYears(-1), null, null, DateTime.UtcNow, DateTime.UtcNow) : null);
+        public Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken)
+        {
+            if (!patientExists)
+            {
+                return Task.FromResult<PetDetailsProjection?>(null);
+            }
+
+            var projection = new PetDetailsProjection(
+                PatientId: patientId,
+                TutorId: 1,
+                Name: "Pet",
+                BirthDate: DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-1)),
+                Status: "Active",
+                Species: "Dog",
+                Breed: "Breed",
+                Sex: PetSex.NotInformed,
+                WeightKg: null,
+                Microchip: null,
+                CreatedAt: DateTime.UtcNow,
+                UpdatedAt: DateTime.UtcNow);
+
+            return Task.FromResult<PetDetailsProjection?>(projection);
+        }
         public Task<bool> TutorExistsAsync(long tutorId, CancellationToken cancellationToken) => Task.FromResult(true);
         public Task<bool> MicrochipExistsAsync(string microchip, long? ignorePatientId, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<PetDetailsProjection> CreateAsync(CreatePetRepositoryData data, CancellationToken cancellationToken) => throw new NotImplementedException();
