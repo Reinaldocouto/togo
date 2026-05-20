@@ -52,6 +52,7 @@ Por método do `AttendanceRepository`:
 - A Infrastructure apenas persiste e consulta.
 - Todos os métodos assíncronos aceitam `CancellationToken`.
 - Não houve criação de migration e não houve database update.
+- Na Fase 4.4.2.1, o projeto `Togo.Infrastructure.Tests` foi adicionado à solution `backend/Togo.sln` para garantir que `dotnet build backend/Togo.sln` e `dotnet test backend/Togo.sln` compilem/executem os testes de Infrastructure; antes dessa correção, os testes existiam como projeto, mas não estavam integrados ao `.sln`.
 
 ## 6. Fora do escopo
 
