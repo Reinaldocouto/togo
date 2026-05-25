@@ -11,6 +11,7 @@ namespace Togo.Api.Controllers;
 [Route("api/patients/{patientId:long}/medical-record")]
 public class MedicalRecordsController : ControllerBase
 {
+    private const string GetMedicalRecordByPatientIdRouteName = "GetMedicalRecordByPatientId";
     private readonly CreateMedicalRecordUseCase _createMedicalRecordUseCase;
     private readonly GetMedicalRecordByPatientIdUseCase _getMedicalRecordByPatientIdUseCase;
     private readonly UpdateMedicalRecordUseCase _updateMedicalRecordUseCase;
@@ -28,7 +29,7 @@ public class MedicalRecordsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
+    [HttpGet(Name = GetMedicalRecordByPatientIdRouteName)]
     [ProducesResponseType(typeof(MedicalRecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -60,8 +61,8 @@ public class MedicalRecordsController : ControllerBase
             return ToActionResult(result);
         }
 
-        return CreatedAtAction(
-            nameof(GetByPatientIdAsync),
+        return CreatedAtRoute(
+            GetMedicalRecordByPatientIdRouteName,
             new { patientId = result.Data!.PatientId },
             result.Data);
     }
