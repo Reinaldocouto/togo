@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Togo.Domain.Entities;
 using Togo.Domain.Enums;
 using Togo.Infrastructure.Persistence;
