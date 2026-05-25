@@ -67,11 +67,6 @@ public class UpdateMedicalRecordUseCase
             _logger.LogWarning(ex, "Medical record update failed due to domain validation error. PatientId: {PatientId}", patientId);
             return ApplicationResult<MedicalRecordResponse>.ValidationError(ex.Message);
         }
-        catch (ArgumentOutOfRangeException ex)
-        {
-            _logger.LogWarning(ex, "Medical record update failed due to domain validation error. PatientId: {PatientId}", patientId);
-            return ApplicationResult<MedicalRecordResponse>.ValidationError(ex.Message);
-        }
     }
 
     private static ApplicationResult<MedicalRecordResponse> ToMedicalRecordResponseResult(ApplicationResult<bool> validationResult) =>

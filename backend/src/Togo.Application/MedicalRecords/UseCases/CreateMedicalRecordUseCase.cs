@@ -60,11 +60,6 @@ public class CreateMedicalRecordUseCase
             _logger.LogWarning(ex, "Medical record creation failed due to domain validation error. PatientId: {PatientId}", patientId);
             return ApplicationResult<MedicalRecordResponse>.ValidationError(ex.Message);
         }
-        catch (ArgumentOutOfRangeException ex)
-        {
-            _logger.LogWarning(ex, "Medical record creation failed due to domain validation error. PatientId: {PatientId}", patientId);
-            return ApplicationResult<MedicalRecordResponse>.ValidationError(ex.Message);
-        }
     }
 
     private static ApplicationResult<MedicalRecordResponse> ToMedicalRecordResponseResult(ApplicationResult<bool> validationResult) =>
