@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Togo.Api.Middlewares;
+using Togo.Api.Security;
 using Togo.Application.Services;
 using Togo.Application.Attendances.UseCases;
 using Togo.Application.Attendances.Validators;
@@ -94,7 +95,7 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options => options.AddMedicalRecordPolicies());
 
 // ====== CORS ======
 const string AllowFrontendPolicy = "AllowFrontend";

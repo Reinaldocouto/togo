@@ -4,7 +4,6 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -12,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Togo.Api.Controllers;
+using Togo.Api.Security;
 using Togo.Application.MedicalRecords.Contracts;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Application.MedicalRecords.UseCases;
@@ -20,6 +20,7 @@ using Togo.Application.Pets;
 using Togo.Application.Pets.Contracts;
 using Togo.Domain.Entities;
 using Togo.Domain.Enums;
+using Togo.Domain.Security;
 
 namespace Togo.Api.Tests.MedicalRecords;
 
@@ -61,6 +62,45 @@ public sealed class MedicalRecordsControllerTests
         using var app = CreateApp();
         var response = await app.UnauthorizedClient.GetAsync("/api/patients/1/medical-record");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+
+    [Fact]
+    public async Task Get_ShouldReturnForbidden_WithTokenWithoutProfileClaim()
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(10);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(10, "read", null, DateTime.UtcNow));
+
+        var response = await app.CreateAuthenticatedClientWithoutProfile().GetAsync("/api/patients/10/medical-record");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(UserProfiles.Reception)]
+    [InlineData(UserProfiles.ReadOnly)]
+    public async Task Get_ShouldReturnForbidden_WhenProfileCannotRead(string profile)
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(11);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(11, "read", null, DateTime.UtcNow));
+
+        var response = await app.CreateAuthenticatedClient(profile).GetAsync("/api/patients/11/medical-record");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_ShouldReturnOk_WhenProfileIsAssistant()
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(12);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(12, "read", null, DateTime.UtcNow));
+
+        var response = await app.CreateAuthenticatedClient(UserProfiles.Assistant).GetAsync("/api/patients/12/medical-record");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -117,6 +157,46 @@ public sealed class MedicalRecordsControllerTests
         Assert.Null(blankBody.FlagsJson);
     }
 
+
+    [Theory]
+    [InlineData(UserProfiles.Assistant)]
+    [InlineData(UserProfiles.Reception)]
+    [InlineData(UserProfiles.ReadOnly)]
+    public async Task Post_ShouldReturnForbidden_WhenProfileCannotCreate(string profile)
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(13);
+
+        var response = await app.CreateAuthenticatedClient(profile)
+            .PostAsJsonAsync("/api/patients/13/medical-record", new CreateMedicalRecordRequest("x", null));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Post_ShouldReturnForbidden_WithTokenWithoutProfileClaim()
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(14);
+
+        var response = await app.CreateAuthenticatedClientWithoutProfile()
+            .PostAsJsonAsync("/api/patients/14/medical-record", new CreateMedicalRecordRequest("x", null));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Post_ShouldReturnCreated_WhenProfileIsAdmin()
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(15);
+
+        var response = await app.CreateAuthenticatedClient(UserProfiles.Admin)
+            .PostAsJsonAsync("/api/patients/15/medical-record", new CreateMedicalRecordRequest("x", null));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
     [Fact] public async Task Post_ShouldReturnBadRequest_WhenPatientIdIsInvalid() { using var app = CreateApp(); var response = await app.AuthorizedClient.PostAsJsonAsync("/api/patients/0/medical-record", new CreateMedicalRecordRequest("x", "y")); Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); }
     [Fact] public async Task Post_ShouldReturnUnauthorized_WithoutToken() { using var app = CreateApp(); var response = await app.UnauthorizedClient.PostAsJsonAsync("/api/patients/1/medical-record", new CreateMedicalRecordRequest("x", "y")); Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode); }
     [Fact] public async Task Post_ShouldReturnNotFound_WhenPatientDoesNotExist() { using var app = CreateApp(); var response = await app.AuthorizedClient.PostAsJsonAsync("/api/patients/777/medical-record", new CreateMedicalRecordRequest("x", "y")); Assert.Equal(HttpStatusCode.NotFound, response.StatusCode); }
@@ -150,6 +230,51 @@ public sealed class MedicalRecordsControllerTests
         Assert.Equal("after", body.GeneralNotes);
         Assert.Equal("{\"v\":2}", body.FlagsJson);
         Assert.True(body.UpdatedAt > previousUpdatedAt);
+    }
+
+
+    [Theory]
+    [InlineData(UserProfiles.Assistant)]
+    [InlineData(UserProfiles.Reception)]
+    [InlineData(UserProfiles.ReadOnly)]
+    public async Task Put_ShouldReturnForbidden_WhenProfileCannotUpdate(string profile)
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(16);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(16, "before", null, DateTime.UtcNow));
+
+        var response = await app.CreateAuthenticatedClient(profile)
+            .PutAsJsonAsync("/api/patients/16/medical-record", new UpdateMedicalRecordRequest("after", null));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Put_ShouldReturnForbidden_WithTokenWithoutProfileClaim()
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(17);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(17, "before", null, DateTime.UtcNow));
+
+        var response = await app.CreateAuthenticatedClientWithoutProfile()
+            .PutAsJsonAsync("/api/patients/17/medical-record", new UpdateMedicalRecordRequest("after", null));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(UserProfiles.Admin)]
+    [InlineData(UserProfiles.Veterinarian)]
+    public async Task Put_ShouldReturnOk_WhenProfileCanUpdate(string profile)
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(18);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(18, "before", null, DateTime.UtcNow));
+
+        var response = await app.CreateAuthenticatedClient(profile)
+            .PutAsJsonAsync("/api/patients/18/medical-record", new UpdateMedicalRecordRequest("after", null));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact] public async Task Put_ShouldReturnBadRequest_WhenPatientIdIsInvalid() { using var app = CreateApp(); var response = await app.AuthorizedClient.PutAsJsonAsync("/api/patients/0/medical-record", new UpdateMedicalRecordRequest("x", "y")); Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); }
@@ -189,10 +314,7 @@ public sealed class MedicalRecordsControllerTests
                 services.AddScoped<MedicalRecordUniquenessValidator>();
                 services.AddScoped<MedicalRecordExistsValidator>();
                 services.AddAuthentication("Test").AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", _ => { });
-                services.AddAuthorization(options =>
-                {
-                    options.DefaultPolicy = new AuthorizationPolicyBuilder("Test").RequireAuthenticatedUser().Build();
-                });
+                services.AddAuthorization(options => options.AddMedicalRecordPolicies());
             })
             .Configure(app =>
             {
@@ -202,22 +324,47 @@ public sealed class MedicalRecordsControllerTests
                 app.UseEndpoints(endpoints => endpoints.MapControllers());
             }));
 
-        var authorizedClient = server.CreateClient();
-        authorizedClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Test", "ok");
+        var authorizedClient = CreateAuthenticatedClient(server, UserProfiles.Veterinarian);
         return new ApiTestContext(server, authorizedClient, server.CreateClient(), medicalRecordRepository, petRepository);
+    }
+
+    private static HttpClient CreateAuthenticatedClient(TestServer server, string profile)
+    {
+        var client = server.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Test", profile);
+        return client;
     }
 
     private sealed record ApiTestContext(TestServer Server, HttpClient AuthorizedClient, HttpClient UnauthorizedClient, InMemoryMedicalRecordRepository MedicalRecordRepository, InMemoryPetRepository PetRepository) : IDisposable
     {
+        public HttpClient CreateAuthenticatedClient(string profile) => MedicalRecordsControllerTests.CreateAuthenticatedClient(Server, profile);
+
+        public HttpClient CreateAuthenticatedClientWithoutProfile()
+        {
+            var client = Server.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Test", TestAuthHandler.AuthenticatedWithoutProfileToken);
+            return client;
+        }
+
         public void Dispose() { AuthorizedClient.Dispose(); UnauthorizedClient.Dispose(); Server.Dispose(); }
     }
 
     private sealed class TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
+        public const string AuthenticatedWithoutProfileToken = "no-profile";
+
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (Request.Headers.Authorization.Count == 0) return Task.FromResult(AuthenticateResult.NoResult());
-            var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "test-user")], Scheme.Name);
+
+            var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, "test-user") };
+            var profile = Request.Headers.Authorization.ToString().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries).ElementAtOrDefault(1);
+            if (!string.Equals(profile, AuthenticatedWithoutProfileToken, StringComparison.Ordinal))
+            {
+                claims.Add(new Claim(TogoClaimTypes.Profile, profile ?? string.Empty));
+            }
+
+            var identity = new ClaimsIdentity(claims, Scheme.Name);
             return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name)));
         }
     }
