@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Togo.Application.Security;
 using Xunit;
 
@@ -9,9 +8,9 @@ public class MedicalRecordPermissionsTests
     [Fact]
     public void Constants_ShouldMatchExpectedValues()
     {
-        MedicalRecordPermissions.Read.Should().Be("MedicalRecord.Read");
-        MedicalRecordPermissions.Create.Should().Be("MedicalRecord.Create");
-        MedicalRecordPermissions.Update.Should().Be("MedicalRecord.Update");
+        Assert.Equal("MedicalRecord.Read", MedicalRecordPermissions.Read);
+        Assert.Equal("MedicalRecord.Create", MedicalRecordPermissions.Create);
+        Assert.Equal("MedicalRecord.Update", MedicalRecordPermissions.Update);
     }
 
     [Fact]
@@ -24,7 +23,7 @@ public class MedicalRecordPermissionsTests
             MedicalRecordPermissions.Update
         };
 
-        values.Should().OnlyContain(value => !string.IsNullOrWhiteSpace(value));
-        values.Distinct().Should().HaveCount(values.Length);
+        Assert.All(values, value => Assert.False(string.IsNullOrWhiteSpace(value)));
+        Assert.Equal(values.Length, values.Distinct().Count());
     }
 }
