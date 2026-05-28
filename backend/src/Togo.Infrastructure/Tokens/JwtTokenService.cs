@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Togo.Domain.Entities;
 using Togo.Domain.Interfaces;
+using Togo.Domain.Security;
 
 namespace Togo.Infrastructure.Tokens;
 
@@ -41,6 +42,7 @@ public class JwtTokenService : ITokenService
             new(ClaimTypes.Name, user.Name),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(ClaimTypes.Email, user.Email),
+            new(TogoClaimTypes.Profile, user.Profile),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N"))
         };
 
