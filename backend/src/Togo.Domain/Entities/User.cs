@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Togo.Domain.Security;
 
 namespace Togo.Domain.Entities;
 
@@ -8,12 +9,13 @@ public class User
         @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    private User(Guid id, string name, string email, string passwordHash)
+    private User(Guid id, string name, string email, string passwordHash, string profile)
     {
         Id = id;
         Name = name;
         Email = email;
         PasswordHash = passwordHash;
+        Profile = profile;
     }
 
     public Guid Id { get; }
@@ -24,13 +26,23 @@ public class User
 
     public string PasswordHash { get; private set; }
 
-    public static User Create(string name, string email, string passwordHash)
+    public string Profile { get; private set; }
+
+    public static User Create(string name, string email, string passwordHash) =>
+        Create(name, email, passwordHash, UserProfiles.Default);
+
+    public static User Create(string name, string email, string passwordHash, string? profile)
     {
         ValidateName(name);
         ValidateEmail(email);
         ValidatePasswordHash(passwordHash);
 
-        return new User(Guid.NewGuid(), name.Trim(), NormalizeEmail(email), passwordHash);
+        return new User(
+            Guid.NewGuid(),
+            name.Trim(),
+            NormalizeEmail(email),
+            passwordHash,
+            UserProfiles.Normalize(profile));
     }
 
     public void UpdateName(string name)
@@ -49,6 +61,11 @@ public class User
     {
         ValidatePasswordHash(passwordHash);
         PasswordHash = passwordHash;
+    }
+
+    public void UpdateProfile(string profile)
+    {
+        Profile = UserProfiles.Normalize(profile);
     }
 
     public static void EnsurePasswordMeetsRules(string password)
