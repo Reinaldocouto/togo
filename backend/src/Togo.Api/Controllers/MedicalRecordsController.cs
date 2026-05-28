@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Togo.Application.MedicalRecords.Contracts;
+using Togo.Api.Security;
 using Togo.Application.MedicalRecords.UseCases;
 using Togo.Application.Tutors;
 
@@ -30,6 +31,7 @@ public class MedicalRecordsController : ControllerBase
     }
 
     [HttpGet(Name = GetMedicalRecordByPatientIdRouteName)]
+    [Authorize(Policy = MedicalRecordPolicies.Read)]
     [ProducesResponseType(typeof(MedicalRecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -43,6 +45,7 @@ public class MedicalRecordsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = MedicalRecordPolicies.Create)]
     [ProducesResponseType(typeof(MedicalRecordResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -68,6 +71,7 @@ public class MedicalRecordsController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(Policy = MedicalRecordPolicies.Update)]
     [ProducesResponseType(typeof(MedicalRecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
