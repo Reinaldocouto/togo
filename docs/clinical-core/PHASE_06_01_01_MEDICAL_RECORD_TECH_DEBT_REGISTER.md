@@ -79,7 +79,7 @@ Regras:
 |---|---|---|---|---|---|---|---|---|---|---|
 | MR-DEBT-001 | Soft Delete ausente | Persistência/Compliance | P1 | Aberto | Não | Sim | Não há exclusão lógica em MedicalRecord. | Perda de histórico clínico se exclusão física for usada futuramente. | Não há endpoint DELETE no MVP. | 6.4.x — Soft Delete e persistência clínica. |
 | MR-DEBT-002 | AuditLog ausente | Auditoria | P1 | Aberto | Não | Sim | Não há trilha de alterações clínicas. | Baixa rastreabilidade. | Logs técnicos sem payload sensível. | 6.3.x — Auditoria clínica. |
-| MR-DEBT-003 | Roles/permissões finas ausentes | Segurança | P1 | Aberto | Não | Sim | Endpoints usam `[Authorize]` genérico. | Acesso não granular por perfil. | Autenticação obrigatória. | 6.2.x — Segurança/autorização granular. |
+| MR-DEBT-003 | Roles/permissões finas ausentes | Segurança | P1 | Resolvido tecnicamente para autorização granular mínima | Não | Não, como bloqueio ativo isolado; produção real permanece bloqueada pelos demais P1 abertos. | Policies por operação, perfil mínimo e claim `togo:profile` aplicados ao fluxo MedicalRecord. | Risco original mitigado por autorização granular mínima; permanecem riscos clínicos dos demais P1. | Policies ASP.NET Core avaliadas por profile JWT, com matriz explícita e testes de autorização/controller. | Tratado nas fases 6.2.1 a 6.2.5; encerramento formal na 6.2.6. |
 | MR-DEBT-004 | Controle de autoria ausente | Auditoria/Segurança | P1 | Aberto | Não | Sim | MedicalRecord não possui `CreatedBy/UpdatedBy`. | Não identificar autor de alteração clínica. | Autenticação existe, mas não persiste autoria. | 6.3.x — Autoria clínica. |
 | MR-DEBT-005 | Política de retenção não implementada | Compliance/Governança | P1 | Aberto | Não | Sim | Diretriz existe, mecanismo técnico não. | Risco regulatório/operacional. | Ausência de fluxo de exclusão e documentação. | 6.4.x — Retenção clínica. |
 | MR-DEBT-006 | DeleteBehavior.Cascade pendente de revisão | Persistência/Integridade clínica | P1 | Aberto | Não | Sim | Cascade registrado na configuração/migration. | Exclusão em cascata de dado clínico. | Sem endpoint DELETE. | 6.4.x — Revisão de integridade referencial. |
@@ -92,7 +92,7 @@ Regras:
 
 ## 8. Débitos P1 — obrigatórios antes de produção real
 
-Itens P1 mapeados:
+Itens P1 originalmente mapeados:
 - Soft Delete;
 - AuditLog;
 - roles/permissões finas;
@@ -100,7 +100,7 @@ Itens P1 mapeados:
 - política de retenção;
 - revisão DeleteBehavior.Cascade.
 
-Esses itens não impedem demonstração/MVP técnico, mas impedem recomendação de produção real com dados clínicos sensíveis, por envolverem riscos diretos de segurança, rastreabilidade, integridade clínica e compliance.
+Após a Fase 6.2, **MR-DEBT-003 — Roles/permissões finas ausentes** está resolvido tecnicamente para o escopo mínimo de autorização granular MedicalRecord. Os demais P1 permanecem abertos e continuam impedindo recomendação de produção real com dados clínicos sensíveis, por envolverem riscos diretos de rastreabilidade, integridade clínica e compliance.
 
 ## 9. Débitos P2 — hardening técnico próximo
 
@@ -123,7 +123,7 @@ Esses itens são evoluções de qualidade e governança, relevantes para maturid
 ## 11. Roadmap recomendado da Fase 6
 
 ### 6.2 — Segurança e autorização granular
-- MR-DEBT-003.
+- MR-DEBT-003 — resolvido tecnicamente para autorização granular mínima pelas fases 6.2.1 a 6.2.5; encerramento formal registrado na Fase 6.2.6.
 
 ### 6.3 — Auditoria e autoria clínica
 - MR-DEBT-002;
@@ -221,3 +221,63 @@ Validações executadas nesta fase documental:
 - `git diff --check`;
 - `dotnet build backend/Togo.sln` (quando disponível);
 - `dotnet test backend/Togo.sln` (quando disponível).
+
+
+## 18. Atualização viva — encerramento da Fase 6.2
+
+### 18.1 MR-DEBT-003 — histórico e status atualizado
+
+**Status anterior:** aberto, pendente e bloqueante para produção real.
+
+**Novo status:** resolvido tecnicamente para autorização granular mínima.
+
+**Fases responsáveis pela solução:** 6.2.1, 6.2.2, 6.2.3, 6.2.4 e 6.2.5.
+
+**PRs responsáveis:** PR 135, PR 136, PR 137, PR 138 e PR 139.
+
+**Resumo da solução:** MedicalRecord deixou de depender apenas de `[Authorize]` genérico. A solução adotou permissões e policies centralizadas, profile mínimo persistido no usuário, claim própria `togo:profile` emitida no JWT, registro das policies no ASP.NET Core Authorization, aplicação de policy por operação no `MedicalRecordsController`, matriz explícita de perfil x permissão e cobertura automatizada da avaliação direta e do controller.
+
+### 18.2 Evidências de implementação e testes do MR-DEBT-003
+
+Foram consolidadas as seguintes evidências:
+- policies MedicalRecord foram definidas;
+- perfil mínimo de usuário foi criado;
+- claim `togo:profile` foi criada e emitida no JWT;
+- policies foram registradas no `Program.cs`;
+- `MedicalRecordsController` passou a usar policies por operação;
+- matriz perfil x permissão foi implementada;
+- testes diretos de autorização foram criados;
+- testes do controller cobrem `401 Unauthorized`, `403 Forbidden` e acessos permitidos;
+- CI passou nos PRs finais da sequência de implementação e evidências.
+
+Arquivos principais envolvidos:
+- `backend/src/Togo.Application/Security/MedicalRecordPermissions.cs`;
+- `backend/src/Togo.Api/Security/MedicalRecordPolicies.cs`;
+- `backend/src/Togo.Api/Security/MedicalRecordAuthorization.cs`;
+- `backend/src/Togo.Domain/Security/UserProfiles.cs`;
+- `backend/src/Togo.Domain/Security/TogoClaimTypes.cs`;
+- `backend/src/Togo.Domain/Entities/User.cs`;
+- `backend/src/Togo.Infrastructure/Tokens/JwtTokenService.cs`;
+- `backend/src/Togo.Infrastructure/Persistence/Configurations/UserConfiguration.cs`;
+- `backend/src/Togo.Infrastructure/Migrations/20260528120000_AddUserProfile.cs`;
+- `backend/src/Togo.Api/Program.cs`;
+- `backend/src/Togo.Api/Controllers/MedicalRecordsController.cs`;
+- `backend/src/Togo.Api.Tests/Security/MedicalRecordAuthorizationTests.cs`;
+- `backend/src/Togo.Api.Tests/MedicalRecords/MedicalRecordsControllerTests.cs`.
+
+### 18.3 Riscos remanescentes e impacto na produção real
+
+MR-DEBT-003 deixa de ser bloqueio ativo isolado. Entretanto, a vertical MedicalRecord ainda **não deve ser usada com dados clínicos reais**, pois permanecem abertos outros P1:
+- MR-DEBT-002 — AuditLog ausente;
+- MR-DEBT-004 — Controle de autoria ausente;
+- MR-DEBT-001 — Soft Delete ausente;
+- MR-DEBT-005 — Política de retenção não implementada;
+- MR-DEBT-006 — `DeleteBehavior.Cascade` pendente de revisão.
+
+A liberação de produção real depende da continuidade das Fases 6.3 e 6.4.
+
+### 18.4 Encerramento e próxima fase
+
+**Decisão:** Opção A — Fase 6.2 encerrada com MR-DEBT-003 tratado tecnicamente por autorização granular mínima baseada em profile JWT e policies ASP.NET Core.
+
+**Próxima fase recomendada:** Fase 6.3 — Auditoria e autoria clínica, iniciando por **Fase 6.3.1 — Planejamento técnico de autoria clínica e auditoria MedicalRecord** para tratar MR-DEBT-004 e MR-DEBT-002.
