@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using Togo.Api.Middlewares;
 using Togo.Api.Security;
 using Togo.Application.Services;
+using Togo.Application.Security;
 using Togo.Application.Attendances.UseCases;
 using Togo.Application.Attendances.Validators;
 using Togo.Application.Attendances.Repositories;
@@ -42,6 +43,8 @@ var jwtSecret = builder.Configuration["Jwt:Secret"]
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
 // ====== DEPENDENCY INJECTION ======
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITutorRepository, TutorRepository>();
 builder.Services.AddScoped<IPetRepository, PetRepository>();
