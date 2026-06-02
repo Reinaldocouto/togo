@@ -111,6 +111,15 @@ public class HttpContextCurrentUserServiceTests
     }
 
     [Fact]
+    public void GetCurrentUser_ShouldFailWhenUserIdIsEmpty()
+    {
+        var service = CreateService(CreateAuthenticatedPrincipal(
+            new Claim(ClaimTypes.NameIdentifier, Guid.Empty.ToString())));
+
+        Assert.Throws<CurrentUserResolutionException>(() => service.GetCurrentUser());
+    }
+
+    [Fact]
     public void GetCurrentUser_ShouldFailWhenUserIdIsNotAValidGuid()
     {
         var service = CreateService(CreateAuthenticatedPrincipal(

@@ -18,6 +18,7 @@ using Togo.Application.MedicalRecords.UseCases;
 using Togo.Application.MedicalRecords.Validators;
 using Togo.Application.Pets;
 using Togo.Application.Pets.Contracts;
+using Togo.Application.Security;
 using Togo.Domain.Entities;
 using Togo.Domain.Enums;
 using Togo.Domain.Security;
@@ -32,7 +33,7 @@ public sealed class MedicalRecordsControllerTests
         using var app = CreateApp();
         var patientId = 1L;
         app.PetRepository.AddPatient(patientId);
-        var medicalRecord = MedicalRecord.Create(patientId, "General", "{\"risk\":false}", DateTime.UtcNow.AddMinutes(-5));
+        var medicalRecord = MedicalRecord.Create(patientId, "General", "{\"risk\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-5));
         await app.MedicalRecordRepository.AddAsync(medicalRecord);
 
         var response = await app.AuthorizedClient.GetAsync($"/api/patients/{patientId}/medical-record");
@@ -70,7 +71,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(10);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(10, "read", null, DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(10, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var response = await app.CreateAuthenticatedClientWithoutProfile().GetAsync("/api/patients/10/medical-record");
 
@@ -84,7 +85,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(11);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(11, "read", null, DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(11, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var response = await app.CreateAuthenticatedClient(profile).GetAsync("/api/patients/11/medical-record");
 
@@ -96,7 +97,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(12);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(12, "read", null, DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(12, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var response = await app.CreateAuthenticatedClient(UserProfiles.Assistant).GetAsync("/api/patients/12/medical-record");
 
@@ -135,6 +136,11 @@ public sealed class MedicalRecordsControllerTests
         Assert.Equal("note", body.GeneralNotes);
         Assert.Equal("{\"a\":1}", body.FlagsJson);
         Assert.NotEqual(default, body.UpdatedAt);
+        var persisted = await app.MedicalRecordRepository.GetByPatientIdAsync(3);
+        Assert.NotNull(persisted);
+        Assert.Equal(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), persisted!.CreatedByUserId);
+        Assert.Equal(persisted.CreatedByUserId, persisted.UpdatedByUserId);
+        Assert.Equal(persisted.CreatedAt, persisted.UpdatedAt);
         Assert.NotNull(response.Headers.Location);
     }
 
@@ -206,7 +212,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(6);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(6, "existing", null, DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(6, "existing", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
         var response = await app.AuthorizedClient.PostAsJsonAsync("/api/patients/6/medical-record", new CreateMedicalRecordRequest("new", null));
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -216,7 +222,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(7);
-        var existing = MedicalRecord.Create(7, "before", "{\"v\":1}", DateTime.UtcNow.AddMinutes(-10));
+        var existing = MedicalRecord.Create(7, "before", "{\"v\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10));
         await app.MedicalRecordRepository.AddAsync(existing);
         var previousUpdatedAt = existing.UpdatedAt;
 
@@ -230,6 +236,8 @@ public sealed class MedicalRecordsControllerTests
         Assert.Equal("after", body.GeneralNotes);
         Assert.Equal("{\"v\":2}", body.FlagsJson);
         Assert.True(body.UpdatedAt > previousUpdatedAt);
+        Assert.Equal(Guid.Parse("11111111-2222-3333-4444-555555555555"), existing.CreatedByUserId);
+        Assert.Equal(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), existing.UpdatedByUserId);
     }
 
 
@@ -241,7 +249,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(16);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(16, "before", null, DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(16, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var response = await app.CreateAuthenticatedClient(profile)
             .PutAsJsonAsync("/api/patients/16/medical-record", new UpdateMedicalRecordRequest("after", null));
@@ -254,7 +262,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(17);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(17, "before", null, DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(17, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var response = await app.CreateAuthenticatedClientWithoutProfile()
             .PutAsJsonAsync("/api/patients/17/medical-record", new UpdateMedicalRecordRequest("after", null));
@@ -269,7 +277,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(18);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(18, "before", null, DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(18, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var response = await app.CreateAuthenticatedClient(profile)
             .PutAsJsonAsync("/api/patients/18/medical-record", new UpdateMedicalRecordRequest("after", null));
@@ -287,7 +295,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(9);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(9, "old", "old", DateTime.UtcNow.AddMinutes(-10)));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(9, "old", "old", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10)));
         var response = await app.AuthorizedClient.PutAsJsonAsync("/api/patients/9/medical-record", new UpdateMedicalRecordRequest("   ", "   "));
         var body = await response.Content.ReadFromJsonAsync<MedicalRecordResponse>();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -305,6 +313,8 @@ public sealed class MedicalRecordsControllerTests
             {
                 services.AddLogging();
                 services.AddControllers().AddApplicationPart(typeof(MedicalRecordsController).Assembly);
+                services.AddHttpContextAccessor();
+                services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
                 services.AddScoped<IMedicalRecordRepository>(_ => medicalRecordRepository);
                 services.AddScoped<IPetRepository>(_ => petRepository);
                 services.AddScoped<CreateMedicalRecordUseCase>();
@@ -357,7 +367,7 @@ public sealed class MedicalRecordsControllerTests
         {
             if (Request.Headers.Authorization.Count == 0) return Task.FromResult(AuthenticateResult.NoResult());
 
-            var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, "test-user") };
+            var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee") };
             var profile = Request.Headers.Authorization.ToString().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries).ElementAtOrDefault(1);
             if (!string.Equals(profile, AuthenticatedWithoutProfileToken, StringComparison.Ordinal))
             {

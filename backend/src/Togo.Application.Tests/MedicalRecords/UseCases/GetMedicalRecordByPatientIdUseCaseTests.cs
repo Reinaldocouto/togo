@@ -15,7 +15,7 @@ public sealed class GetMedicalRecordByPatientIdUseCaseTests
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", DateTime.UtcNow));
+        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
         var useCase = CreateUseCase(repository, petRepository);
 
         var result = await useCase.ExecuteAsync(patientId, CancellationToken.None);
@@ -67,7 +67,7 @@ public sealed class GetMedicalRecordByPatientIdUseCaseTests
         var repository = new FakeMedicalRecordRepository { ReturnNullOnGetByPatientId = true };
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", DateTime.UtcNow));
+        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var result = await CreateUseCase(repository, petRepository)
             .ExecuteAsync(patientId, CancellationToken.None);

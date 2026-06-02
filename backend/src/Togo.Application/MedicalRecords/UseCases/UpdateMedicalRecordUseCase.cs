@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Togo.Application.MedicalRecords.Contracts;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Application.MedicalRecords.Validators;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
 
@@ -12,17 +13,20 @@ public class UpdateMedicalRecordUseCase
     private readonly IMedicalRecordRepository _medicalRecordRepository;
     private readonly MedicalRecordPatientExistsValidator _medicalRecordPatientExistsValidator;
     private readonly MedicalRecordExistsValidator _medicalRecordExistsValidator;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdateMedicalRecordUseCase> _logger;
 
     public UpdateMedicalRecordUseCase(
         IMedicalRecordRepository medicalRecordRepository,
         MedicalRecordPatientExistsValidator medicalRecordPatientExistsValidator,
         MedicalRecordExistsValidator medicalRecordExistsValidator,
+        ICurrentUserService currentUserService,
         ILogger<UpdateMedicalRecordUseCase> logger)
     {
         _medicalRecordRepository = medicalRecordRepository;
         _medicalRecordPatientExistsValidator = medicalRecordPatientExistsValidator;
         _medicalRecordExistsValidator = medicalRecordExistsValidator;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -56,7 +60,8 @@ public class UpdateMedicalRecordUseCase
 
         try
         {
-            medicalRecord.UpdateNotes(request.GeneralNotes, request.FlagsJson, DateTime.UtcNow);
+            var currentUser = _currentUserService.GetCurrentUser();
+            medicalRecord.UpdateNotes(request.GeneralNotes, request.FlagsJson, currentUser.UserId, DateTime.UtcNow);
             await _medicalRecordRepository.UpdateAsync(medicalRecord);
 
             _logger.LogInformation("Medical record updated successfully. PatientId: {PatientId}. MedicalRecordId: {MedicalRecordId}", patientId, medicalRecord.Id);

@@ -18,7 +18,7 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Add MedicalRecord");
         var updatedAt = new DateTime(2026, 5, 10, 10, 30, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(patient.Id, "Initial notes", "{\"allergies\":[\"none\"]}", updatedAt);
+        var medicalRecord = MedicalRecord.Create(patient.Id, "Initial notes", "{\"allergies\":[\"none\"]}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         await repository.AddAsync(medicalRecord);
 
@@ -26,6 +26,9 @@ public class MedicalRecordRepositoryTests
         Assert.Equal(patient.Id, persisted.PatientId);
         Assert.Equal("Initial notes", persisted.GeneralNotes);
         Assert.Equal("{\"allergies\":[\"none\"]}", persisted.FlagsJson);
+        Assert.Equal(Guid.Parse("11111111-2222-3333-4444-555555555555"), persisted.CreatedByUserId);
+        Assert.Equal(updatedAt, persisted.CreatedAt);
+        Assert.Equal(Guid.Parse("11111111-2222-3333-4444-555555555555"), persisted.UpdatedByUserId);
         Assert.Equal(updatedAt, persisted.UpdatedAt);
     }
 
@@ -38,7 +41,7 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient GetById MedicalRecord");
         var updatedAt = new DateTime(2026, 5, 11, 9, 0, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(patient.Id, "Notes by id", "{\"risk\":false}", updatedAt);
+        var medicalRecord = MedicalRecord.Create(patient.Id, "Notes by id", "{\"risk\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
         await repository.AddAsync(medicalRecord);
 
         var result = await repository.GetByIdAsync(medicalRecord.Id);
@@ -75,7 +78,7 @@ public class MedicalRecordRepositoryTests
         var medicalRecord = MedicalRecord.Create(
             patient.Id,
             "Notes by patient",
-            "{\"vaccination\":\"up-to-date\"}",
+            "{\"vaccination\":\"up-to-date\"}", Guid.Parse("11111111-2222-3333-4444-555555555555"),
             new DateTime(2026, 5, 12, 12, 0, 0, DateTimeKind.Utc));
 
         await repository.AddAsync(medicalRecord);
@@ -108,7 +111,7 @@ public class MedicalRecordRepositoryTests
 
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Exists MedicalRecord");
-        var medicalRecord = MedicalRecord.Create(patient.Id, "Exists note", "{\"critical\":false}", DateTime.UtcNow);
+        var medicalRecord = MedicalRecord.Create(patient.Id, "Exists note", "{\"critical\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
         await repository.AddAsync(medicalRecord);
 
         var exists = await repository.ExistsByPatientIdAsync(patient.Id);
@@ -137,17 +140,20 @@ public class MedicalRecordRepositoryTests
 
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Update MedicalRecord");
-        var medicalRecord = MedicalRecord.Create(patient.Id, "Old notes", "{\"risk\":false}", new DateTime(2026, 5, 13, 8, 0, 0, DateTimeKind.Utc));
+        var medicalRecord = MedicalRecord.Create(patient.Id, "Old notes", "{\"risk\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), new DateTime(2026, 5, 13, 8, 0, 0, DateTimeKind.Utc));
         await repository.AddAsync(medicalRecord);
 
         var updatedAt = new DateTime(2026, 5, 13, 9, 30, 0, DateTimeKind.Utc);
-        medicalRecord.UpdateNotes("Updated notes", "{\"risk\":true}", updatedAt);
+        medicalRecord.UpdateNotes("Updated notes", "{\"risk\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         await repository.UpdateAsync(medicalRecord);
 
         var persisted = await context.MedicalRecords.AsNoTracking().SingleAsync(record => record.Id == medicalRecord.Id);
         Assert.Equal("Updated notes", persisted.GeneralNotes);
         Assert.Equal("{\"risk\":true}", persisted.FlagsJson);
+        Assert.Equal(Guid.Parse("11111111-2222-3333-4444-555555555555"), persisted.CreatedByUserId);
+        Assert.Equal(new DateTime(2026, 5, 13, 8, 0, 0, DateTimeKind.Utc), persisted.CreatedAt);
+        Assert.Equal(Guid.Parse("11111111-2222-3333-4444-555555555555"), persisted.UpdatedByUserId);
         Assert.Equal(updatedAt, persisted.UpdatedAt);
     }
 
@@ -159,7 +165,7 @@ public class MedicalRecordRepositoryTests
 
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient AsNoTracking MedicalRecord");
-        var medicalRecord = MedicalRecord.Create(patient.Id, "AsNoTracking notes", "{\"watch\":true}", new DateTime(2026, 5, 14, 11, 0, 0, DateTimeKind.Utc));
+        var medicalRecord = MedicalRecord.Create(patient.Id, "AsNoTracking notes", "{\"watch\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), new DateTime(2026, 5, 14, 11, 0, 0, DateTimeKind.Utc));
         await repository.AddAsync(medicalRecord);
 
         context.ChangeTracker.Clear();

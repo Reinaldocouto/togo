@@ -3,6 +3,8 @@ using Togo.Application.MedicalRecords.UseCases;
 using Togo.Application.MedicalRecords.Validators;
 using Togo.Application.Tests.MedicalRecords.Fakes;
 using Togo.Application.Tests.Pets.Fakes;
+using Togo.Application.Tests.Security.Fakes;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
 
@@ -10,13 +12,16 @@ namespace Togo.Application.Tests.MedicalRecords.UseCases;
 
 public sealed class UpdateMedicalRecordUseCaseTests
 {
+    private static readonly Guid CreatorUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
+    private static readonly Guid UpdatingUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
     [Fact]
     public async Task ExecuteAsync_ShouldReturnSuccess_WhenRequestIsValid()
     {
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(MedicalRecord.Create(patientId, "old", "{\"v\":1}", DateTime.UtcNow.AddHours(-1)));
+        var createdAt = DateTime.UtcNow.AddHours(-1);
+        repository.AddExisting(MedicalRecord.Create(patientId, "old", "{\"v\":1}", CreatorUserId, createdAt));
 
         var result = await CreateUseCase(repository, petRepository)
             .ExecuteAsync(patientId, new UpdateMedicalRecordRequest("  new note ", "  {\"v\":2}  "), CancellationToken.None);
@@ -27,6 +32,11 @@ public sealed class UpdateMedicalRecordUseCaseTests
         Assert.Equal("new note", result.Data.GeneralNotes);
         Assert.Equal("{\"v\":2}", result.Data.FlagsJson);
         Assert.Equal(1, repository.UpdateCallsCount);
+        var persisted = Assert.Single(repository.Items);
+        Assert.Equal(CreatorUserId, persisted.CreatedByUserId);
+        Assert.Equal(createdAt, persisted.CreatedAt);
+        Assert.Equal(UpdatingUserId, persisted.UpdatedByUserId);
+        Assert.True(persisted.UpdatedAt > createdAt);
     }
 
     [Fact]
@@ -74,7 +84,7 @@ public sealed class UpdateMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository { ReturnNullOnGetByPatientId = true };
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", DateTime.UtcNow));
+        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var result = await CreateUseCase(repository, petRepository)
             .ExecuteAsync(patientId, new UpdateMedicalRecordRequest("note", "{}"), CancellationToken.None);
@@ -84,11 +94,31 @@ public sealed class UpdateMedicalRecordUseCaseTests
         Assert.Equal(0, repository.UpdateCallsCount);
     }
 
-    private static UpdateMedicalRecordUseCase CreateUseCase(FakeMedicalRecordRepository repository, FakePetRepository petRepository)
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldFailSafely_WhenCurrentUserCannotBeResolved()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var medicalRecord = MedicalRecord.Create(patientId, "old", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1));
+        repository.AddExisting(medicalRecord);
+        var originalUpdatedAt = medicalRecord.UpdatedAt;
+        var currentUserService = new FakeCurrentUserService(UpdatingUserId) { ThrowResolutionException = true };
+
+        await Assert.ThrowsAsync<CurrentUserResolutionException>(() => CreateUseCase(repository, petRepository, currentUserService)
+            .ExecuteAsync(patientId, new UpdateMedicalRecordRequest("new", "{}"), CancellationToken.None));
+
+        Assert.Equal(0, repository.UpdateCallsCount);
+        Assert.Equal(originalUpdatedAt, medicalRecord.UpdatedAt);
+        Assert.Equal(CreatorUserId, medicalRecord.UpdatedByUserId);
+    }
+
+    private static UpdateMedicalRecordUseCase CreateUseCase(FakeMedicalRecordRepository repository, FakePetRepository petRepository, FakeCurrentUserService? currentUserService = null)
     {
         var patientValidator = new MedicalRecordPatientExistsValidator(petRepository, new TestLogger<MedicalRecordPatientExistsValidator>());
         var existsValidator = new MedicalRecordExistsValidator(repository, new TestLogger<MedicalRecordExistsValidator>());
 
-        return new UpdateMedicalRecordUseCase(repository, patientValidator, existsValidator, new TestLogger<UpdateMedicalRecordUseCase>());
+        return new UpdateMedicalRecordUseCase(repository, patientValidator, existsValidator, currentUserService ?? new FakeCurrentUserService(UpdatingUserId), new TestLogger<UpdateMedicalRecordUseCase>());
     }
 }

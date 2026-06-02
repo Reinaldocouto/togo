@@ -16,6 +16,9 @@ public class MedicalRecordConfiguration : IEntityTypeConfiguration<MedicalRecord
         builder.Property(m => m.PatientId).IsRequired();
         builder.Property(m => m.GeneralNotes).HasColumnType("text");
         builder.Property(m => m.FlagsJson).HasColumnType("longtext");
+        builder.Property(m => m.CreatedByUserId).IsRequired();
+        builder.Property(m => m.CreatedAt).IsRequired();
+        builder.Property(m => m.UpdatedByUserId).IsRequired();
         builder.Property(m => m.UpdatedAt).IsRequired();
 
         builder.HasOne<Patient>()
