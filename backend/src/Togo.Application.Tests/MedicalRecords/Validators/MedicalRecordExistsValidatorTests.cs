@@ -38,7 +38,7 @@ public sealed class MedicalRecordExistsValidatorTests
     public async Task ValidateAsync_ShouldReturnSuccess_WhenMedicalRecordExists()
     {
         var repository = new FakeMedicalRecordRepository();
-        repository.AddExisting(MedicalRecord.Create(55, "note", "{}", DateTime.UtcNow));
+        repository.AddExisting(MedicalRecord.Create(55, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
         var validator = new MedicalRecordExistsValidator(repository, new TestLogger<MedicalRecordExistsValidator>());
 
         var result = await validator.ValidateAsync(55, CancellationToken.None);

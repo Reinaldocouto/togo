@@ -26,7 +26,7 @@ public sealed class MedicalRecordUniquenessValidatorTests
     public async Task ValidateAsync_ShouldReturnConflict_WhenPatientAlreadyHasMedicalRecord()
     {
         var repository = new FakeMedicalRecordRepository();
-        repository.AddExisting(MedicalRecord.Create(10, "note", "{}", DateTime.UtcNow));
+        repository.AddExisting(MedicalRecord.Create(10, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
         var validator = new MedicalRecordUniquenessValidator(repository, new TestLogger<MedicalRecordUniquenessValidator>());
 
         var result = await validator.ValidateAsync(10, CancellationToken.None);

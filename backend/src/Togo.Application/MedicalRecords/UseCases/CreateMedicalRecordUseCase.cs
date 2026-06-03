@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Togo.Application.MedicalRecords.Contracts;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Application.MedicalRecords.Validators;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
 
@@ -12,17 +13,20 @@ public class CreateMedicalRecordUseCase
     private readonly IMedicalRecordRepository _medicalRecordRepository;
     private readonly MedicalRecordPatientExistsValidator _medicalRecordPatientExistsValidator;
     private readonly MedicalRecordUniquenessValidator _medicalRecordUniquenessValidator;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CreateMedicalRecordUseCase> _logger;
 
     public CreateMedicalRecordUseCase(
         IMedicalRecordRepository medicalRecordRepository,
         MedicalRecordPatientExistsValidator medicalRecordPatientExistsValidator,
         MedicalRecordUniquenessValidator medicalRecordUniquenessValidator,
+        ICurrentUserService currentUserService,
         ILogger<CreateMedicalRecordUseCase> logger)
     {
         _medicalRecordRepository = medicalRecordRepository;
         _medicalRecordPatientExistsValidator = medicalRecordPatientExistsValidator;
         _medicalRecordUniquenessValidator = medicalRecordUniquenessValidator;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -49,7 +53,8 @@ public class CreateMedicalRecordUseCase
 
         try
         {
-            var medicalRecord = MedicalRecord.Create(patientId, request.GeneralNotes, request.FlagsJson, DateTime.UtcNow);
+            var currentUser = _currentUserService.GetCurrentUser();
+            var medicalRecord = MedicalRecord.Create(patientId, request.GeneralNotes, request.FlagsJson, currentUser.UserId, DateTime.UtcNow);
             await _medicalRecordRepository.AddAsync(medicalRecord);
 
             _logger.LogInformation("Medical record created successfully. PatientId: {PatientId}. MedicalRecordId: {MedicalRecordId}", patientId, medicalRecord.Id);

@@ -3,12 +3,15 @@ using Togo.Application.MedicalRecords.UseCases;
 using Togo.Application.MedicalRecords.Validators;
 using Togo.Application.Tests.MedicalRecords.Fakes;
 using Togo.Application.Tests.Pets.Fakes;
+using Togo.Application.Tests.Security.Fakes;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 
 namespace Togo.Application.Tests.MedicalRecords.UseCases;
 
 public sealed class CreateMedicalRecordUseCaseTests
 {
+    private static readonly Guid CurrentUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
     [Fact]
     public async Task ExecuteAsync_ShouldReturnSuccess_WhenRequestIsValid()
     {
@@ -28,6 +31,11 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.Equal("{\"flag\":true}", result.Data.FlagsJson);
         Assert.NotEqual(default, result.Data.UpdatedAt);
         Assert.Equal(1, repository.AddCallsCount);
+        var persisted = Assert.Single(repository.Items);
+        Assert.Equal(CurrentUserId, persisted.CreatedByUserId);
+        Assert.Equal(CurrentUserId, persisted.UpdatedByUserId);
+        Assert.NotEqual(default, persisted.CreatedAt);
+        Assert.Equal(persisted.CreatedAt, persisted.UpdatedAt);
     }
 
     [Fact]
@@ -60,7 +68,7 @@ public sealed class CreateMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(Togo.Domain.Entities.MedicalRecord.Create(patientId, "note", "{}", DateTime.UtcNow));
+        repository.AddExisting(Togo.Domain.Entities.MedicalRecord.Create(patientId, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var result = await CreateUseCase(repository, petRepository)
             .ExecuteAsync(patientId, new CreateMedicalRecordRequest("new", "{}"), CancellationToken.None);
@@ -87,14 +95,30 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.DoesNotContain("SENSITIVE_JSON", combined);
     }
 
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldFailSafely_WhenCurrentUserCannotBeResolved()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var currentUserService = new FakeCurrentUserService(CurrentUserId) { ThrowResolutionException = true };
+        var useCase = CreateUseCase(repository, petRepository, currentUserService: currentUserService);
+
+        await Assert.ThrowsAsync<CurrentUserResolutionException>(() =>
+            useCase.ExecuteAsync(patientId, new CreateMedicalRecordRequest("note", "{}"), CancellationToken.None));
+        Assert.Equal(0, repository.AddCallsCount);
+    }
+
     private static CreateMedicalRecordUseCase CreateUseCase(
         FakeMedicalRecordRepository repository,
         FakePetRepository petRepository,
-        TestLogger<CreateMedicalRecordUseCase>? logger = null)
+        TestLogger<CreateMedicalRecordUseCase>? logger = null,
+        FakeCurrentUserService? currentUserService = null)
     {
         var patientValidator = new MedicalRecordPatientExistsValidator(petRepository, new TestLogger<MedicalRecordPatientExistsValidator>());
         var uniquenessValidator = new MedicalRecordUniquenessValidator(repository, new TestLogger<MedicalRecordUniquenessValidator>());
 
-        return new CreateMedicalRecordUseCase(repository, patientValidator, uniquenessValidator, logger ?? new TestLogger<CreateMedicalRecordUseCase>());
+        return new CreateMedicalRecordUseCase(repository, patientValidator, uniquenessValidator, currentUserService ?? new FakeCurrentUserService(CurrentUserId), logger ?? new TestLogger<CreateMedicalRecordUseCase>());
     }
 }

@@ -10,6 +10,7 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
 
     public int AddCallsCount { get; private set; }
     public int UpdateCallsCount { get; private set; }
+    public IReadOnlyCollection<MedicalRecord> Items => _recordsByPatientId.Values;
     public long? LastExistsByPatientIdInput { get; private set; }
     public long? LastGetByPatientIdInput { get; private set; }
 

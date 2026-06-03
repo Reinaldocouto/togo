@@ -27,7 +27,7 @@ public sealed class HttpContextCurrentUserService : ICurrentUserService
         var userIdValue = principal.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? principal.FindFirstValue(SubjectClaimType);
 
-        if (!Guid.TryParse(userIdValue, out var userId))
+        if (!Guid.TryParse(userIdValue, out var userId) || userId == Guid.Empty)
         {
             throw new CurrentUserResolutionException("The authenticated current user identifier is missing or invalid.");
         }
