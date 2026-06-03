@@ -32,6 +32,9 @@ public partial class AddMedicalRecordAuthorship : Migration
             .Annotation("MySql:CharSet", "ascii");
 
         migrationBuilder.Sql("UPDATE MedicalRecords SET CreatedAt = UpdatedAt;");
+        migrationBuilder.Sql("ALTER TABLE `MedicalRecords` ALTER COLUMN `CreatedAt` DROP DEFAULT;");
+        migrationBuilder.Sql("ALTER TABLE `MedicalRecords` ALTER COLUMN `CreatedByUserId` DROP DEFAULT;");
+        migrationBuilder.Sql("ALTER TABLE `MedicalRecords` ALTER COLUMN `UpdatedByUserId` DROP DEFAULT;");
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
