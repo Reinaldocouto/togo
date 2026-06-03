@@ -46,13 +46,13 @@ public class MedicalRecordTests
     }
 
     [Fact]
-    public void Create_ShouldThrowArgumentException_WhenUpdatedAtIsDefault()
+    public void Create_ShouldThrowArgumentException_WhenCreatedAtIsDefault()
     {
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
             MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), default));
         Assert.StartsWith("Date is required", exception.Message);
-        Assert.Equal("updatedAt", exception.ParamName);
+        Assert.Equal("createdAt", exception.ParamName);
     }
 
     [Fact]
