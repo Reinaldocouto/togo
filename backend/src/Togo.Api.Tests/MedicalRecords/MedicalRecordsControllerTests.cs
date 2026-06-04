@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Togo.Api.Controllers;
 using Togo.Api.Security;
+using Togo.Application.Auditing;
 using Togo.Application.MedicalRecords.Contracts;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Application.MedicalRecords.UseCases;
@@ -316,6 +317,7 @@ public sealed class MedicalRecordsControllerTests
                 services.AddHttpContextAccessor();
                 services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
                 services.AddScoped<IMedicalRecordRepository>(_ => medicalRecordRepository);
+                services.AddScoped<IClinicalAuditLogWriter>(_ => new InMemoryClinicalAuditLogWriter());
                 services.AddScoped<IPetRepository>(_ => petRepository);
                 services.AddScoped<CreateMedicalRecordUseCase>();
                 services.AddScoped<GetMedicalRecordByPatientIdUseCase>();
@@ -390,6 +392,15 @@ public sealed class MedicalRecordsControllerTests
         public Task UpdateAsync(MedicalRecord medicalRecord) { _items[medicalRecord.PatientId] = medicalRecord; return Task.CompletedTask; }
 
         private static void SetId(MedicalRecord medicalRecord, long id) => typeof(MedicalRecord).GetProperty(nameof(MedicalRecord.Id))!.SetValue(medicalRecord, id);
+    }
+
+    private sealed class InMemoryClinicalAuditLogWriter : IClinicalAuditLogWriter
+    {
+        public Task WriteAsync(ClinicalAuditEvent auditEvent, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class InMemoryPetRepository : IPetRepository

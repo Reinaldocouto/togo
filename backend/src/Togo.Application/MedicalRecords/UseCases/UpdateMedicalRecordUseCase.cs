@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Togo.Application.Auditing;
 using Togo.Application.MedicalRecords.Contracts;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Application.MedicalRecords.Validators;
@@ -14,6 +16,7 @@ public class UpdateMedicalRecordUseCase
     private readonly MedicalRecordPatientExistsValidator _medicalRecordPatientExistsValidator;
     private readonly MedicalRecordExistsValidator _medicalRecordExistsValidator;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IClinicalAuditLogWriter _clinicalAuditLogWriter;
     private readonly ILogger<UpdateMedicalRecordUseCase> _logger;
 
     public UpdateMedicalRecordUseCase(
@@ -21,12 +24,14 @@ public class UpdateMedicalRecordUseCase
         MedicalRecordPatientExistsValidator medicalRecordPatientExistsValidator,
         MedicalRecordExistsValidator medicalRecordExistsValidator,
         ICurrentUserService currentUserService,
+        IClinicalAuditLogWriter clinicalAuditLogWriter,
         ILogger<UpdateMedicalRecordUseCase> logger)
     {
         _medicalRecordRepository = medicalRecordRepository;
         _medicalRecordPatientExistsValidator = medicalRecordPatientExistsValidator;
         _medicalRecordExistsValidator = medicalRecordExistsValidator;
         _currentUserService = currentUserService;
+        _clinicalAuditLogWriter = clinicalAuditLogWriter;
         _logger = logger;
     }
 
@@ -63,6 +68,7 @@ public class UpdateMedicalRecordUseCase
             var currentUser = _currentUserService.GetCurrentUser();
             medicalRecord.UpdateNotes(request.GeneralNotes, request.FlagsJson, currentUser.UserId, DateTime.UtcNow);
             await _medicalRecordRepository.UpdateAsync(medicalRecord);
+            await WriteUpdatedAuditLogAsync(medicalRecord, currentUser, cancellationToken);
 
             _logger.LogInformation("Medical record updated successfully. PatientId: {PatientId}. MedicalRecordId: {MedicalRecordId}", patientId, medicalRecord.Id);
             return ApplicationResult<MedicalRecordResponse>.Success(ToResponse(medicalRecord));
@@ -73,6 +79,23 @@ public class UpdateMedicalRecordUseCase
             return ApplicationResult<MedicalRecordResponse>.ValidationError(ex.Message);
         }
     }
+
+    private async Task WriteUpdatedAuditLogAsync(MedicalRecord medicalRecord, CurrentUserInfo currentUser, CancellationToken cancellationToken)
+    {
+        var auditEvent = new ClinicalAuditEvent(
+            EntityName: nameof(MedicalRecord),
+            EntityId: medicalRecord.Id.ToString(),
+            Action: MedicalRecordAuditActions.Updated,
+            UserId: currentUser.UserId,
+            UserProfile: currentUser.Profile,
+            OccurredAt: DateTime.UtcNow,
+            MetadataJson: CreateMetadataJson(medicalRecord.PatientId));
+
+        await _clinicalAuditLogWriter.WriteAsync(auditEvent, cancellationToken);
+    }
+
+    private static string CreateMetadataJson(long patientId) =>
+        JsonSerializer.Serialize(new { PatientId = patientId });
 
     private static ApplicationResult<MedicalRecordResponse> ToMedicalRecordResponseResult(ApplicationResult<bool> validationResult) =>
         validationResult.Type switch
