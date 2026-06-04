@@ -84,7 +84,7 @@ Regras:
 | MR-DEBT-005 | Política de retenção não implementada | Compliance/Governança | P1 | Aberto | Não | Sim | Diretriz existe, mecanismo técnico não. | Risco regulatório/operacional. | Ausência de fluxo de exclusão e documentação. | 6.4.x — Retenção clínica. |
 | MR-DEBT-006 | DeleteBehavior.Cascade pendente de revisão | Persistência/Integridade clínica | P1 | Aberto | Não | Sim | Cascade registrado na configuração/migration. | Exclusão em cascata de dado clínico. | Sem endpoint DELETE. | 6.4.x — Revisão de integridade referencial. |
 | MR-DEBT-007 | Índice único em MedicalRecords.PatientId ausente | Integridade/Banco | P2 | Aberto | Não | Sim | Unicidade lógica, não física. | Duplicidade em concorrência extrema. | Validator + use case. | 6.5.x — Hardening de schema. |
-| MR-DEBT-008 | CreatedAt ausente | Rastreabilidade temporal | P2 | Aberto | Não | Parcialmente | Entidade possui UpdatedAt, mas não CreatedAt. | Menor clareza de criação do prontuário. | UpdatedAt presente. | 6.5.x — Evolução de schema. |
+| MR-DEBT-008 | CreatedAt ausente | Rastreabilidade temporal | P2 | Resolvido tecnicamente pela Fase 6.3.3 | Não | Não, como bloqueio ativo isolado. | `MedicalRecord` possui `CreatedAt` persistido, preenchido na criação e preservado na atualização. | Risco original mitigado; rastreabilidade temporal de criação agora existe. | `CreatedAt` persistido junto da autoria clínica mínima. | Tratado na Fase 6.3.3; evidências finais na Fase 6.3.5. |
 | MR-DEBT-009 | FlagsJson flexível | Modelagem/Validação | P2 | Aberto | Não | Parcialmente | Campo aceita string livre. | Inconsistência estrutural futura. | Débito documentado. | 6.5.x — Validação estrutural ou normalização. |
 | MR-DEBT-010 | CancellationToken não propagado no repository | Operação/Resiliência | P3 | Aberto | Não | Não diretamente | IMedicalRecordRepository não recebe CancellationToken. | Menor capacidade de cancelamento em operações longas. | Métodos assíncronos. | 6.6.x — Qualidade operacional. |
 | MR-DEBT-011 | Evidências manuais Swagger não versionadas formalmente | QA/Governança | P3 | Aberto | Não | Não diretamente | Fluxo validado visualmente, sem pacote formal versionado. | Menor rastreabilidade de QA manual. | Testes automatizados + prints/observações. | 6.6.x — Evidências operacionais. |
@@ -115,12 +115,13 @@ Esses pontos podem virar débitos futuros, se necessário. A produção real com
 
 ## 9. Débitos P2 — hardening técnico próximo
 
-Itens P2 mapeados:
+Itens P2 ainda abertos:
 - índice único em PatientId;
-- CreatedAt;
 - validação estrutural/normalização de FlagsJson.
 
-Esses itens aumentam robustez técnica de schema/modelagem e reduzem risco operacional de médio prazo, devendo ser tratados no ciclo de hardening subsequente ao fechamento dos bloqueios P1.
+O item originalmente mapeado como `CreatedAt` (**MR-DEBT-008**) não permanece como P2 aberto: foi resolvido tecnicamente na Fase 6.3.3 como parte da autoria clínica mínima e consolidado documentalmente nas Fases 6.3.5 e 6.3.6.
+
+Os P2 ainda abertos aumentam robustez técnica de schema/modelagem e reduzem risco operacional de médio prazo, devendo ser tratados no ciclo de hardening subsequente ao fechamento dos bloqueios P1.
 
 ## 10. Débitos P3 — evolução técnica posterior
 
@@ -147,8 +148,9 @@ Esses itens são evoluções de qualidade e governança, relevantes para maturid
 
 ### 6.5 — Integridade e evolução de schema
 - MR-DEBT-007;
-- MR-DEBT-008;
 - MR-DEBT-009.
+
+Observação: MR-DEBT-008 foi retirado da fila aberta da Fase 6.5 porque `CreatedAt` foi implementado na Fase 6.3.3 como parte da autoria clínica mínima.
 
 ### 6.6 — Qualidade operacional
 - MR-DEBT-010;
@@ -209,7 +211,6 @@ Esta fase não implementa:
 - AuditLog;
 - roles/permissões;
 - índice único;
-- CreatedAt;
 - FlagsJson estrutural;
 - CancellationToken;
 - Redis;
@@ -278,14 +279,9 @@ Arquivos principais envolvidos:
 
 ### 18.3 Riscos remanescentes e impacto na produção real
 
-MR-DEBT-003 deixa de ser bloqueio ativo isolado. Entretanto, a vertical MedicalRecord ainda **não deve ser usada com dados clínicos reais**, pois permanecem abertos outros P1:
-- MR-DEBT-002 — AuditLog ausente;
-- MR-DEBT-004 — Controle de autoria ausente;
-- MR-DEBT-001 — Soft Delete ausente;
-- MR-DEBT-005 — Política de retenção não implementada;
-- MR-DEBT-006 — `DeleteBehavior.Cascade` pendente de revisão.
+MR-DEBT-003 deixa de ser bloqueio ativo isolado. À época do encerramento da Fase 6.2, a vertical MedicalRecord ainda **não deveria ser usada com dados clínicos reais**, pois permaneciam abertos outros P1, incluindo MR-DEBT-002, MR-DEBT-004, MR-DEBT-001, MR-DEBT-005 e MR-DEBT-006.
 
-A liberação de produção real depende da continuidade das Fases 6.3 e 6.4.
+Após a Fase 6.3, MR-DEBT-002 e MR-DEBT-004 foram resolvidos tecnicamente no escopo mínimo planejado. A liberação de produção real segue dependente da Fase 6.4 para tratar MR-DEBT-001, MR-DEBT-005 e MR-DEBT-006.
 
 ### 18.4 Encerramento e próxima fase
 
@@ -322,7 +318,19 @@ A liberação de produção real depende da continuidade das Fases 6.3 e 6.4.
 
 **Observação de escopo:** a solução não inclui auditoria de leitura, auditoria de acesso negado, endpoint público de auditoria, tela frontend de auditoria, retenção/expurgo ou transação única entre a operação principal e o AuditLog. Esses itens permanecem candidatos a débitos futuros, se necessário.
 
-### 19.3 Impacto na produção real
+### 19.3 MR-DEBT-008 — correção documental e status atualizado
+
+**Status anterior no registro vivo:** aberto como P2, com evidência de ausência de `CreatedAt`.
+
+**Novo status:** resolvido tecnicamente pela Fase 6.3.3.
+
+**Fases responsáveis pela solução:** 6.3.3 e consolidação documental nas Fases 6.3.5 e 6.3.6.
+
+**Resumo da solução:** `MedicalRecord` passou a possuir `CreatedAt` persistido como parte da autoria clínica mínima. O campo é preenchido na criação e preservado na atualização, junto de `CreatedByUserId`, `UpdatedByUserId` e `UpdatedAt`.
+
+**Impacto no backlog:** MR-DEBT-008 não permanece como P2 aberto nem como bloqueio ativo isolado para produção real. A rastreabilidade temporal de criação passou a existir no modelo persistido.
+
+### 19.4 Impacto na produção real
 
 MR-DEBT-004 e MR-DEBT-002 deixam de ser bloqueios ativos isolados após a Fase 6.3. Entretanto, a vertical MedicalRecord ainda não deve ser considerada pronta para produção real com dados clínicos sensíveis enquanto outros P1 permanecerem abertos, especialmente:
 
@@ -330,8 +338,9 @@ MR-DEBT-004 e MR-DEBT-002 deixam de ser bloqueios ativos isolados após a Fase 6
 - MR-DEBT-005 — Política de retenção não implementada;
 - MR-DEBT-006 — `DeleteBehavior.Cascade` pendente de revisão.
 
-### 19.4 Evidência documental final
+### 19.5 Evidência documental final
 
 A consolidação técnica e os critérios finais de aceite da Fase 6.3 estão registrados em:
 
-- `docs/clinical-core/PHASE_06_03_05_MEDICAL_RECORD_AUTHORSHIP_AUDIT_EVIDENCE.md`.
+- `docs/clinical-core/PHASE_06_03_05_MEDICAL_RECORD_AUTHORSHIP_AUDIT_EVIDENCE.md`;
+- `docs/clinical-core/PHASE_06_03_06_MEDICAL_RECORD_AUTHORSHIP_AUDIT_CLOSURE.md`.
