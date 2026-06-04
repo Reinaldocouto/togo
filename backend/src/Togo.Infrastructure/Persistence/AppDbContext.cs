@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Pet> Pets => Set<Pet>();
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
+    public DbSet<ClinicalAuditLog> ClinicalAuditLogs => Set<ClinicalAuditLog>();
     public DbSet<Attendance> Attendances => Set<Attendance>();
     public DbSet<ClinicalEvolution> ClinicalEvolutions => Set<ClinicalEvolution>();
     public DbSet<Prescription> Prescriptions => Set<Prescription>();

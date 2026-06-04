@@ -1,3 +1,4 @@
+using Togo.Application.Auditing;
 using Togo.Application.MedicalRecords.Contracts;
 using Togo.Application.MedicalRecords.UseCases;
 using Togo.Application.MedicalRecords.Validators;
@@ -12,6 +13,7 @@ namespace Togo.Application.Tests.MedicalRecords.UseCases;
 public sealed class CreateMedicalRecordUseCaseTests
 {
     private static readonly Guid CurrentUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+
     [Fact]
     public async Task ExecuteAsync_ShouldReturnSuccess_WhenRequestIsValid()
     {
@@ -19,7 +21,12 @@ public sealed class CreateMedicalRecordUseCaseTests
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
         var request = new CreateMedicalRecordRequest("  General  ", "  {\"flag\":true}  ");
-        var useCase = CreateUseCase(repository, petRepository);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var currentUserService = new FakeCurrentUserService(CurrentUserId)
+        {
+            CurrentUser = new CurrentUserInfo(CurrentUserId, Profile: "Veterinarian", IsAuthenticated: true)
+        };
+        var useCase = CreateUseCase(repository, petRepository, currentUserService: currentUserService, auditLogWriter: auditLogWriter);
 
         var result = await useCase.ExecuteAsync(patientId, request, CancellationToken.None);
 
@@ -36,6 +43,18 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.Equal(CurrentUserId, persisted.UpdatedByUserId);
         Assert.NotEqual(default, persisted.CreatedAt);
         Assert.Equal(persisted.CreatedAt, persisted.UpdatedAt);
+
+        var auditEvent = Assert.Single(auditLogWriter.Events);
+        Assert.Equal(nameof(Togo.Domain.Entities.MedicalRecord), auditEvent.EntityName);
+        Assert.Equal(persisted.Id.ToString(), auditEvent.EntityId);
+        Assert.Equal(MedicalRecordAuditActions.Created, auditEvent.Action);
+        Assert.Equal(CurrentUserId, auditEvent.UserId);
+        Assert.Equal("Veterinarian", auditEvent.UserProfile);
+        Assert.Equal(DateTimeKind.Utc, auditEvent.OccurredAt.Kind);
+        Assert.NotNull(auditEvent.MetadataJson);
+        Assert.Contains($"\"PatientId\":{patientId}", auditEvent.MetadataJson);
+        Assert.DoesNotContain(request.GeneralNotes!, auditEvent.MetadataJson);
+        Assert.DoesNotContain(request.FlagsJson!, auditEvent.MetadataJson);
     }
 
     [Fact]
@@ -78,7 +97,7 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.Equal(0, repository.AddCallsCount);
     }
 
-        [Fact]
+    [Fact]
     public async Task ExecuteAsync_ShouldNotLogSensitiveFields()
     {
         var repository = new FakeMedicalRecordRepository();
@@ -95,6 +114,20 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.DoesNotContain("SENSITIVE_JSON", combined);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldNotWriteAuditLog_WhenCreationFailsValidation()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+
+        var result = await CreateUseCase(repository, new FakePetRepository(), auditLogWriter: auditLogWriter)
+            .ExecuteAsync(0, new CreateMedicalRecordRequest("SENSITIVE_NOTE", "SENSITIVE_FLAGS_JSON"), CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.ValidationError, result.Type);
+        Assert.Equal(0, repository.AddCallsCount);
+        Assert.Equal(0, auditLogWriter.WriteCallsCount);
+        Assert.Empty(auditLogWriter.Events);
+    }
 
     [Fact]
     public async Task ExecuteAsync_ShouldFailSafely_WhenCurrentUserCannotBeResolved()
@@ -114,11 +147,18 @@ public sealed class CreateMedicalRecordUseCaseTests
         FakeMedicalRecordRepository repository,
         FakePetRepository petRepository,
         TestLogger<CreateMedicalRecordUseCase>? logger = null,
-        FakeCurrentUserService? currentUserService = null)
+        FakeCurrentUserService? currentUserService = null,
+        FakeClinicalAuditLogWriter? auditLogWriter = null)
     {
         var patientValidator = new MedicalRecordPatientExistsValidator(petRepository, new TestLogger<MedicalRecordPatientExistsValidator>());
         var uniquenessValidator = new MedicalRecordUniquenessValidator(repository, new TestLogger<MedicalRecordUniquenessValidator>());
 
-        return new CreateMedicalRecordUseCase(repository, patientValidator, uniquenessValidator, currentUserService ?? new FakeCurrentUserService(CurrentUserId), logger ?? new TestLogger<CreateMedicalRecordUseCase>());
+        return new CreateMedicalRecordUseCase(
+            repository,
+            patientValidator,
+            uniquenessValidator,
+            currentUserService ?? new FakeCurrentUserService(CurrentUserId),
+            auditLogWriter ?? new FakeClinicalAuditLogWriter(),
+            logger ?? new TestLogger<CreateMedicalRecordUseCase>());
     }
 }
