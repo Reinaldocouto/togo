@@ -78,9 +78,9 @@ Regras:
 | ID | Débito | Categoria | Prioridade | Status | Bloqueia MVP? | Bloqueia produção real? | Evidência | Risco | Mitigação atual | Fase futura recomendada |
 |---|---|---|---|---|---|---|---|---|---|---|
 | MR-DEBT-001 | Soft Delete ausente | Persistência/Compliance | P1 | Aberto | Não | Sim | Não há exclusão lógica em MedicalRecord. | Perda de histórico clínico se exclusão física for usada futuramente. | Não há endpoint DELETE no MVP. | 6.4.x — Soft Delete e persistência clínica. |
-| MR-DEBT-002 | AuditLog ausente | Auditoria | P1 | Aberto | Não | Sim | Não há trilha de alterações clínicas. | Baixa rastreabilidade. | Logs técnicos sem payload sensível. | 6.3.x — Auditoria clínica. |
+| MR-DEBT-002 | AuditLog ausente | Auditoria | P1 | Resolvido tecnicamente para AuditLog clínico mínimo | Não | Não, como bloqueio ativo isolado; produção real permanece bloqueada pelos demais P1 abertos. | `ClinicalAuditLogs` persiste eventos `MedicalRecord.Created` e `MedicalRecord.Updated` com usuário, entidade, ação, instante UTC e metadata mínima. | Risco original mitigado para criação/atualização; leitura, acesso negado, endpoint público e transação única permanecem fora do escopo. | AuditLog interno sem payload clínico sensível, sem endpoint público e sem tela frontend. | Tratado na Fase 6.3.4; evidências finais na Fase 6.3.5. |
 | MR-DEBT-003 | Roles/permissões finas ausentes | Segurança | P1 | Resolvido tecnicamente para autorização granular mínima | Não | Não, como bloqueio ativo isolado; produção real permanece bloqueada pelos demais P1 abertos. | Policies por operação, perfil mínimo e claim `togo:profile` aplicados ao fluxo MedicalRecord. | Risco original mitigado por autorização granular mínima; permanecem riscos clínicos dos demais P1. | Policies ASP.NET Core avaliadas por profile JWT, com matriz explícita e testes de autorização/controller. | Tratado nas fases 6.2.1 a 6.2.5; encerramento formal na 6.2.6. |
-| MR-DEBT-004 | Controle de autoria ausente | Auditoria/Segurança | P1 | Aberto | Não | Sim | MedicalRecord não possui `CreatedBy/UpdatedBy`. | Não identificar autor de alteração clínica. | Autenticação existe, mas não persiste autoria. | 6.3.x — Autoria clínica. |
+| MR-DEBT-004 | Controle de autoria ausente | Auditoria/Segurança | P1 | Resolvido tecnicamente para autoria clínica mínima | Não | Não, como bloqueio ativo isolado; produção real permanece bloqueada pelos demais P1 abertos. | `MedicalRecord` possui `CreatedByUserId`, `CreatedAt`, `UpdatedByUserId` e `UpdatedAt` preenchidos por usuário autenticado. | Risco original mitigado para criação/atualização; escopos avançados permanecem como possíveis débitos futuros. | Autoria mínima persistida sem defaults finais de banco e sem autoria fake/hardcoded em produção. | Tratado na Fase 6.3.3; hotfix de defaults na 6.3.3.1; evidências finais na 6.3.5. |
 | MR-DEBT-005 | Política de retenção não implementada | Compliance/Governança | P1 | Aberto | Não | Sim | Diretriz existe, mecanismo técnico não. | Risco regulatório/operacional. | Ausência de fluxo de exclusão e documentação. | 6.4.x — Retenção clínica. |
 | MR-DEBT-006 | DeleteBehavior.Cascade pendente de revisão | Persistência/Integridade clínica | P1 | Aberto | Não | Sim | Cascade registrado na configuração/migration. | Exclusão em cascata de dado clínico. | Sem endpoint DELETE. | 6.4.x — Revisão de integridade referencial. |
 | MR-DEBT-007 | Índice único em MedicalRecords.PatientId ausente | Integridade/Banco | P2 | Aberto | Não | Sim | Unicidade lógica, não física. | Duplicidade em concorrência extrema. | Validator + use case. | 6.5.x — Hardening de schema. |
@@ -100,7 +100,18 @@ Itens P1 originalmente mapeados:
 - política de retenção;
 - revisão DeleteBehavior.Cascade.
 
-Após a Fase 6.2, **MR-DEBT-003 — Roles/permissões finas ausentes** está resolvido tecnicamente para o escopo mínimo de autorização granular MedicalRecord. Os demais P1 permanecem abertos e continuam impedindo recomendação de produção real com dados clínicos sensíveis, por envolverem riscos diretos de rastreabilidade, integridade clínica e compliance.
+Após a Fase 6.2, **MR-DEBT-003 — Roles/permissões finas ausentes** está resolvido tecnicamente para o escopo mínimo de autorização granular MedicalRecord.
+
+Após a Fase 6.3, **MR-DEBT-004 — Controle de autoria ausente** e **MR-DEBT-002 — AuditLog ausente** também estão resolvidos tecnicamente no escopo incremental planejado. O tratamento é técnico e mínimo: cobre autoria persistida em criação/atualização e AuditLog interno para `MedicalRecord.Created`/`MedicalRecord.Updated`, sem payload clínico sensível.
+
+Continuam fora do escopo deste tratamento:
+- auditoria de leitura;
+- auditoria de acesso negado;
+- endpoint público de auditoria;
+- tela frontend de auditoria;
+- transação única entre a operação principal e o AuditLog.
+
+Esses pontos podem virar débitos futuros, se necessário. A produção real com dados clínicos sensíveis continua não recomendada enquanto permanecerem abertos outros P1, especialmente Soft Delete, retenção e revisão de `DeleteBehavior.Cascade`.
 
 ## 9. Débitos P2 — hardening técnico próximo
 
@@ -126,8 +137,8 @@ Esses itens são evoluções de qualidade e governança, relevantes para maturid
 - MR-DEBT-003 — resolvido tecnicamente para autorização granular mínima pelas fases 6.2.1 a 6.2.5; encerramento formal registrado na Fase 6.2.6.
 
 ### 6.3 — Auditoria e autoria clínica
-- MR-DEBT-002;
-- MR-DEBT-004.
+- MR-DEBT-004 — resolvido tecnicamente para autoria clínica mínima pela Fase 6.3.3, com hotfix de defaults na 6.3.3.1 e evidências finais na 6.3.5;
+- MR-DEBT-002 — resolvido tecnicamente para AuditLog clínico mínimo pela Fase 6.3.4, com evidências finais na 6.3.5.
 
 ### 6.4 — Persistência clínica e retenção
 - MR-DEBT-001;
@@ -281,3 +292,46 @@ A liberação de produção real depende da continuidade das Fases 6.3 e 6.4.
 **Decisão:** Opção A — Fase 6.2 encerrada com MR-DEBT-003 tratado tecnicamente por autorização granular mínima baseada em profile JWT e policies ASP.NET Core.
 
 **Próxima fase recomendada:** Fase 6.3 — Auditoria e autoria clínica, iniciando por **Fase 6.3.1 — Planejamento técnico de autoria clínica e auditoria MedicalRecord** para tratar MR-DEBT-004 e MR-DEBT-002.
+
+
+## 19. Atualização viva — encerramento da Fase 6.3
+
+### 19.1 MR-DEBT-004 — histórico e status atualizado
+
+**Status anterior:** aberto, pendente e bloqueante para produção real.
+
+**Novo status:** resolvido tecnicamente para autoria clínica mínima.
+
+**Fases responsáveis pela solução:** 6.3.3, 6.3.3.1 e consolidação documental na 6.3.5.
+
+**Resumo da solução:** `MedicalRecord` passou a persistir `CreatedByUserId`, `CreatedAt`, `UpdatedByUserId` e `UpdatedAt`. A criação preenche autoria de criação e de atualização com o usuário autenticado atual. A atualização preserva a autoria original de criação e altera apenas a autoria da última modificação.
+
+**Observação de escopo:** a solução é técnica, incremental e limitada aos fluxos de criação/atualização de `MedicalRecord`. Não inclui auditoria de leitura, auditoria de acesso negado, endpoint público de auditoria, frontend de auditoria ou transação única com AuditLog.
+
+### 19.2 MR-DEBT-002 — histórico e status atualizado
+
+**Status anterior:** aberto, pendente e bloqueante para produção real.
+
+**Novo status:** resolvido tecnicamente para AuditLog clínico mínimo.
+
+**Fases responsáveis pela solução:** 6.3.4 e consolidação documental na 6.3.5.
+
+**Resumo da solução:** foi criada a entidade/tabela `ClinicalAuditLogs` e um writer EF interno. Os use cases de criação e atualização de `MedicalRecord` registram `MedicalRecord.Created` e `MedicalRecord.Updated` com `UserId`, `UserProfile` quando disponível, `EntityName`, `EntityId`, `Action`, `OccurredAt` UTC e `MetadataJson` mínimo.
+
+**Minimização de dados:** o AuditLog não armazena `GeneralNotes` completo nem `FlagsJson` completo. A metadata mínima atualmente registra apenas `PatientId`.
+
+**Observação de escopo:** a solução não inclui auditoria de leitura, auditoria de acesso negado, endpoint público de auditoria, tela frontend de auditoria, retenção/expurgo ou transação única entre a operação principal e o AuditLog. Esses itens permanecem candidatos a débitos futuros, se necessário.
+
+### 19.3 Impacto na produção real
+
+MR-DEBT-004 e MR-DEBT-002 deixam de ser bloqueios ativos isolados após a Fase 6.3. Entretanto, a vertical MedicalRecord ainda não deve ser considerada pronta para produção real com dados clínicos sensíveis enquanto outros P1 permanecerem abertos, especialmente:
+
+- MR-DEBT-001 — Soft Delete ausente;
+- MR-DEBT-005 — Política de retenção não implementada;
+- MR-DEBT-006 — `DeleteBehavior.Cascade` pendente de revisão.
+
+### 19.4 Evidência documental final
+
+A consolidação técnica e os critérios finais de aceite da Fase 6.3 estão registrados em:
+
+- `docs/clinical-core/PHASE_06_03_05_MEDICAL_RECORD_AUTHORSHIP_AUDIT_EVIDENCE.md`.
