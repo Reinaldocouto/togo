@@ -57,6 +57,8 @@ public sealed class UpdateMedicalRecordUseCaseTests
         Assert.Contains($"\"PatientId\":{patientId}", auditEvent.MetadataJson);
         Assert.DoesNotContain("new note", auditEvent.MetadataJson);
         Assert.DoesNotContain("{\"v\":2}", auditEvent.MetadataJson);
+        Assert.DoesNotContain(nameof(UpdateMedicalRecordRequest.GeneralNotes), auditEvent.MetadataJson);
+        Assert.DoesNotContain(nameof(UpdateMedicalRecordRequest.FlagsJson), auditEvent.MetadataJson);
     }
 
     [Fact]

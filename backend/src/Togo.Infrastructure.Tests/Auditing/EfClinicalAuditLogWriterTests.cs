@@ -37,4 +37,33 @@ public sealed class EfClinicalAuditLogWriterTests
         Assert.DoesNotContain("GeneralNotes", persisted.MetadataJson);
         Assert.DoesNotContain("FlagsJson", persisted.MetadataJson);
     }
+
+    [Fact]
+    public async Task WriteAsync_ShouldPersistClinicalAuditLog_WhenUserProfileAndMetadataAreNull()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+        var writer = new EfClinicalAuditLogWriter(context);
+        var userId = Guid.Parse("bbbbbbbb-cccc-dddd-eeee-ffffffffffff");
+        var occurredAt = new DateTime(2026, 6, 4, 13, 0, 0, DateTimeKind.Utc);
+        var auditEvent = new ClinicalAuditEvent(
+            EntityName: "MedicalRecord",
+            EntityId: "456",
+            Action: MedicalRecordAuditActions.Updated,
+            UserId: userId,
+            UserProfile: null,
+            OccurredAt: occurredAt,
+            MetadataJson: null);
+
+        await writer.WriteAsync(auditEvent, CancellationToken.None);
+
+        var persisted = await context.ClinicalAuditLogs.AsNoTracking().SingleAsync();
+        Assert.Equal("MedicalRecord", persisted.EntityName);
+        Assert.Equal("456", persisted.EntityId);
+        Assert.Equal(MedicalRecordAuditActions.Updated, persisted.Action);
+        Assert.Equal(userId, persisted.UserId);
+        Assert.Null(persisted.UserProfile);
+        Assert.Equal(occurredAt, persisted.OccurredAt);
+        Assert.Null(persisted.MetadataJson);
+    }
 }
