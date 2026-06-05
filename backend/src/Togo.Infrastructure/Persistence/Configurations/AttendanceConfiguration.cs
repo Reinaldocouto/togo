@@ -23,7 +23,7 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
         builder.HasOne<Patient>()
             .WithMany()
             .HasForeignKey(a => a.PatientId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(a => a.PatientId);
         builder.HasIndex(a => a.AttendanceNumber).IsUnique();

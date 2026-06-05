@@ -27,7 +27,7 @@ public class MedicalRecordConfiguration : IEntityTypeConfiguration<MedicalRecord
         builder.HasOne<Patient>()
             .WithMany()
             .HasForeignKey(m => m.PatientId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(m => m.PatientId);
     }
