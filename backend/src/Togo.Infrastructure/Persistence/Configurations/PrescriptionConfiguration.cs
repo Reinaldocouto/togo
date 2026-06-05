@@ -20,7 +20,7 @@ public class PrescriptionConfiguration : IEntityTypeConfiguration<Prescription>
         builder.HasOne<Attendance>()
             .WithMany()
             .HasForeignKey(p => p.AttendanceId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(p => p.AttendanceId);
         builder.HasIndex(p => p.IssuedAt);

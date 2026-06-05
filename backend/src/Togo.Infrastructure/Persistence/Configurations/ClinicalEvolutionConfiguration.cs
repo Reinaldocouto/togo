@@ -21,7 +21,7 @@ public class ClinicalEvolutionConfiguration : IEntityTypeConfiguration<ClinicalE
         builder.HasOne<Attendance>()
             .WithMany()
             .HasForeignKey(e => e.AttendanceId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => e.AttendanceId);
         builder.HasIndex(e => e.RegisteredAt);
