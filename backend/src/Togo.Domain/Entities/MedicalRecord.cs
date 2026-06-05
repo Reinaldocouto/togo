@@ -17,6 +17,9 @@ public class MedicalRecord
         CreatedAt = createdAt;
         UpdatedByUserId = createdByUserId;
         UpdatedAt = createdAt;
+        IsDeleted = false;
+        DeletedAt = null;
+        DeletedByUserId = null;
     }
 
     public long Id { get; private set; }
@@ -27,6 +30,9 @@ public class MedicalRecord
     public DateTime CreatedAt { get; private set; }
     public Guid UpdatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedByUserId { get; private set; }
 
     public static MedicalRecord Create(long patientId, string? generalNotes, string? flagsJson, Guid createdByUserId, DateTime createdAt) =>
         new(patientId, generalNotes, flagsJson, createdByUserId, createdAt);
@@ -40,6 +46,26 @@ public class MedicalRecord
         FlagsJson = NormalizeOptional(flagsJson);
         UpdatedByUserId = updatedByUserId;
         UpdatedAt = updatedAt;
+    }
+
+    public void SoftDelete(Guid deletedByUserId, DateTime deletedAt)
+    {
+        ValidateUserId(deletedByUserId, nameof(deletedByUserId));
+        ValidateDate(deletedAt, nameof(deletedAt));
+
+        if (deletedAt.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("Deleted at must be UTC", nameof(deletedAt));
+        }
+
+        if (IsDeleted)
+        {
+            throw new InvalidOperationException("Medical record is already soft deleted.");
+        }
+
+        IsDeleted = true;
+        DeletedAt = deletedAt;
+        DeletedByUserId = deletedByUserId;
     }
 
     private static void ValidateId(long id, string paramName)

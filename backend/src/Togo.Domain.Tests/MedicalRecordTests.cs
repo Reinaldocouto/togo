@@ -259,4 +259,100 @@ public class MedicalRecordTests
         // Assert
         Assert.Equal(initialId, medicalRecord.Id);
     }
+
+    [Fact]
+    public void Create_ShouldInitializeSoftDeleteFieldsAsNotDeleted()
+    {
+        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+
+        Assert.False(medicalRecord.IsDeleted);
+        Assert.Null(medicalRecord.DeletedAt);
+        Assert.Null(medicalRecord.DeletedByUserId);
+    }
+
+    [Fact]
+    public void SoftDelete_ShouldMarkRecordAsDeleted_WhenDataIsValid()
+    {
+        var createdAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
+        var deletedAt = new DateTime(2026, 5, 23, 11, 0, 0, DateTimeKind.Utc);
+        var createdByUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
+        var deletedByUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        var medicalRecord = MedicalRecord.Create(10, "notes", "{\"flag\":true}", createdByUserId, createdAt);
+
+        medicalRecord.SoftDelete(deletedByUserId, deletedAt);
+
+        Assert.True(medicalRecord.IsDeleted);
+        Assert.Equal(deletedAt, medicalRecord.DeletedAt);
+        Assert.Equal(deletedByUserId, medicalRecord.DeletedByUserId);
+    }
+
+    [Fact]
+    public void SoftDelete_ShouldThrowArgumentException_WhenDeletedByUserIdIsEmpty()
+    {
+        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+
+        var exception = Assert.Throws<ArgumentException>(() => medicalRecord.SoftDelete(Guid.Empty, DateTime.UtcNow));
+
+        Assert.StartsWith("User id is required", exception.Message);
+        Assert.Equal("deletedByUserId", exception.ParamName);
+    }
+
+    [Fact]
+    public void SoftDelete_ShouldThrowArgumentException_WhenDeletedAtIsDefault()
+    {
+        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+
+        var exception = Assert.Throws<ArgumentException>(() => medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), default));
+
+        Assert.StartsWith("Date is required", exception.Message);
+        Assert.Equal("deletedAt", exception.ParamName);
+    }
+
+    [Fact]
+    public void SoftDelete_ShouldThrowArgumentException_WhenDeletedAtIsNotUtc()
+    {
+        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+        var localDeletedAt = new DateTime(2026, 5, 23, 11, 0, 0, DateTimeKind.Local);
+
+        var exception = Assert.Throws<ArgumentException>(() => medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), localDeletedAt));
+
+        Assert.StartsWith("Deleted at must be UTC", exception.Message);
+        Assert.Equal("deletedAt", exception.ParamName);
+    }
+
+    [Fact]
+    public void SoftDelete_ShouldPreserveClinicalAuthorshipTimestampsAndContent()
+    {
+        var createdAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
+        var updatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
+        var deletedAt = new DateTime(2026, 5, 24, 10, 0, 0, DateTimeKind.Utc);
+        var createdByUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
+        var updatedByUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        var deletedByUserId = Guid.Parse("99999999-8888-7777-6666-555555555555");
+        var medicalRecord = MedicalRecord.Create(10, "notes", "{\"flag\":true}", createdByUserId, createdAt);
+        medicalRecord.UpdateNotes("updated notes", "{\"flag\":false}", updatedByUserId, updatedAt);
+
+        medicalRecord.SoftDelete(deletedByUserId, deletedAt);
+
+        Assert.Equal(createdAt, medicalRecord.CreatedAt);
+        Assert.Equal(createdByUserId, medicalRecord.CreatedByUserId);
+        Assert.Equal(updatedAt, medicalRecord.UpdatedAt);
+        Assert.Equal(updatedByUserId, medicalRecord.UpdatedByUserId);
+        Assert.Equal("updated notes", medicalRecord.GeneralNotes);
+        Assert.Equal("{\"flag\":false}", medicalRecord.FlagsJson);
+        Assert.Equal(10, medicalRecord.PatientId);
+    }
+
+    [Fact]
+    public void SoftDelete_ShouldThrowInvalidOperationException_WhenRecordIsAlreadyDeleted()
+    {
+        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
+        medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow);
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            medicalRecord.SoftDelete(Guid.Parse("99999999-8888-7777-6666-555555555555"), DateTime.UtcNow.AddMinutes(1)));
+
+        Assert.Equal("Medical record is already soft deleted.", exception.Message);
+    }
+
 }
