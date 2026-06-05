@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Togo.Application.MedicalRecords.Repositories;
 using Togo.Domain.Entities;
 using Togo.Domain.Enums;
 using Togo.Infrastructure.Persistence;
@@ -70,6 +71,26 @@ public class MedicalRecordRepositoryTests
         Assert.Null(result);
     }
 
+
+    [Fact]
+    public async Task GetByIdAsync_ShouldReturnNull_WhenMedicalRecordIsSoftDeleted()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        var patient = await AddPatientAsync(context, "Patient Deleted GetById MedicalRecord");
+        var medicalRecord = MedicalRecord.Create(patient.Id, "Deleted by id", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
+        await repository.AddAsync(medicalRecord);
+        medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
+        await repository.UpdateAsync(medicalRecord);
+
+        var result = await repository.GetByIdAsync(medicalRecord.Id);
+
+        Assert.Null(result);
+        Assert.Equal(1, await context.MedicalRecords.AsNoTracking().CountAsync(record => record.Id == medicalRecord.Id));
+    }
+
     [Fact]
     public async Task GetByPatientIdAsync_ShouldReturnMedicalRecord_WhenExists()
     {
@@ -106,6 +127,26 @@ public class MedicalRecordRepositoryTests
         Assert.Null(result);
     }
 
+
+    [Fact]
+    public async Task GetByPatientIdAsync_ShouldReturnNull_WhenMedicalRecordIsSoftDeleted()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        var patient = await AddPatientAsync(context, "Patient Deleted GetByPatientId MedicalRecord");
+        var medicalRecord = MedicalRecord.Create(patient.Id, "Deleted by patient", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
+        await repository.AddAsync(medicalRecord);
+        medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
+        await repository.UpdateAsync(medicalRecord);
+
+        var result = await repository.GetByPatientIdAsync(patient.Id);
+
+        Assert.Null(result);
+        Assert.Equal(1, await context.MedicalRecords.AsNoTracking().CountAsync(record => record.PatientId == patient.Id));
+    }
+
     [Fact]
     public async Task ExistsByPatientIdAsync_ShouldReturnTrue_WhenExists()
     {
@@ -133,6 +174,26 @@ public class MedicalRecordRepositoryTests
         var exists = await repository.ExistsByPatientIdAsync(88888);
 
         Assert.False(exists);
+    }
+
+
+    [Fact]
+    public async Task ExistsByPatientIdAsync_ShouldReturnFalse_WhenMedicalRecordIsSoftDeleted()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        var patient = await AddPatientAsync(context, "Patient Deleted Exists MedicalRecord");
+        var medicalRecord = MedicalRecord.Create(patient.Id, "Deleted exists", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
+        await repository.AddAsync(medicalRecord);
+        medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
+        await repository.UpdateAsync(medicalRecord);
+
+        var exists = await repository.ExistsByPatientIdAsync(patient.Id);
+
+        Assert.False(exists);
+        Assert.Equal(1, await context.MedicalRecords.AsNoTracking().CountAsync(record => record.PatientId == patient.Id));
     }
 
     [Fact]
@@ -213,6 +274,15 @@ public class MedicalRecordRepositoryTests
         var deletedByUserId = entityType.FindProperty(nameof(MedicalRecord.DeletedByUserId));
         Assert.NotNull(deletedByUserId);
         Assert.True(deletedByUserId!.IsNullable);
+    }
+
+
+    [Fact]
+    public void RepositoryContract_ShouldNotExposePhysicalDeleteMethod()
+    {
+        var methodNames = typeof(IMedicalRecordRepository).GetMethods().Select(method => method.Name);
+
+        Assert.DoesNotContain(methodNames, methodName => methodName.Contains("Delete", StringComparison.OrdinalIgnoreCase) && !methodName.Contains("Soft", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

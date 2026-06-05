@@ -18,21 +18,21 @@ public class MedicalRecordRepository : IMedicalRecordRepository
     {
         return await _context.MedicalRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(medicalRecord => medicalRecord.Id == id);
+            .FirstOrDefaultAsync(medicalRecord => medicalRecord.Id == id && !medicalRecord.IsDeleted);
     }
 
     public async Task<MedicalRecord?> GetByPatientIdAsync(long patientId)
     {
         return await _context.MedicalRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(medicalRecord => medicalRecord.PatientId == patientId);
+            .FirstOrDefaultAsync(medicalRecord => medicalRecord.PatientId == patientId && !medicalRecord.IsDeleted);
     }
 
     public async Task<bool> ExistsByPatientIdAsync(long patientId)
     {
         return await _context.MedicalRecords
             .AsNoTracking()
-            .AnyAsync(medicalRecord => medicalRecord.PatientId == patientId);
+            .AnyAsync(medicalRecord => medicalRecord.PatientId == patientId && !medicalRecord.IsDeleted);
     }
 
     public async Task AddAsync(MedicalRecord medicalRecord)

@@ -118,6 +118,36 @@ public sealed class UpdateMedicalRecordUseCaseTests
 
 
     [Fact]
+    public async Task ExecuteAsync_ShouldReturnNotFoundAndNotMutateOrAudit_WhenMedicalRecordIsSoftDeleted()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var createdAt = DateTime.UtcNow.AddHours(-3);
+        var deletedAt = DateTime.UtcNow.AddHours(-2);
+        var medicalRecord = MedicalRecord.Create(patientId, "old deleted note", "{\"v\":1}", CreatorUserId, createdAt);
+        medicalRecord.SoftDelete(UpdatingUserId, deletedAt);
+        repository.AddExisting(medicalRecord);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+
+        var result = await CreateUseCase(repository, petRepository, auditLogWriter: auditLogWriter)
+            .ExecuteAsync(patientId, new UpdateMedicalRecordRequest("new note", "{\"v\":2}"), CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.NotFound, result.Type);
+        Assert.Equal("Medical record not found.", result.Error);
+        Assert.Equal(0, repository.UpdateCallsCount);
+        Assert.Equal("old deleted note", medicalRecord.GeneralNotes);
+        Assert.Equal("{\"v\":1}", medicalRecord.FlagsJson);
+        Assert.Equal(CreatorUserId, medicalRecord.UpdatedByUserId);
+        Assert.Equal(createdAt, medicalRecord.UpdatedAt);
+        Assert.True(medicalRecord.IsDeleted);
+        Assert.Equal(deletedAt, medicalRecord.DeletedAt);
+        Assert.Equal(0, auditLogWriter.WriteCallsCount);
+        Assert.Empty(auditLogWriter.Events);
+    }
+
+
+    [Fact]
     public async Task ExecuteAsync_ShouldNotWriteAuditLog_WhenUpdateFailsValidation()
     {
         var repository = new FakeMedicalRecordRepository();
