@@ -30,6 +30,9 @@ public class MedicalRecordRepositoryTests
         Assert.Equal(updatedAt, persisted.CreatedAt);
         Assert.Equal(Guid.Parse("11111111-2222-3333-4444-555555555555"), persisted.UpdatedByUserId);
         Assert.Equal(updatedAt, persisted.UpdatedAt);
+        Assert.False(persisted.IsDeleted);
+        Assert.Null(persisted.DeletedAt);
+        Assert.Null(persisted.DeletedByUserId);
     }
 
     [Fact]
@@ -155,6 +158,61 @@ public class MedicalRecordRepositoryTests
         Assert.Equal(new DateTime(2026, 5, 13, 8, 0, 0, DateTimeKind.Utc), persisted.CreatedAt);
         Assert.Equal(Guid.Parse("11111111-2222-3333-4444-555555555555"), persisted.UpdatedByUserId);
         Assert.Equal(updatedAt, persisted.UpdatedAt);
+    }
+
+
+
+    [Fact]
+    public async Task UpdateAsync_ShouldPersistSoftDeleteFields()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        var patient = await AddPatientAsync(context, "Patient SoftDelete MedicalRecord");
+        var createdAt = new DateTime(2026, 5, 15, 8, 0, 0, DateTimeKind.Utc);
+        var deletedAt = new DateTime(2026, 5, 15, 9, 0, 0, DateTimeKind.Utc);
+        var creatorUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
+        var deletingUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        var medicalRecord = MedicalRecord.Create(patient.Id, "Soft delete notes", "{\"risk\":false}", creatorUserId, createdAt);
+        await repository.AddAsync(medicalRecord);
+
+        medicalRecord.SoftDelete(deletingUserId, deletedAt);
+        await repository.UpdateAsync(medicalRecord);
+
+        var persisted = await context.MedicalRecords.AsNoTracking().SingleAsync(record => record.Id == medicalRecord.Id);
+        Assert.True(persisted.IsDeleted);
+        Assert.Equal(deletedAt, persisted.DeletedAt);
+        Assert.Equal(deletingUserId, persisted.DeletedByUserId);
+        Assert.Equal("Soft delete notes", persisted.GeneralNotes);
+        Assert.Equal("{\"risk\":false}", persisted.FlagsJson);
+        Assert.Equal(creatorUserId, persisted.CreatedByUserId);
+        Assert.Equal(createdAt, persisted.CreatedAt);
+        Assert.Equal(creatorUserId, persisted.UpdatedByUserId);
+        Assert.Equal(createdAt, persisted.UpdatedAt);
+    }
+
+    [Fact]
+    public void MedicalRecordConfiguration_ShouldConfigureSoftDeleteColumnsAsMinimalNullableSchema()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        using var _ = connection;
+
+        var entityType = context.Model.FindEntityType(typeof(MedicalRecord));
+        Assert.NotNull(entityType);
+
+        var isDeleted = entityType!.FindProperty(nameof(MedicalRecord.IsDeleted));
+        Assert.NotNull(isDeleted);
+        Assert.False(isDeleted!.IsNullable);
+        Assert.Equal(false, isDeleted.GetDefaultValue());
+
+        var deletedAt = entityType.FindProperty(nameof(MedicalRecord.DeletedAt));
+        Assert.NotNull(deletedAt);
+        Assert.True(deletedAt!.IsNullable);
+
+        var deletedByUserId = entityType.FindProperty(nameof(MedicalRecord.DeletedByUserId));
+        Assert.NotNull(deletedByUserId);
+        Assert.True(deletedByUserId!.IsNullable);
     }
 
     [Fact]

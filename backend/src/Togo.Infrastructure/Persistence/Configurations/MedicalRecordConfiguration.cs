@@ -20,6 +20,9 @@ public class MedicalRecordConfiguration : IEntityTypeConfiguration<MedicalRecord
         builder.Property(m => m.CreatedAt).IsRequired();
         builder.Property(m => m.UpdatedByUserId).IsRequired();
         builder.Property(m => m.UpdatedAt).IsRequired();
+        builder.Property(m => m.IsDeleted).IsRequired().HasDefaultValue(false);
+        builder.Property(m => m.DeletedAt);
+        builder.Property(m => m.DeletedByUserId);
 
         builder.HasOne<Patient>()
             .WithMany()

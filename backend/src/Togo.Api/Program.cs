@@ -72,6 +72,7 @@ builder.Services.AddScoped<CancelAttendanceUseCase>();
 builder.Services.AddScoped<CreateMedicalRecordUseCase>();
 builder.Services.AddScoped<GetMedicalRecordByPatientIdUseCase>();
 builder.Services.AddScoped<UpdateMedicalRecordUseCase>();
+builder.Services.AddScoped<SoftDeleteMedicalRecordUseCase>();
 builder.Services.AddScoped<AttendancePatientExistsValidator>();
 builder.Services.AddScoped<AttendanceNumberUniqueValidator>();
 builder.Services.AddScoped<OpenAttendanceValidator>();
