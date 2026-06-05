@@ -61,6 +61,25 @@ public sealed class GetMedicalRecordByPatientIdUseCaseTests
         Assert.Equal("Medical record not found.", result.Error);
     }
 
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnNotFound_WhenMedicalRecordIsSoftDeleted()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var medicalRecord = MedicalRecord.Create(patientId, "deleted note", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
+        medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
+        repository.AddExisting(medicalRecord);
+
+        var result = await CreateUseCase(repository, petRepository)
+            .ExecuteAsync(patientId, CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.NotFound, result.Type);
+        Assert.Equal("Medical record not found.", result.Error);
+        Assert.Null(result.Data);
+    }
+
     [Fact]
     public async Task ExecuteAsync_ShouldReturnDefensiveNotFound_WhenRepositoryReturnsNullAfterValidations()
     {

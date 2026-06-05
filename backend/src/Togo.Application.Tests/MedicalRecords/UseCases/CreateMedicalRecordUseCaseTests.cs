@@ -100,6 +100,33 @@ public sealed class CreateMedicalRecordUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldReturnSuccess_WhenOnlyExistingMedicalRecordIsSoftDeleted()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var deletedRecord = Togo.Domain.Entities.MedicalRecord.Create(patientId, "deleted", "{\"old\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-3));
+        deletedRecord.SoftDelete(CurrentUserId, DateTime.UtcNow.AddHours(-2));
+        repository.AddExisting(deletedRecord);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+
+        var result = await CreateUseCase(repository, petRepository, auditLogWriter: auditLogWriter)
+            .ExecuteAsync(patientId, new CreateMedicalRecordRequest("new active", "{\"new\":true}"), CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.Success, result.Type);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, repository.AddCallsCount);
+        Assert.Equal(2, repository.Items.Count);
+        Assert.True(deletedRecord.IsDeleted);
+        var activeRecord = Assert.Single(repository.Items.Where(record => !record.IsDeleted));
+        Assert.Equal(patientId, activeRecord.PatientId);
+        Assert.Equal("new active", activeRecord.GeneralNotes);
+        Assert.Equal("{\"new\":true}", activeRecord.FlagsJson);
+        Assert.Equal(1, auditLogWriter.WriteCallsCount);
+    }
+
+
+    [Fact]
     public async Task ExecuteAsync_ShouldNotLogSensitiveFields()
     {
         var repository = new FakeMedicalRecordRepository();

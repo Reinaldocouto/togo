@@ -5,12 +5,12 @@ namespace Togo.Application.Tests.MedicalRecords.Fakes;
 
 internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
 {
-    private readonly Dictionary<long, MedicalRecord> _recordsByPatientId = [];
+    private readonly List<MedicalRecord> _records = [];
     private long _nextId = 1;
 
     public int AddCallsCount { get; private set; }
     public int UpdateCallsCount { get; private set; }
-    public IReadOnlyCollection<MedicalRecord> Items => _recordsByPatientId.Values;
+    public IReadOnlyCollection<MedicalRecord> Items => _records;
     public long? LastExistsByPatientIdInput { get; private set; }
     public long? LastGetByPatientIdInput { get; private set; }
 
@@ -19,12 +19,12 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
     public void AddExisting(MedicalRecord medicalRecord)
     {
         AssignIdIfMissing(medicalRecord);
-        _recordsByPatientId[medicalRecord.PatientId] = medicalRecord;
+        _records.Add(medicalRecord);
     }
 
     public Task<MedicalRecord?> GetByIdAsync(long id)
     {
-        var record = _recordsByPatientId.Values.FirstOrDefault(x => x.Id == id);
+        var record = _records.FirstOrDefault(x => x.Id == id && !x.IsDeleted);
         return Task.FromResult(record);
     }
 
@@ -37,28 +37,27 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
             return Task.FromResult<MedicalRecord?>(null);
         }
 
-        _recordsByPatientId.TryGetValue(patientId, out var record);
+        var record = _records.FirstOrDefault(x => x.PatientId == patientId && !x.IsDeleted);
         return Task.FromResult(record);
     }
 
     public Task<bool> ExistsByPatientIdAsync(long patientId)
     {
         LastExistsByPatientIdInput = patientId;
-        return Task.FromResult(_recordsByPatientId.ContainsKey(patientId));
+        return Task.FromResult(_records.Any(x => x.PatientId == patientId && !x.IsDeleted));
     }
 
     public Task AddAsync(MedicalRecord medicalRecord)
     {
         AddCallsCount++;
         AssignIdIfMissing(medicalRecord);
-        _recordsByPatientId[medicalRecord.PatientId] = medicalRecord;
+        _records.Add(medicalRecord);
         return Task.CompletedTask;
     }
 
     public Task UpdateAsync(MedicalRecord medicalRecord)
     {
         UpdateCallsCount++;
-        _recordsByPatientId[medicalRecord.PatientId] = medicalRecord;
         return Task.CompletedTask;
     }
 

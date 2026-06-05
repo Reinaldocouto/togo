@@ -121,7 +121,7 @@ public sealed class SoftDeleteMedicalRecordUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldReturnConflict_WhenRecordIsAlreadySoftDeleted()
+    public async Task ExecuteAsync_ShouldReturnNotFound_WhenRecordIsAlreadySoftDeleted()
     {
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
@@ -132,8 +132,8 @@ public sealed class SoftDeleteMedicalRecordUseCaseTests
 
         var result = await CreateUseCase(repository, petRepository).ExecuteAsync(patientId, CancellationToken.None);
 
-        Assert.Equal(ApplicationResultType.Conflict, result.Type);
-        Assert.Equal("Medical record is already soft deleted.", result.Error);
+        Assert.Equal(ApplicationResultType.NotFound, result.Type);
+        Assert.Equal("Medical record not found.", result.Error);
         Assert.Equal(0, repository.UpdateCallsCount);
     }
 
