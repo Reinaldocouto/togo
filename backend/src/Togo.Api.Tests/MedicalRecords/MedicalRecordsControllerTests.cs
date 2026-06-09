@@ -385,9 +385,10 @@ public sealed class MedicalRecordsControllerTests
     {
         private readonly Dictionary<long, MedicalRecord> _items = [];
         private long _nextId = 1;
-        public Task<MedicalRecord?> GetByIdAsync(long id) => Task.FromResult(_items.Values.FirstOrDefault(x => x.Id == id));
-        public Task<MedicalRecord?> GetByPatientIdAsync(long patientId) => Task.FromResult(_items.TryGetValue(patientId, out var value) ? value : null);
-        public Task<bool> ExistsByPatientIdAsync(long patientId) => Task.FromResult(_items.ContainsKey(patientId));
+        public Task<MedicalRecord?> GetByIdAsync(long id) => Task.FromResult(_items.Values.FirstOrDefault(x => x.Id == id && !x.IsDeleted));
+        public Task<MedicalRecord?> GetByPatientIdAsync(long patientId) => Task.FromResult(_items.TryGetValue(patientId, out var value) && !value.IsDeleted ? value : null);
+        public Task<bool> ExistsByPatientIdAsync(long patientId) => Task.FromResult(_items.TryGetValue(patientId, out var value) && !value.IsDeleted);
+        public Task<bool> ExistsIncludingDeletedByPatientIdAsync(long patientId) => Task.FromResult(_items.ContainsKey(patientId));
         public Task AddAsync(MedicalRecord medicalRecord) { SetId(medicalRecord, _nextId++); _items[medicalRecord.PatientId] = medicalRecord; return Task.CompletedTask; }
         public Task UpdateAsync(MedicalRecord medicalRecord) { _items[medicalRecord.PatientId] = medicalRecord; return Task.CompletedTask; }
 

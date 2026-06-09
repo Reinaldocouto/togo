@@ -37,6 +37,71 @@ public class MedicalRecordRepositoryTests
     }
 
     [Fact]
+    public void MedicalRecordConfiguration_ShouldConfigurePatientIdAsUniqueIndex()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        using var _ = connection;
+
+        var entityType = context.Model.FindEntityType(typeof(MedicalRecord));
+        Assert.NotNull(entityType);
+
+        var patientIdIndex = Assert.Single(entityType!.GetIndexes(), index =>
+            index.Properties.Count == 1 && index.Properties[0].Name == nameof(MedicalRecord.PatientId));
+        Assert.True(patientIdIndex.IsUnique);
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldFail_WhenPatientAlreadyHasActiveMedicalRecord()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        var patient = await AddPatientAsync(context, "Patient Duplicate Active MedicalRecord");
+        var firstRecord = MedicalRecord.Create(patient.Id, "First notes", "{\"first\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
+        var duplicateRecord = MedicalRecord.Create(patient.Id, "Duplicate notes", "{\"duplicate\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
+        await repository.AddAsync(firstRecord);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicateRecord));
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldFail_WhenPatientAlreadyHasSoftDeletedMedicalRecord()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        var patient = await AddPatientAsync(context, "Patient Duplicate Deleted MedicalRecord");
+        var firstRecord = MedicalRecord.Create(patient.Id, "Deleted notes", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-3));
+        await repository.AddAsync(firstRecord);
+        firstRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-2));
+        await repository.UpdateAsync(firstRecord);
+
+        var duplicateRecord = MedicalRecord.Create(patient.Id, "Duplicate notes", "{\"duplicate\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicateRecord));
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldPersistMedicalRecords_WhenPatientsAreDifferent()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        var firstPatient = await AddPatientAsync(context, "Patient First Unique MedicalRecord");
+        var secondPatient = await AddPatientAsync(context, "Patient Second Unique MedicalRecord");
+        var firstRecord = MedicalRecord.Create(firstPatient.Id, "First notes", "{\"first\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
+        var secondRecord = MedicalRecord.Create(secondPatient.Id, "Second notes", "{\"second\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
+
+        await repository.AddAsync(firstRecord);
+        await repository.AddAsync(secondRecord);
+
+        Assert.Equal(2, await context.MedicalRecords.AsNoTracking().CountAsync());
+    }
+
+    [Fact]
     public async Task GetByIdAsync_ShouldReturnMedicalRecord_WhenExists()
     {
         using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
@@ -194,6 +259,37 @@ public class MedicalRecordRepositoryTests
 
         Assert.False(exists);
         Assert.Equal(1, await context.MedicalRecords.AsNoTracking().CountAsync(record => record.PatientId == patient.Id));
+    }
+
+    [Fact]
+    public async Task ExistsIncludingDeletedByPatientIdAsync_ShouldReturnTrue_WhenMedicalRecordIsSoftDeleted()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        var patient = await AddPatientAsync(context, "Patient Deleted Exists Any MedicalRecord");
+        var medicalRecord = MedicalRecord.Create(patient.Id, "Deleted exists any", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
+        await repository.AddAsync(medicalRecord);
+        medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
+        await repository.UpdateAsync(medicalRecord);
+
+        var exists = await repository.ExistsIncludingDeletedByPatientIdAsync(patient.Id);
+
+        Assert.True(exists);
+    }
+
+    [Fact]
+    public async Task ExistsIncludingDeletedByPatientIdAsync_ShouldReturnFalse_WhenNotFound()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+
+        var exists = await repository.ExistsIncludingDeletedByPatientIdAsync(88888);
+
+        Assert.False(exists);
     }
 
     [Fact]

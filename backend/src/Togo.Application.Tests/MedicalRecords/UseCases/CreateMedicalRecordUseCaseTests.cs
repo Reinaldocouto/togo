@@ -100,7 +100,7 @@ public sealed class CreateMedicalRecordUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldReturnSuccess_WhenOnlyExistingMedicalRecordIsSoftDeleted()
+    public async Task ExecuteAsync_ShouldReturnConflict_WhenOnlyExistingMedicalRecordIsSoftDeleted()
     {
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
@@ -113,16 +113,13 @@ public sealed class CreateMedicalRecordUseCaseTests
         var result = await CreateUseCase(repository, petRepository, auditLogWriter: auditLogWriter)
             .ExecuteAsync(patientId, new CreateMedicalRecordRequest("new active", "{\"new\":true}"), CancellationToken.None);
 
-        Assert.Equal(ApplicationResultType.Success, result.Type);
-        Assert.True(result.IsSuccess);
-        Assert.Equal(1, repository.AddCallsCount);
-        Assert.Equal(2, repository.Items.Count);
+        Assert.Equal(ApplicationResultType.Conflict, result.Type);
+        Assert.Equal("Patient already has a medical record.", result.Error);
+        Assert.Equal(0, repository.AddCallsCount);
+        Assert.Single(repository.Items);
         Assert.True(deletedRecord.IsDeleted);
-        var activeRecord = Assert.Single(repository.Items.Where(record => !record.IsDeleted));
-        Assert.Equal(patientId, activeRecord.PatientId);
-        Assert.Equal("new active", activeRecord.GeneralNotes);
-        Assert.Equal("{\"new\":true}", activeRecord.FlagsJson);
-        Assert.Equal(1, auditLogWriter.WriteCallsCount);
+        Assert.Equal(0, auditLogWriter.WriteCallsCount);
+        Assert.Equal(patientId, repository.LastExistsIncludingDeletedByPatientIdInput);
     }
 
 
