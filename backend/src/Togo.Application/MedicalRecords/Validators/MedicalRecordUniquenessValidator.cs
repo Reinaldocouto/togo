@@ -25,7 +25,7 @@ public class MedicalRecordUniquenessValidator
             return ApplicationResult<bool>.ValidationError("Patient id is invalid.");
         }
 
-        var exists = await _medicalRecordRepository.ExistsByPatientIdAsync(patientId);
+        var exists = await _medicalRecordRepository.ExistsIncludingSoftDeletedByPatientIdAsync(patientId);
         if (exists)
         {
             _logger.LogWarning("Medical record uniqueness validation failed because patient already has a medical record. PatientId: {PatientId}", patientId);
