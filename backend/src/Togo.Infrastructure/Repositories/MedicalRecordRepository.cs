@@ -35,7 +35,7 @@ public class MedicalRecordRepository : IMedicalRecordRepository
             .AnyAsync(medicalRecord => medicalRecord.PatientId == patientId && !medicalRecord.IsDeleted);
     }
 
-    public async Task<bool> ExistsIncludingDeletedByPatientIdAsync(long patientId)
+    public async Task<bool> ExistsIncludingSoftDeletedByPatientIdAsync(long patientId)
     {
         return await _context.MedicalRecords
             .AsNoTracking()

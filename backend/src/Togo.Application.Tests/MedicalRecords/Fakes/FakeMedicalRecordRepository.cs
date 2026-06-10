@@ -12,7 +12,7 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
     public int UpdateCallsCount { get; private set; }
     public IReadOnlyCollection<MedicalRecord> Items => _records;
     public long? LastExistsByPatientIdInput { get; private set; }
-    public long? LastExistsIncludingDeletedByPatientIdInput { get; private set; }
+    public long? LastExistsIncludingSoftDeletedByPatientIdInput { get; private set; }
     public long? LastGetByPatientIdInput { get; private set; }
 
     public bool ReturnNullOnGetByPatientId { get; set; }
@@ -48,9 +48,9 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
         return Task.FromResult(_records.Any(x => x.PatientId == patientId && !x.IsDeleted));
     }
 
-    public Task<bool> ExistsIncludingDeletedByPatientIdAsync(long patientId)
+    public Task<bool> ExistsIncludingSoftDeletedByPatientIdAsync(long patientId)
     {
-        LastExistsIncludingDeletedByPatientIdInput = patientId;
+        LastExistsIncludingSoftDeletedByPatientIdInput = patientId;
         return Task.FromResult(_records.Any(x => x.PatientId == patientId));
     }
 

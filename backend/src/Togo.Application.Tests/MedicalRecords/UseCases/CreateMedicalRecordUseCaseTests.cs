@@ -119,7 +119,7 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.Single(repository.Items);
         Assert.True(deletedRecord.IsDeleted);
         Assert.Equal(0, auditLogWriter.WriteCallsCount);
-        Assert.Equal(patientId, repository.LastExistsIncludingDeletedByPatientIdInput);
+        Assert.Equal(patientId, repository.LastExistsIncludingSoftDeletedByPatientIdInput);
     }
 
 

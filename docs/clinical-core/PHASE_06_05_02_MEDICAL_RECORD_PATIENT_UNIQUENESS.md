@@ -61,7 +61,7 @@ A diferença é que criação usa a nova verificação total.
 
 Alterações realizadas:
 
-- `IMedicalRecordRepository` recebeu `ExistsIncludingDeletedByPatientIdAsync(long patientId)`;
+- `IMedicalRecordRepository` recebeu `ExistsIncludingSoftDeletedByPatientIdAsync(long patientId)`;
 - `MedicalRecordRepository` implementa a nova verificação sem filtro de `IsDeleted`;
 - `MedicalRecordUniquenessValidator` passou a usar a verificação total;
 - `CreateMedicalRecordUseCase` mantém a mesma orquestração, mas passa a bloquear recriação após Soft Delete por meio do validator;

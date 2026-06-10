@@ -262,7 +262,7 @@ public class MedicalRecordRepositoryTests
     }
 
     [Fact]
-    public async Task ExistsIncludingDeletedByPatientIdAsync_ShouldReturnTrue_WhenMedicalRecordIsSoftDeleted()
+    public async Task ExistsIncludingSoftDeletedByPatientIdAsync_ShouldReturnTrue_WhenMedicalRecordIsSoftDeleted()
     {
         using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
         await using var _ = connection;
@@ -274,20 +274,20 @@ public class MedicalRecordRepositoryTests
         medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
         await repository.UpdateAsync(medicalRecord);
 
-        var exists = await repository.ExistsIncludingDeletedByPatientIdAsync(patient.Id);
+        var exists = await repository.ExistsIncludingSoftDeletedByPatientIdAsync(patient.Id);
 
         Assert.True(exists);
     }
 
     [Fact]
-    public async Task ExistsIncludingDeletedByPatientIdAsync_ShouldReturnFalse_WhenNotFound()
+    public async Task ExistsIncludingSoftDeletedByPatientIdAsync_ShouldReturnFalse_WhenNotFound()
     {
         using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
         await using var _ = connection;
 
         var repository = new MedicalRecordRepository(context);
 
-        var exists = await repository.ExistsIncludingDeletedByPatientIdAsync(88888);
+        var exists = await repository.ExistsIncludingSoftDeletedByPatientIdAsync(88888);
 
         Assert.False(exists);
     }
