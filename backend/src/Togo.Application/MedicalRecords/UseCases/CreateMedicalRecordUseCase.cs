@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Togo.Application.Auditing;
 using Togo.Application.MedicalRecords.Contracts;
+using Togo.Application.MedicalRecords.Exceptions;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Application.MedicalRecords.Validators;
 using Togo.Application.Security;
@@ -65,6 +66,11 @@ public class CreateMedicalRecordUseCase
 
             _logger.LogInformation("Medical record created successfully. PatientId: {PatientId}. MedicalRecordId: {MedicalRecordId}", patientId, medicalRecord.Id);
             return ApplicationResult<MedicalRecordResponse>.Success(ToResponse(medicalRecord));
+        }
+        catch (MedicalRecordAlreadyExistsException)
+        {
+            _logger.LogWarning("Medical record creation failed because a concurrent insert already created a record. PatientId: {PatientId}", patientId);
+            return ApplicationResult<MedicalRecordResponse>.Conflict(MedicalRecordAlreadyExistsException.DefaultMessage);
         }
         catch (ArgumentException ex)
         {

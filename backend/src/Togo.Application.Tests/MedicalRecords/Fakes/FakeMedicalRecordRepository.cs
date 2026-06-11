@@ -1,3 +1,4 @@
+using Togo.Application.MedicalRecords.Exceptions;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Domain.Entities;
 
@@ -16,6 +17,8 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
     public long? LastGetByPatientIdInput { get; private set; }
 
     public bool ReturnNullOnGetByPatientId { get; set; }
+    public bool ThrowMedicalRecordAlreadyExistsOnAdd { get; set; }
+    public Exception? ExceptionToThrowOnAdd { get; set; }
 
     public void AddExisting(MedicalRecord medicalRecord)
     {
@@ -57,6 +60,17 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
     public Task AddAsync(MedicalRecord medicalRecord)
     {
         AddCallsCount++;
+
+        if (ThrowMedicalRecordAlreadyExistsOnAdd)
+        {
+            throw new MedicalRecordAlreadyExistsException(medicalRecord.PatientId, new InvalidOperationException("Simulated unique constraint violation."));
+        }
+
+        if (ExceptionToThrowOnAdd is not null)
+        {
+            throw ExceptionToThrowOnAdd;
+        }
+
         AssignIdIfMissing(medicalRecord);
         _records.Add(medicalRecord);
         return Task.CompletedTask;

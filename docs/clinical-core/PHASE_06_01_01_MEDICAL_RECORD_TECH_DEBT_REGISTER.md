@@ -111,17 +111,18 @@ Continuam fora do escopo deste tratamento:
 - tela frontend de auditoria;
 - transação única entre a operação principal e o AuditLog.
 
-Esses pontos podem virar débitos futuros, se necessário. A produção real com dados clínicos sensíveis continua não recomendada enquanto permanecerem abertos outros P1, especialmente Soft Delete, retenção e revisão de `DeleteBehavior.Cascade`.
+Esses pontos podem virar débitos futuros, se necessário. Soft Delete, retenção e revisão de `DeleteBehavior.Cascade` não permanecem como P1 abertos nesta trilha: foram resolvidos tecnicamente nas Fases 6.4.2 a 6.4.6. A produção real com dados clínicos sensíveis ainda depende de validações macro posteriores de segurança, compliance, infraestrutura e produto.
 
 ## 9. Débitos P2 — hardening técnico próximo
 
-Itens P2 ainda abertos:
-- índice único em PatientId;
-- validação estrutural/normalização de FlagsJson.
+Itens P2 nesta trilha:
+- `MR-DEBT-007 — Índice único em MedicalRecords.PatientId ausente` foi resolvido tecnicamente na Fase 6.5.2, com índice único físico em `MedicalRecords.PatientId`, validação lógica alinhada e Soft Delete contando para unicidade;
+- a janela de conflito concorrente remanescente de `MR-DEBT-007` foi tratada complementarmente na Fase 6.5.2.1, traduzindo a violação física específica de `IX_MedicalRecords_PatientId` para conflito de negócio/HTTP 409;
+- o único P2 ainda aberto nesta trilha é `MR-DEBT-009 — FlagsJson flexível`.
 
 O item originalmente mapeado como `CreatedAt` (**MR-DEBT-008**) não permanece como P2 aberto: foi resolvido tecnicamente na Fase 6.3.3 como parte da autoria clínica mínima e consolidado documentalmente nas Fases 6.3.5 e 6.3.6.
 
-Os P2 ainda abertos aumentam robustez técnica de schema/modelagem e reduzem risco operacional de médio prazo, devendo ser tratados no ciclo de hardening subsequente ao fechamento dos bloqueios P1.
+O P2 ainda aberto aumenta robustez de modelagem e validação de dados sem reabrir `MR-DEBT-007`, que permanece resolvido após o hardening complementar de concorrência.
 
 ## 10. Débitos P3 — evolução técnica posterior
 
@@ -142,13 +143,13 @@ Esses itens são evoluções de qualidade e governança, relevantes para maturid
 - MR-DEBT-002 — resolvido tecnicamente para AuditLog clínico mínimo pela Fase 6.3.4, com evidências finais na 6.3.5.
 
 ### 6.4 — Persistência clínica e retenção
-- MR-DEBT-001;
-- MR-DEBT-005;
-- MR-DEBT-006.
+- MR-DEBT-001 — resolvido tecnicamente para Soft Delete clínico mínimo nas Fases 6.4.2 e 6.4.3, com consolidação na Fase 6.4.6;
+- MR-DEBT-005 — resolvido tecnicamente por decisão formal de retenção clínica inicial na Fase 6.4.5, com consolidação na Fase 6.4.6;
+- MR-DEBT-006 — resolvido tecnicamente por revisão de cascades clínicos críticos na Fase 6.4.4, com consolidação na Fase 6.4.6.
 
 ### 6.5 — Integridade e evolução de schema
-- MR-DEBT-007 — resolvido tecnicamente por índice único físico em `MedicalRecords.PatientId` na Fase 6.5.2;
-- MR-DEBT-009.
+- MR-DEBT-007 — resolvido tecnicamente por índice único físico em `MedicalRecords.PatientId` na Fase 6.5.2; a Fase 6.5.2.1 complementou o hardening ao tratar conflito concorrente da constraint como conflito de negócio;
+- MR-DEBT-009 — único P2 aberto nesta trilha.
 
 Observação: MR-DEBT-008 foi retirado da fila aberta da Fase 6.5 porque `CreatedAt` foi implementado na Fase 6.3.3 como parte da autoria clínica mínima.
 

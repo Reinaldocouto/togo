@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Togo.Application.MedicalRecords.Exceptions;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Domain.Entities;
 using Togo.Infrastructure.Persistence;
+using Togo.Infrastructure.Repositories.MedicalRecords;
 
 namespace Togo.Infrastructure.Repositories;
 
@@ -45,7 +47,15 @@ public class MedicalRecordRepository : IMedicalRecordRepository
     public async Task AddAsync(MedicalRecord medicalRecord)
     {
         await _context.MedicalRecords.AddAsync(medicalRecord);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (MedicalRecordUniqueConstraintDetector.IsMedicalRecordPatientIdUniqueConstraintViolation(ex))
+        {
+            throw new MedicalRecordAlreadyExistsException(medicalRecord.PatientId, ex);
+        }
     }
 
     public async Task UpdateAsync(MedicalRecord medicalRecord)
