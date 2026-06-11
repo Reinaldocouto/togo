@@ -355,4 +355,131 @@ public class MedicalRecordTests
         Assert.Equal("Medical record is already soft deleted.", exception.Message);
     }
 
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("   ", null)]
+    [InlineData("{}", "{}")]
+    [InlineData("{\"risk\":true}", "{\"risk\":true}")]
+    [InlineData("{\"risk\":\"high\",\"metadata\":{\"source\":\"clinical\"}}", "{\"risk\":\"high\",\"metadata\":{\"source\":\"clinical\"}}")]
+    [InlineData("{\"alerts\":[\"allergy\",\"cardiac\"]}", "{\"alerts\":[\"allergy\",\"cardiac\"]}")]
+    [InlineData("  {\"risk\":true}  ", "{\"risk\":true}")]
+    public void Create_ShouldNormalizeAndAcceptFlagsJson_WhenValueIsAbsentOrValidObject(string? flagsJson, string? expectedFlagsJson)
+    {
+        var medicalRecord = MedicalRecord.Create(
+            10,
+            "notes",
+            flagsJson,
+            Guid.Parse("11111111-2222-3333-4444-555555555555"),
+            new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc));
+
+        Assert.Equal(expectedFlagsJson, medicalRecord.FlagsJson);
+    }
+
+    [Theory]
+    [InlineData("not-json")]
+    [InlineData("{")]
+    [InlineData("{\"risk\":true")]
+    [InlineData("[]")]
+    [InlineData("\"high-risk\"")]
+    [InlineData("123")]
+    [InlineData("true")]
+    [InlineData("null")]
+    [InlineData("{\"risk\":true,}")]
+    [InlineData("{ /* comment */ \"risk\": true }")]
+    public void Create_ShouldThrowArgumentException_WhenFlagsJsonIsInvalidOrRootIsNotObject(string flagsJson)
+    {
+        var exception = Assert.Throws<ArgumentException>(() => MedicalRecord.Create(
+            10,
+            "notes",
+            flagsJson,
+            Guid.Parse("11111111-2222-3333-4444-555555555555"),
+            new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc)));
+
+        Assert.StartsWith("FlagsJson must be a valid JSON object.", exception.Message);
+        Assert.Equal("flagsJson", exception.ParamName);
+        Assert.DoesNotContain(flagsJson, exception.Message);
+    }
+
+    [Theory]
+    [InlineData("{\"risk\":true}", "{\"risk\":true}")]
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("   ", null)]
+    public void UpdateNotes_ShouldNormalizeAndAcceptFlagsJson_WhenValueIsAbsentOrValidObject(string? flagsJson, string? expectedFlagsJson)
+    {
+        var createdAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
+        var updatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
+        var createdByUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
+        var updatedByUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        var medicalRecord = MedicalRecord.Create(10, "old", "{\"old\":true}", createdByUserId, createdAt);
+
+        medicalRecord.UpdateNotes("new", flagsJson, updatedByUserId, updatedAt);
+
+        Assert.Equal(expectedFlagsJson, medicalRecord.FlagsJson);
+        Assert.Equal(10, medicalRecord.PatientId);
+        Assert.Equal(createdAt, medicalRecord.CreatedAt);
+        Assert.Equal(createdByUserId, medicalRecord.CreatedByUserId);
+    }
+
+    [Theory]
+    [InlineData("{")]
+    [InlineData("[]")]
+    [InlineData("\"high-risk\"")]
+    [InlineData("123")]
+    [InlineData("true")]
+    [InlineData("null")]
+    public void UpdateNotes_ShouldThrowArgumentException_WhenFlagsJsonIsInvalidOrRootIsNotObject(string flagsJson)
+    {
+        var medicalRecord = MedicalRecord.Create(
+            10,
+            "old",
+            "{\"old\":true}",
+            Guid.Parse("11111111-2222-3333-4444-555555555555"),
+            new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc));
+
+        var exception = Assert.Throws<ArgumentException>(() => medicalRecord.UpdateNotes(
+            "new",
+            flagsJson,
+            Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+            new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc)));
+
+        Assert.StartsWith("FlagsJson must be a valid JSON object.", exception.Message);
+        Assert.Equal("flagsJson", exception.ParamName);
+        Assert.DoesNotContain(flagsJson, exception.Message);
+    }
+
+    [Fact]
+    public void UpdateNotes_ShouldPreserveState_WhenFlagsJsonIsInvalid()
+    {
+        var createdAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
+        var updatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
+        var attemptedUpdatedAt = new DateTime(2026, 5, 24, 10, 0, 0, DateTimeKind.Utc);
+        var createdByUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
+        var updatedByUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        var attemptedUpdatedByUserId = Guid.Parse("99999999-8888-7777-6666-555555555555");
+        var medicalRecord = MedicalRecord.Create(10, "old notes", "{\"old\":true}", createdByUserId, createdAt);
+        medicalRecord.UpdateNotes("current notes", "{\"current\":true}", updatedByUserId, updatedAt);
+        var id = medicalRecord.Id;
+
+        var exception = Assert.Throws<ArgumentException>(() => medicalRecord.UpdateNotes(
+            "new sensitive notes",
+            "{",
+            attemptedUpdatedByUserId,
+            attemptedUpdatedAt));
+
+        Assert.StartsWith("FlagsJson must be a valid JSON object.", exception.Message);
+        Assert.Equal("flagsJson", exception.ParamName);
+        Assert.Equal("current notes", medicalRecord.GeneralNotes);
+        Assert.Equal("{\"current\":true}", medicalRecord.FlagsJson);
+        Assert.Equal(updatedByUserId, medicalRecord.UpdatedByUserId);
+        Assert.Equal(updatedAt, medicalRecord.UpdatedAt);
+        Assert.Equal(createdByUserId, medicalRecord.CreatedByUserId);
+        Assert.Equal(createdAt, medicalRecord.CreatedAt);
+        Assert.Equal(10, medicalRecord.PatientId);
+        Assert.Equal(id, medicalRecord.Id);
+    }
+
+
 }
