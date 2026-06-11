@@ -122,6 +122,47 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.Equal(patientId, repository.LastExistsIncludingSoftDeletedByPatientIdInput);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnConflict_WhenUniqueConstraintIsViolatedDuringAdd()
+    {
+        var repository = new FakeMedicalRecordRepository { ThrowMedicalRecordAlreadyExistsOnAdd = true };
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+
+        var result = await CreateUseCase(repository, petRepository, auditLogWriter: auditLogWriter)
+            .ExecuteAsync(patientId, new CreateMedicalRecordRequest("new", "{}"), CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.Conflict, result.Type);
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Data);
+        Assert.Equal("Patient already has a medical record.", result.Error);
+        Assert.Equal(1, repository.AddCallsCount);
+        Assert.Empty(repository.Items);
+        Assert.Equal(0, auditLogWriter.WriteCallsCount);
+        Assert.Empty(auditLogWriter.Events);
+        Assert.Equal(patientId, repository.LastExistsIncludingSoftDeletedByPatientIdInput);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldPropagateUnexpectedPersistenceException_WhenAddFailsForUnrelatedReason()
+    {
+        var expectedException = new InvalidOperationException("Simulated unrelated persistence failure.");
+        var repository = new FakeMedicalRecordRepository { ExceptionToThrowOnAdd = expectedException };
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+
+        var actualException = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            CreateUseCase(repository, petRepository, auditLogWriter: auditLogWriter)
+                .ExecuteAsync(patientId, new CreateMedicalRecordRequest("new", "{}"), CancellationToken.None));
+
+        Assert.Same(expectedException, actualException);
+        Assert.Equal(1, repository.AddCallsCount);
+        Assert.Empty(repository.Items);
+        Assert.Equal(0, auditLogWriter.WriteCallsCount);
+        Assert.Empty(auditLogWriter.Events);
+    }
 
     [Fact]
     public async Task ExecuteAsync_ShouldNotLogSensitiveFields()

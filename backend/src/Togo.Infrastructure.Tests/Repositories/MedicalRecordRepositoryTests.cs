@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Togo.Application.MedicalRecords.Exceptions;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Domain.Entities;
 using Togo.Domain.Enums;
@@ -62,7 +63,10 @@ public class MedicalRecordRepositoryTests
         var duplicateRecord = MedicalRecord.Create(patient.Id, "Duplicate notes", "{\"duplicate\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
         await repository.AddAsync(firstRecord);
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicateRecord));
+        var exception = await Assert.ThrowsAsync<MedicalRecordAlreadyExistsException>(() => repository.AddAsync(duplicateRecord));
+        Assert.Equal(patient.Id, exception.PatientId);
+        Assert.NotNull(exception.InnerException);
+        Assert.IsType<DbUpdateException>(exception.InnerException);
     }
 
     [Fact]
@@ -80,7 +84,25 @@ public class MedicalRecordRepositoryTests
 
         var duplicateRecord = MedicalRecord.Create(patient.Id, "Duplicate notes", "{\"duplicate\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicateRecord));
+        var exception = await Assert.ThrowsAsync<MedicalRecordAlreadyExistsException>(() => repository.AddAsync(duplicateRecord));
+        Assert.Equal(patient.Id, exception.PatientId);
+        Assert.NotNull(exception.InnerException);
+        Assert.IsType<DbUpdateException>(exception.InnerException);
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldNotTranslateDbUpdateException_WhenFailureIsNotMedicalRecordPatientIdUniqueConstraint()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        var missingPatientId = 987654L;
+        var medicalRecord = MedicalRecord.Create(missingPatientId, "No patient", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(medicalRecord));
+
+        Assert.DoesNotContain("IX_MedicalRecords_PatientId", exception.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -135,7 +157,6 @@ public class MedicalRecordRepositoryTests
 
         Assert.Null(result);
     }
-
 
     [Fact]
     public async Task GetByIdAsync_ShouldReturnNull_WhenMedicalRecordIsSoftDeleted()
@@ -192,7 +213,6 @@ public class MedicalRecordRepositoryTests
         Assert.Null(result);
     }
 
-
     [Fact]
     public async Task GetByPatientIdAsync_ShouldReturnNull_WhenMedicalRecordIsSoftDeleted()
     {
@@ -240,7 +260,6 @@ public class MedicalRecordRepositoryTests
 
         Assert.False(exists);
     }
-
 
     [Fact]
     public async Task ExistsByPatientIdAsync_ShouldReturnFalse_WhenMedicalRecordIsSoftDeleted()
@@ -317,8 +336,6 @@ public class MedicalRecordRepositoryTests
         Assert.Equal(updatedAt, persisted.UpdatedAt);
     }
 
-
-
     [Fact]
     public async Task UpdateAsync_ShouldPersistSoftDeleteFields()
     {
@@ -371,7 +388,6 @@ public class MedicalRecordRepositoryTests
         Assert.NotNull(deletedByUserId);
         Assert.True(deletedByUserId!.IsNullable);
     }
-
 
     [Fact]
     public void RepositoryContract_ShouldNotExposePhysicalDeleteMethod()

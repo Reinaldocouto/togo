@@ -185,3 +185,19 @@ Risco original mitigado: duplicidade física em concorrência extrema ou escrita
 Mitigação atual: constraint física + validação lógica coerente.
 
 Fase futura recomendada para este débito: tratado na Fase 6.5.2; evidências finais podem ser consolidadas em Fase 6.5.x de encerramento.
+
+
+## 18. Complemento 6.5.2.1 — conflito concorrente da constraint física
+
+A revisão pós-PR 156 identificou que o validator lógico reduz conflitos previsíveis, mas não elimina corrida de concorrência: duas requisições podem validar simultaneamente, a primeira persistir e a segunda violar o índice único durante `SaveChangesAsync`.
+
+A Fase 6.5.2.1 mantém o índice único como fonte final de integridade e adiciona o hardening complementar:
+
+- a violação física específica de `MedicalRecords.PatientId`/`IX_MedicalRecords_PatientId` é traduzida pela Infrastructure para uma exceção de Application independente de EF Core/provider;
+- o `CreateMedicalRecordUseCase` converte essa exceção para `ApplicationResultType.Conflict` com a mesma mensagem do validator: `Patient already has a medical record.`;
+- o controller já mapeia `ApplicationResultType.Conflict` para HTTP 409, evitando HTTP 500 para duplicidade concorrente esperada;
+- erros de banco não relacionados à unicidade de `MedicalRecords.PatientId` continuam propagando como falhas inesperadas;
+- `MedicalRecord.Created` não é escrito no `ClinicalAuditLog` quando o insert falha;
+- `MR-DEBT-007` permanece resolvido após o hardening complementar.
+
+Esse complemento não altera schema, não cria migration e não implementa `MR-DEBT-009`/validação de `FlagsJson`.

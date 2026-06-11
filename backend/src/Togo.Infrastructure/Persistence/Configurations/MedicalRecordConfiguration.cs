@@ -29,6 +29,6 @@ public class MedicalRecordConfiguration : IEntityTypeConfiguration<MedicalRecord
             .HasForeignKey(m => m.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(m => m.PatientId).IsUnique();
+        builder.HasIndex(m => m.PatientId).IsUnique().HasDatabaseName("IX_MedicalRecords_PatientId");
     }
 }

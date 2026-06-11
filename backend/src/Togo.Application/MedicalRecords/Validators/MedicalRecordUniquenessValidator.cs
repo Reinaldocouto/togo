@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Togo.Application.MedicalRecords.Exceptions;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Application.Tutors;
 
@@ -29,7 +30,7 @@ public class MedicalRecordUniquenessValidator
         if (exists)
         {
             _logger.LogWarning("Medical record uniqueness validation failed because patient already has a medical record. PatientId: {PatientId}", patientId);
-            return ApplicationResult<bool>.Conflict("Patient already has a medical record.");
+            return ApplicationResult<bool>.Conflict(MedicalRecordAlreadyExistsException.DefaultMessage);
         }
 
         _logger.LogDebug("Medical record uniqueness validation succeeded. PatientId: {PatientId}", patientId);
