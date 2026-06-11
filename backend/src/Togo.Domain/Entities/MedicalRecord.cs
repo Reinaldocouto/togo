@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Togo.Domain.Entities;
 
 public class MedicalRecord
@@ -12,7 +14,7 @@ public class MedicalRecord
 
         PatientId = patientId;
         GeneralNotes = NormalizeOptional(generalNotes);
-        FlagsJson = NormalizeOptional(flagsJson);
+        FlagsJson = NormalizeAndValidateFlagsJson(flagsJson, nameof(flagsJson));
         CreatedByUserId = createdByUserId;
         CreatedAt = createdAt;
         UpdatedByUserId = createdByUserId;
@@ -42,8 +44,11 @@ public class MedicalRecord
         ValidateUserId(updatedByUserId, nameof(updatedByUserId));
         ValidateDate(updatedAt, nameof(updatedAt));
 
-        GeneralNotes = NormalizeOptional(generalNotes);
-        FlagsJson = NormalizeOptional(flagsJson);
+        var normalizedGeneralNotes = NormalizeOptional(generalNotes);
+        var normalizedFlagsJson = NormalizeAndValidateFlagsJson(flagsJson, nameof(flagsJson));
+
+        GeneralNotes = normalizedGeneralNotes;
+        FlagsJson = normalizedFlagsJson;
         UpdatedByUserId = updatedByUserId;
         UpdatedAt = updatedAt;
     }
@@ -93,4 +98,29 @@ public class MedicalRecord
     }
 
     private static string? NormalizeOptional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string? NormalizeAndValidateFlagsJson(string? flagsJson, string paramName)
+    {
+        if (string.IsNullOrWhiteSpace(flagsJson))
+        {
+            return null;
+        }
+
+        var normalizedFlagsJson = flagsJson.Trim();
+
+        try
+        {
+            using var document = JsonDocument.Parse(normalizedFlagsJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                throw new ArgumentException("FlagsJson must be a valid JSON object.", paramName);
+            }
+        }
+        catch (JsonException ex)
+        {
+            throw new ArgumentException("FlagsJson must be a valid JSON object.", paramName, ex);
+        }
+
+        return normalizedFlagsJson;
+    }
 }

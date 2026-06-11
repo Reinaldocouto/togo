@@ -117,6 +117,43 @@ public sealed class UpdateMedicalRecordUseCaseTests
     }
 
 
+    [Theory]
+    [InlineData("{")]
+    [InlineData("[]")]
+    public async Task ExecuteAsync_ShouldReturnValidationError_WhenFlagsJsonIsInvalid(string flagsJson)
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var createdAt = DateTime.UtcNow.AddHours(-2);
+        var originalUpdatedAt = DateTime.UtcNow.AddHours(-1);
+        var medicalRecord = MedicalRecord.Create(patientId, "old notes", "{\"old\":true}", CreatorUserId, createdAt);
+        medicalRecord.UpdateNotes("current notes", "{\"current\":true}", CreatorUserId, originalUpdatedAt);
+        repository.AddExisting(medicalRecord);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+
+        var result = await CreateUseCase(repository, petRepository, auditLogWriter: auditLogWriter)
+            .ExecuteAsync(patientId, new UpdateMedicalRecordRequest("SENSITIVE_NOTE", flagsJson), CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.ValidationError, result.Type);
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Data);
+        Assert.NotNull(result.Error);
+        Assert.StartsWith("FlagsJson must be a valid JSON object.", result.Error);
+        Assert.DoesNotContain(flagsJson, result.Error);
+        Assert.DoesNotContain("SENSITIVE_NOTE", result.Error);
+        Assert.Equal(0, repository.UpdateCallsCount);
+        Assert.Equal(0, auditLogWriter.WriteCallsCount);
+        Assert.Empty(auditLogWriter.Events);
+        Assert.Equal("current notes", medicalRecord.GeneralNotes);
+        Assert.Equal("{\"current\":true}", medicalRecord.FlagsJson);
+        Assert.Equal(CreatorUserId, medicalRecord.UpdatedByUserId);
+        Assert.Equal(originalUpdatedAt, medicalRecord.UpdatedAt);
+        Assert.Equal(CreatorUserId, medicalRecord.CreatedByUserId);
+        Assert.Equal(createdAt, medicalRecord.CreatedAt);
+        Assert.Equal(patientId, medicalRecord.PatientId);
+    }
+
     [Fact]
     public async Task ExecuteAsync_ShouldReturnNotFoundAndNotMutateOrAudit_WhenMedicalRecordIsSoftDeleted()
     {
@@ -154,7 +191,7 @@ public sealed class UpdateMedicalRecordUseCaseTests
         var auditLogWriter = new FakeClinicalAuditLogWriter();
 
         var result = await CreateUseCase(repository, new FakePetRepository(), auditLogWriter: auditLogWriter)
-            .ExecuteAsync(0, new UpdateMedicalRecordRequest("SENSITIVE_NOTE", "SENSITIVE_FLAGS_JSON"), CancellationToken.None);
+            .ExecuteAsync(0, new UpdateMedicalRecordRequest("SENSITIVE_NOTE", "{\"secret\":\"SENSITIVE_FLAGS_JSON\"}"), CancellationToken.None);
 
         Assert.Equal(ApplicationResultType.ValidationError, result.Type);
         Assert.Equal(0, repository.UpdateCallsCount);

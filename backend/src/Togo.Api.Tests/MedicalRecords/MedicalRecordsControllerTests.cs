@@ -166,6 +166,28 @@ public sealed class MedicalRecordsControllerTests
 
 
     [Theory]
+    [InlineData("{\"secret\":\"SENSITIVE_BAD\"")]
+    [InlineData("[]")]
+    public async Task Post_ShouldReturnBadRequest_WhenFlagsJsonIsInvalidOrRootIsArray(string flagsJson)
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(19);
+
+        var response = await app.AuthorizedClient.PostAsJsonAsync(
+            "/api/patients/19/medical-record",
+            new CreateMedicalRecordRequest("SENSITIVE_NOTE", flagsJson));
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("FlagsJson must be a valid JSON object.", body);
+        Assert.DoesNotContain(flagsJson, body);
+        Assert.DoesNotContain("SENSITIVE_BAD", body);
+        Assert.DoesNotContain("SENSITIVE_NOTE", body);
+        Assert.Null(await app.MedicalRecordRepository.GetByPatientIdAsync(19));
+    }
+
+
+    [Theory]
     [InlineData(UserProfiles.Assistant)]
     [InlineData(UserProfiles.Reception)]
     [InlineData(UserProfiles.ReadOnly)]
@@ -243,6 +265,33 @@ public sealed class MedicalRecordsControllerTests
 
 
     [Theory]
+    [InlineData("{\"secret\":\"SENSITIVE_BAD\"")]
+    [InlineData("null")]
+    public async Task Put_ShouldReturnBadRequest_WhenFlagsJsonIsInvalidOrRootIsNull(string flagsJson)
+    {
+        using var app = CreateApp();
+        app.PetRepository.AddPatient(20);
+        var existing = MedicalRecord.Create(20, "before", "{\"before\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10));
+        await app.MedicalRecordRepository.AddAsync(existing);
+        var originalUpdatedAt = existing.UpdatedAt;
+
+        var response = await app.AuthorizedClient.PutAsJsonAsync(
+            "/api/patients/20/medical-record",
+            new UpdateMedicalRecordRequest("SENSITIVE_NOTE", flagsJson));
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("FlagsJson must be a valid JSON object.", body);
+        Assert.DoesNotContain(flagsJson, body);
+        Assert.DoesNotContain("SENSITIVE_BAD", body);
+        Assert.DoesNotContain("SENSITIVE_NOTE", body);
+        Assert.Equal("before", existing.GeneralNotes);
+        Assert.Equal("{\"before\":true}", existing.FlagsJson);
+        Assert.Equal(originalUpdatedAt, existing.UpdatedAt);
+    }
+
+
+    [Theory]
     [InlineData(UserProfiles.Assistant)]
     [InlineData(UserProfiles.Reception)]
     [InlineData(UserProfiles.ReadOnly)]
@@ -296,7 +345,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(9);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(9, "old", "old", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10)));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(9, "old", "{\"old\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10)));
         var response = await app.AuthorizedClient.PutAsJsonAsync("/api/patients/9/medical-record", new UpdateMedicalRecordRequest("   ", "   "));
         var body = await response.Content.ReadFromJsonAsync<MedicalRecordResponse>();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

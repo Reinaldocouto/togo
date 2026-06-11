@@ -164,6 +164,32 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.Empty(auditLogWriter.Events);
     }
 
+    [Theory]
+    [InlineData("{")]
+    [InlineData("[]")]
+    public async Task ExecuteAsync_ShouldReturnValidationError_WhenFlagsJsonIsInvalid(string flagsJson)
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+
+        var result = await CreateUseCase(repository, petRepository, auditLogWriter: auditLogWriter)
+            .ExecuteAsync(patientId, new CreateMedicalRecordRequest("SENSITIVE_NOTE", flagsJson), CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.ValidationError, result.Type);
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Data);
+        Assert.NotNull(result.Error);
+        Assert.StartsWith("FlagsJson must be a valid JSON object.", result.Error);
+        Assert.DoesNotContain(flagsJson, result.Error);
+        Assert.DoesNotContain("SENSITIVE_NOTE", result.Error);
+        Assert.Equal(0, repository.AddCallsCount);
+        Assert.Empty(repository.Items);
+        Assert.Equal(0, auditLogWriter.WriteCallsCount);
+        Assert.Empty(auditLogWriter.Events);
+    }
+
     [Fact]
     public async Task ExecuteAsync_ShouldNotLogSensitiveFields()
     {
@@ -172,7 +198,7 @@ public sealed class CreateMedicalRecordUseCaseTests
         var patientId = petRepository.AddPet();
         var logger = new TestLogger<CreateMedicalRecordUseCase>();
         var useCase = CreateUseCase(repository, petRepository, logger);
-        var request = new CreateMedicalRecordRequest("SENSITIVE_NOTE", "SENSITIVE_JSON");
+        var request = new CreateMedicalRecordRequest("SENSITIVE_NOTE", "{\"secret\":\"SENSITIVE_JSON\"}");
 
         await useCase.ExecuteAsync(patientId, request, CancellationToken.None);
 
@@ -188,7 +214,7 @@ public sealed class CreateMedicalRecordUseCaseTests
         var auditLogWriter = new FakeClinicalAuditLogWriter();
 
         var result = await CreateUseCase(repository, new FakePetRepository(), auditLogWriter: auditLogWriter)
-            .ExecuteAsync(0, new CreateMedicalRecordRequest("SENSITIVE_NOTE", "SENSITIVE_FLAGS_JSON"), CancellationToken.None);
+            .ExecuteAsync(0, new CreateMedicalRecordRequest("SENSITIVE_NOTE", "{\"secret\":\"SENSITIVE_FLAGS_JSON\"}"), CancellationToken.None);
 
         Assert.Equal(ApplicationResultType.ValidationError, result.Type);
         Assert.Equal(0, repository.AddCallsCount);
