@@ -61,7 +61,7 @@ public class CreateMedicalRecordUseCase
         {
             var currentUser = _currentUserService.GetCurrentUser();
             var medicalRecord = MedicalRecord.Create(patientId, request.GeneralNotes, request.FlagsJson, currentUser.UserId, DateTime.UtcNow);
-            await _medicalRecordRepository.AddAsync(medicalRecord);
+            await _medicalRecordRepository.AddAsync(medicalRecord, cancellationToken);
             await WriteCreatedAuditLogAsync(medicalRecord, currentUser, cancellationToken);
 
             _logger.LogInformation("Medical record created successfully. PatientId: {PatientId}. MedicalRecordId: {MedicalRecordId}", patientId, medicalRecord.Id);

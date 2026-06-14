@@ -56,7 +56,7 @@ public class UpdateMedicalRecordUseCase
             return ToMedicalRecordResponseResult(medicalRecordValidation);
         }
 
-        var medicalRecord = await _medicalRecordRepository.GetByPatientIdAsync(patientId);
+        var medicalRecord = await _medicalRecordRepository.GetByPatientIdAsync(patientId, cancellationToken);
         if (medicalRecord is null)
         {
             _logger.LogWarning("Medical record was not found after successful validations in update flow. PatientId: {PatientId}", patientId);
@@ -67,7 +67,7 @@ public class UpdateMedicalRecordUseCase
         {
             var currentUser = _currentUserService.GetCurrentUser();
             medicalRecord.UpdateNotes(request.GeneralNotes, request.FlagsJson, currentUser.UserId, DateTime.UtcNow);
-            await _medicalRecordRepository.UpdateAsync(medicalRecord);
+            await _medicalRecordRepository.UpdateAsync(medicalRecord, cancellationToken);
             await WriteUpdatedAuditLogAsync(medicalRecord, currentUser, cancellationToken);
 
             _logger.LogInformation("Medical record updated successfully. PatientId: {PatientId}. MedicalRecordId: {MedicalRecordId}", patientId, medicalRecord.Id);

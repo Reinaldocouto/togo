@@ -16,41 +16,41 @@ public class MedicalRecordRepository : IMedicalRecordRepository
         _context = context;
     }
 
-    public async Task<MedicalRecord?> GetByIdAsync(long id)
+    public async Task<MedicalRecord?> GetByIdAsync(long id, CancellationToken cancellationToken)
     {
         return await _context.MedicalRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(medicalRecord => medicalRecord.Id == id && !medicalRecord.IsDeleted);
+            .FirstOrDefaultAsync(medicalRecord => medicalRecord.Id == id && !medicalRecord.IsDeleted, cancellationToken);
     }
 
-    public async Task<MedicalRecord?> GetByPatientIdAsync(long patientId)
+    public async Task<MedicalRecord?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken)
     {
         return await _context.MedicalRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(medicalRecord => medicalRecord.PatientId == patientId && !medicalRecord.IsDeleted);
+            .FirstOrDefaultAsync(medicalRecord => medicalRecord.PatientId == patientId && !medicalRecord.IsDeleted, cancellationToken);
     }
 
-    public async Task<bool> ExistsByPatientIdAsync(long patientId)
+    public async Task<bool> ExistsByPatientIdAsync(long patientId, CancellationToken cancellationToken)
     {
         return await _context.MedicalRecords
             .AsNoTracking()
-            .AnyAsync(medicalRecord => medicalRecord.PatientId == patientId && !medicalRecord.IsDeleted);
+            .AnyAsync(medicalRecord => medicalRecord.PatientId == patientId && !medicalRecord.IsDeleted, cancellationToken);
     }
 
-    public async Task<bool> ExistsIncludingSoftDeletedByPatientIdAsync(long patientId)
+    public async Task<bool> ExistsIncludingSoftDeletedByPatientIdAsync(long patientId, CancellationToken cancellationToken)
     {
         return await _context.MedicalRecords
             .AsNoTracking()
-            .AnyAsync(medicalRecord => medicalRecord.PatientId == patientId);
+            .AnyAsync(medicalRecord => medicalRecord.PatientId == patientId, cancellationToken);
     }
 
-    public async Task AddAsync(MedicalRecord medicalRecord)
+    public async Task AddAsync(MedicalRecord medicalRecord, CancellationToken cancellationToken)
     {
-        await _context.MedicalRecords.AddAsync(medicalRecord);
+        await _context.MedicalRecords.AddAsync(medicalRecord, cancellationToken);
 
         try
         {
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (MedicalRecordUniqueConstraintDetector.IsMedicalRecordPatientIdUniqueConstraintViolation(ex))
         {
@@ -58,9 +58,9 @@ public class MedicalRecordRepository : IMedicalRecordRepository
         }
     }
 
-    public async Task UpdateAsync(MedicalRecord medicalRecord)
+    public async Task UpdateAsync(MedicalRecord medicalRecord, CancellationToken cancellationToken)
     {
         _context.MedicalRecords.Update(medicalRecord);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

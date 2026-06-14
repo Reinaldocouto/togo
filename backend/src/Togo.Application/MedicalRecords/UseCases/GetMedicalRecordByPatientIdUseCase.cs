@@ -46,7 +46,7 @@ public class GetMedicalRecordByPatientIdUseCase
             return ToMedicalRecordResponseResult(medicalRecordValidation);
         }
 
-        var medicalRecord = await _medicalRecordRepository.GetByPatientIdAsync(patientId);
+        var medicalRecord = await _medicalRecordRepository.GetByPatientIdAsync(patientId, cancellationToken);
         if (medicalRecord is null)
         {
             _logger.LogWarning("Medical record was not found after successful validations. PatientId: {PatientId}", patientId);

@@ -25,7 +25,7 @@ public class MedicalRecordExistsValidator
             return ApplicationResult<bool>.ValidationError("Patient id is invalid.");
         }
 
-        var exists = await _medicalRecordRepository.ExistsByPatientIdAsync(patientId);
+        var exists = await _medicalRecordRepository.ExistsByPatientIdAsync(patientId, cancellationToken);
         if (!exists)
         {
             _logger.LogWarning("Medical record existence validation failed because medical record was not found for patient. PatientId: {PatientId}", patientId);

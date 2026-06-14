@@ -22,7 +22,7 @@ public class MedicalRecordRepositoryTests
         var updatedAt = new DateTime(2026, 5, 10, 10, 30, 0, DateTimeKind.Utc);
         var medicalRecord = MedicalRecord.Create(patient.Id, "Initial notes", "{\"allergies\":[\"none\"]}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
 
         var persisted = await context.MedicalRecords.AsNoTracking().SingleAsync();
         Assert.Equal(patient.Id, persisted.PatientId);
@@ -61,9 +61,9 @@ public class MedicalRecordRepositoryTests
         var patient = await AddPatientAsync(context, "Patient Duplicate Active MedicalRecord");
         var firstRecord = MedicalRecord.Create(patient.Id, "First notes", "{\"first\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
         var duplicateRecord = MedicalRecord.Create(patient.Id, "Duplicate notes", "{\"duplicate\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
-        await repository.AddAsync(firstRecord);
+        await repository.AddAsync(firstRecord, CancellationToken.None);
 
-        var exception = await Assert.ThrowsAsync<MedicalRecordAlreadyExistsException>(() => repository.AddAsync(duplicateRecord));
+        var exception = await Assert.ThrowsAsync<MedicalRecordAlreadyExistsException>(() => repository.AddAsync(duplicateRecord, CancellationToken.None));
         Assert.Equal(patient.Id, exception.PatientId);
         Assert.NotNull(exception.InnerException);
         Assert.IsType<DbUpdateException>(exception.InnerException);
@@ -78,13 +78,13 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Duplicate Deleted MedicalRecord");
         var firstRecord = MedicalRecord.Create(patient.Id, "Deleted notes", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-3));
-        await repository.AddAsync(firstRecord);
+        await repository.AddAsync(firstRecord, CancellationToken.None);
         firstRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-2));
-        await repository.UpdateAsync(firstRecord);
+        await repository.UpdateAsync(firstRecord, CancellationToken.None);
 
         var duplicateRecord = MedicalRecord.Create(patient.Id, "Duplicate notes", "{\"duplicate\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
 
-        var exception = await Assert.ThrowsAsync<MedicalRecordAlreadyExistsException>(() => repository.AddAsync(duplicateRecord));
+        var exception = await Assert.ThrowsAsync<MedicalRecordAlreadyExistsException>(() => repository.AddAsync(duplicateRecord, CancellationToken.None));
         Assert.Equal(patient.Id, exception.PatientId);
         Assert.NotNull(exception.InnerException);
         Assert.IsType<DbUpdateException>(exception.InnerException);
@@ -100,7 +100,7 @@ public class MedicalRecordRepositoryTests
         var missingPatientId = 987654L;
         var medicalRecord = MedicalRecord.Create(missingPatientId, "No patient", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
 
-        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(medicalRecord));
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(medicalRecord, CancellationToken.None));
 
         Assert.DoesNotContain("IX_MedicalRecords_PatientId", exception.ToString(), StringComparison.OrdinalIgnoreCase);
     }
@@ -117,8 +117,8 @@ public class MedicalRecordRepositoryTests
         var firstRecord = MedicalRecord.Create(firstPatient.Id, "First notes", "{\"first\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
         var secondRecord = MedicalRecord.Create(secondPatient.Id, "Second notes", "{\"second\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
 
-        await repository.AddAsync(firstRecord);
-        await repository.AddAsync(secondRecord);
+        await repository.AddAsync(firstRecord, CancellationToken.None);
+        await repository.AddAsync(secondRecord, CancellationToken.None);
 
         Assert.Equal(2, await context.MedicalRecords.AsNoTracking().CountAsync());
     }
@@ -133,9 +133,9 @@ public class MedicalRecordRepositoryTests
         var patient = await AddPatientAsync(context, "Patient GetById MedicalRecord");
         var updatedAt = new DateTime(2026, 5, 11, 9, 0, 0, DateTimeKind.Utc);
         var medicalRecord = MedicalRecord.Create(patient.Id, "Notes by id", "{\"risk\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
 
-        var result = await repository.GetByIdAsync(medicalRecord.Id);
+        var result = await repository.GetByIdAsync(medicalRecord.Id, CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.Equal(medicalRecord.Id, result!.Id);
@@ -153,7 +153,7 @@ public class MedicalRecordRepositoryTests
 
         var repository = new MedicalRecordRepository(context);
 
-        var result = await repository.GetByIdAsync(99999);
+        var result = await repository.GetByIdAsync(99999, CancellationToken.None);
 
         Assert.Null(result);
     }
@@ -167,11 +167,11 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Deleted GetById MedicalRecord");
         var medicalRecord = MedicalRecord.Create(patient.Id, "Deleted by id", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
         medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
-        await repository.UpdateAsync(medicalRecord);
+        await repository.UpdateAsync(medicalRecord, CancellationToken.None);
 
-        var result = await repository.GetByIdAsync(medicalRecord.Id);
+        var result = await repository.GetByIdAsync(medicalRecord.Id, CancellationToken.None);
 
         Assert.Null(result);
         Assert.Equal(1, await context.MedicalRecords.AsNoTracking().CountAsync(record => record.Id == medicalRecord.Id));
@@ -191,9 +191,9 @@ public class MedicalRecordRepositoryTests
             "{\"vaccination\":\"up-to-date\"}", Guid.Parse("11111111-2222-3333-4444-555555555555"),
             new DateTime(2026, 5, 12, 12, 0, 0, DateTimeKind.Utc));
 
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
 
-        var result = await repository.GetByPatientIdAsync(patient.Id);
+        var result = await repository.GetByPatientIdAsync(patient.Id, CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.Equal(medicalRecord.Id, result!.Id);
@@ -208,7 +208,7 @@ public class MedicalRecordRepositoryTests
 
         var repository = new MedicalRecordRepository(context);
 
-        var result = await repository.GetByPatientIdAsync(99999);
+        var result = await repository.GetByPatientIdAsync(99999, CancellationToken.None);
 
         Assert.Null(result);
     }
@@ -222,11 +222,11 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Deleted GetByPatientId MedicalRecord");
         var medicalRecord = MedicalRecord.Create(patient.Id, "Deleted by patient", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
         medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
-        await repository.UpdateAsync(medicalRecord);
+        await repository.UpdateAsync(medicalRecord, CancellationToken.None);
 
-        var result = await repository.GetByPatientIdAsync(patient.Id);
+        var result = await repository.GetByPatientIdAsync(patient.Id, CancellationToken.None);
 
         Assert.Null(result);
         Assert.Equal(1, await context.MedicalRecords.AsNoTracking().CountAsync(record => record.PatientId == patient.Id));
@@ -241,9 +241,9 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Exists MedicalRecord");
         var medicalRecord = MedicalRecord.Create(patient.Id, "Exists note", "{\"critical\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
 
-        var exists = await repository.ExistsByPatientIdAsync(patient.Id);
+        var exists = await repository.ExistsByPatientIdAsync(patient.Id, CancellationToken.None);
 
         Assert.True(exists);
     }
@@ -256,7 +256,7 @@ public class MedicalRecordRepositoryTests
 
         var repository = new MedicalRecordRepository(context);
 
-        var exists = await repository.ExistsByPatientIdAsync(88888);
+        var exists = await repository.ExistsByPatientIdAsync(88888, CancellationToken.None);
 
         Assert.False(exists);
     }
@@ -270,11 +270,11 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Deleted Exists MedicalRecord");
         var medicalRecord = MedicalRecord.Create(patient.Id, "Deleted exists", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
         medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
-        await repository.UpdateAsync(medicalRecord);
+        await repository.UpdateAsync(medicalRecord, CancellationToken.None);
 
-        var exists = await repository.ExistsByPatientIdAsync(patient.Id);
+        var exists = await repository.ExistsByPatientIdAsync(patient.Id, CancellationToken.None);
 
         Assert.False(exists);
         Assert.Equal(1, await context.MedicalRecords.AsNoTracking().CountAsync(record => record.PatientId == patient.Id));
@@ -289,11 +289,11 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Deleted Exists Any MedicalRecord");
         var medicalRecord = MedicalRecord.Create(patient.Id, "Deleted exists any", "{\"deleted\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-2));
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
         medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
-        await repository.UpdateAsync(medicalRecord);
+        await repository.UpdateAsync(medicalRecord, CancellationToken.None);
 
-        var exists = await repository.ExistsIncludingSoftDeletedByPatientIdAsync(patient.Id);
+        var exists = await repository.ExistsIncludingSoftDeletedByPatientIdAsync(patient.Id, CancellationToken.None);
 
         Assert.True(exists);
     }
@@ -306,7 +306,7 @@ public class MedicalRecordRepositoryTests
 
         var repository = new MedicalRecordRepository(context);
 
-        var exists = await repository.ExistsIncludingSoftDeletedByPatientIdAsync(88888);
+        var exists = await repository.ExistsIncludingSoftDeletedByPatientIdAsync(88888, CancellationToken.None);
 
         Assert.False(exists);
     }
@@ -320,12 +320,12 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient Update MedicalRecord");
         var medicalRecord = MedicalRecord.Create(patient.Id, "Old notes", "{\"risk\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), new DateTime(2026, 5, 13, 8, 0, 0, DateTimeKind.Utc));
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
 
         var updatedAt = new DateTime(2026, 5, 13, 9, 30, 0, DateTimeKind.Utc);
         medicalRecord.UpdateNotes("Updated notes", "{\"risk\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
-        await repository.UpdateAsync(medicalRecord);
+        await repository.UpdateAsync(medicalRecord, CancellationToken.None);
 
         var persisted = await context.MedicalRecords.AsNoTracking().SingleAsync(record => record.Id == medicalRecord.Id);
         Assert.Equal("Updated notes", persisted.GeneralNotes);
@@ -349,10 +349,10 @@ public class MedicalRecordRepositoryTests
         var creatorUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
         var deletingUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
         var medicalRecord = MedicalRecord.Create(patient.Id, "Soft delete notes", "{\"risk\":false}", creatorUserId, createdAt);
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
 
         medicalRecord.SoftDelete(deletingUserId, deletedAt);
-        await repository.UpdateAsync(medicalRecord);
+        await repository.UpdateAsync(medicalRecord, CancellationToken.None);
 
         var persisted = await context.MedicalRecords.AsNoTracking().SingleAsync(record => record.Id == medicalRecord.Id);
         Assert.True(persisted.IsDeleted);
@@ -406,17 +406,31 @@ public class MedicalRecordRepositoryTests
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient AsNoTracking MedicalRecord");
         var medicalRecord = MedicalRecord.Create(patient.Id, "AsNoTracking notes", "{\"watch\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), new DateTime(2026, 5, 14, 11, 0, 0, DateTimeKind.Utc));
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
 
         context.ChangeTracker.Clear();
 
-        var byId = await repository.GetByIdAsync(medicalRecord.Id);
+        var byId = await repository.GetByIdAsync(medicalRecord.Id, CancellationToken.None);
         Assert.NotNull(byId);
         Assert.Empty(context.ChangeTracker.Entries<MedicalRecord>());
 
-        var byPatientId = await repository.GetByPatientIdAsync(patient.Id);
+        var byPatientId = await repository.GetByPatientIdAsync(patient.Id, CancellationToken.None);
         Assert.NotNull(byPatientId);
         Assert.Empty(context.ChangeTracker.Entries<MedicalRecord>());
+    }
+
+    [Fact]
+    public async Task GetByPatientIdAsync_ShouldThrowOperationCanceledException_WhenTokenIsCanceled()
+    {
+        using var context = SqliteAppDbContextFactory.CreateContext(out var connection);
+        await using var _ = connection;
+
+        var repository = new MedicalRecordRepository(context);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            repository.GetByPatientIdAsync(12345, cts.Token));
     }
 
     private static async Task<Patient> AddPatientAsync(AppDbContext context, string name)

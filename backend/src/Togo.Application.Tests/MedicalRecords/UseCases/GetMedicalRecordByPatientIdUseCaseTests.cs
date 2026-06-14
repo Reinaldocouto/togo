@@ -95,6 +95,21 @@ public sealed class GetMedicalRecordByPatientIdUseCaseTests
         Assert.Equal("Medical record not found.", result.Error);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldPassCancellationToken_ToRepositoryOnGet()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        using var cts = new CancellationTokenSource();
+
+        await CreateUseCase(repository, petRepository).ExecuteAsync(patientId, cts.Token);
+
+        Assert.Equal(cts.Token, repository.LastExistsByPatientIdCancellationToken);
+        Assert.Equal(cts.Token, repository.LastGetByPatientIdCancellationToken);
+    }
+
     private static GetMedicalRecordByPatientIdUseCase CreateUseCase(FakeMedicalRecordRepository repository, FakePetRepository petRepository)
     {
         var patientValidator = new MedicalRecordPatientExistsValidator(petRepository, new TestLogger<MedicalRecordPatientExistsValidator>());

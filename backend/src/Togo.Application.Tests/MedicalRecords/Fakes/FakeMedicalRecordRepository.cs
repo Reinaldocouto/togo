@@ -15,6 +15,11 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
     public long? LastExistsByPatientIdInput { get; private set; }
     public long? LastExistsIncludingSoftDeletedByPatientIdInput { get; private set; }
     public long? LastGetByPatientIdInput { get; private set; }
+    public CancellationToken LastGetByPatientIdCancellationToken { get; private set; }
+    public CancellationToken LastExistsByPatientIdCancellationToken { get; private set; }
+    public CancellationToken LastExistsIncludingSoftDeletedByPatientIdCancellationToken { get; private set; }
+    public CancellationToken LastAddCancellationToken { get; private set; }
+    public CancellationToken LastUpdateCancellationToken { get; private set; }
 
     public bool ReturnNullOnGetByPatientId { get; set; }
     public bool ThrowMedicalRecordAlreadyExistsOnAdd { get; set; }
@@ -26,15 +31,16 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
         _records.Add(medicalRecord);
     }
 
-    public Task<MedicalRecord?> GetByIdAsync(long id)
+    public Task<MedicalRecord?> GetByIdAsync(long id, CancellationToken cancellationToken)
     {
         var record = _records.FirstOrDefault(x => x.Id == id && !x.IsDeleted);
         return Task.FromResult(record);
     }
 
-    public Task<MedicalRecord?> GetByPatientIdAsync(long patientId)
+    public Task<MedicalRecord?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken)
     {
         LastGetByPatientIdInput = patientId;
+        LastGetByPatientIdCancellationToken = cancellationToken;
 
         if (ReturnNullOnGetByPatientId)
         {
@@ -45,21 +51,24 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
         return Task.FromResult(record);
     }
 
-    public Task<bool> ExistsByPatientIdAsync(long patientId)
+    public Task<bool> ExistsByPatientIdAsync(long patientId, CancellationToken cancellationToken)
     {
         LastExistsByPatientIdInput = patientId;
+        LastExistsByPatientIdCancellationToken = cancellationToken;
         return Task.FromResult(_records.Any(x => x.PatientId == patientId && !x.IsDeleted));
     }
 
-    public Task<bool> ExistsIncludingSoftDeletedByPatientIdAsync(long patientId)
+    public Task<bool> ExistsIncludingSoftDeletedByPatientIdAsync(long patientId, CancellationToken cancellationToken)
     {
         LastExistsIncludingSoftDeletedByPatientIdInput = patientId;
+        LastExistsIncludingSoftDeletedByPatientIdCancellationToken = cancellationToken;
         return Task.FromResult(_records.Any(x => x.PatientId == patientId));
     }
 
-    public Task AddAsync(MedicalRecord medicalRecord)
+    public Task AddAsync(MedicalRecord medicalRecord, CancellationToken cancellationToken)
     {
         AddCallsCount++;
+        LastAddCancellationToken = cancellationToken;
 
         if (ThrowMedicalRecordAlreadyExistsOnAdd)
         {
@@ -76,9 +85,10 @@ internal sealed class FakeMedicalRecordRepository : IMedicalRecordRepository
         return Task.CompletedTask;
     }
 
-    public Task UpdateAsync(MedicalRecord medicalRecord)
+    public Task UpdateAsync(MedicalRecord medicalRecord, CancellationToken cancellationToken)
     {
         UpdateCallsCount++;
+        LastUpdateCancellationToken = cancellationToken;
         return Task.CompletedTask;
     }
 

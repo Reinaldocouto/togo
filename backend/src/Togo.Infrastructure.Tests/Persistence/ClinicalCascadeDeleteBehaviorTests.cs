@@ -137,14 +137,14 @@ public class ClinicalCascadeDeleteBehaviorTests
             null,
             ClinicalUserId,
             new DateTime(2026, 6, 5, 11, 0, 0, DateTimeKind.Utc));
-        await repository.AddAsync(medicalRecord);
+        await repository.AddAsync(medicalRecord, CancellationToken.None);
 
         medicalRecord.SoftDelete(DeletingUserId, new DateTime(2026, 6, 5, 12, 0, 0, DateTimeKind.Utc));
-        await repository.UpdateAsync(medicalRecord);
+        await repository.UpdateAsync(medicalRecord, CancellationToken.None);
 
-        Assert.Null(await repository.GetByIdAsync(medicalRecord.Id));
-        Assert.Null(await repository.GetByPatientIdAsync(patient.Id));
-        Assert.False(await repository.ExistsByPatientIdAsync(patient.Id));
+        Assert.Null(await repository.GetByIdAsync(medicalRecord.Id, CancellationToken.None));
+        Assert.Null(await repository.GetByPatientIdAsync(patient.Id, CancellationToken.None));
+        Assert.False(await repository.ExistsByPatientIdAsync(patient.Id, CancellationToken.None));
         Assert.Equal(1, await context.MedicalRecords.AsNoTracking().CountAsync(record => record.Id == medicalRecord.Id && record.IsDeleted));
     }
 

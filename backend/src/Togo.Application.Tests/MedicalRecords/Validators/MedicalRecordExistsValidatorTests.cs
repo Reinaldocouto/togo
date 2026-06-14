@@ -47,4 +47,17 @@ public sealed class MedicalRecordExistsValidatorTests
         Assert.True(result.IsSuccess);
         Assert.True(result.Data);
     }
+
+    [Fact]
+    public async Task ValidateAsync_ShouldPassCancellationToken_ToRepository()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var validator = new MedicalRecordExistsValidator(repository, new TestLogger<MedicalRecordExistsValidator>());
+        using var cts = new CancellationTokenSource();
+
+        await validator.ValidateAsync(55, cts.Token);
+
+        Assert.Equal(cts.Token, repository.LastExistsByPatientIdCancellationToken);
+    }
+
 }

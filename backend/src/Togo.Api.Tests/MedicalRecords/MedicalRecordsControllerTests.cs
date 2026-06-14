@@ -35,7 +35,7 @@ public sealed class MedicalRecordsControllerTests
         var patientId = 1L;
         app.PetRepository.AddPatient(patientId);
         var medicalRecord = MedicalRecord.Create(patientId, "General", "{\"risk\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-5));
-        await app.MedicalRecordRepository.AddAsync(medicalRecord);
+        await app.MedicalRecordRepository.AddAsync(medicalRecord, CancellationToken.None);
 
         var response = await app.AuthorizedClient.GetAsync($"/api/patients/{patientId}/medical-record");
         var body = await response.Content.ReadFromJsonAsync<MedicalRecordResponse>();
@@ -72,7 +72,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(10);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(10, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(10, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClientWithoutProfile().GetAsync("/api/patients/10/medical-record");
 
@@ -86,7 +86,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(11);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(11, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(11, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClient(profile).GetAsync("/api/patients/11/medical-record");
 
@@ -98,7 +98,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(12);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(12, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(12, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClient(UserProfiles.Assistant).GetAsync("/api/patients/12/medical-record");
 
@@ -137,7 +137,7 @@ public sealed class MedicalRecordsControllerTests
         Assert.Equal("note", body.GeneralNotes);
         Assert.Equal("{\"a\":1}", body.FlagsJson);
         Assert.NotEqual(default, body.UpdatedAt);
-        var persisted = await app.MedicalRecordRepository.GetByPatientIdAsync(3);
+        var persisted = await app.MedicalRecordRepository.GetByPatientIdAsync(3, CancellationToken.None);
         Assert.NotNull(persisted);
         Assert.Equal(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), persisted!.CreatedByUserId);
         Assert.Equal(persisted.CreatedByUserId, persisted.UpdatedByUserId);
@@ -183,7 +183,7 @@ public sealed class MedicalRecordsControllerTests
         Assert.DoesNotContain(flagsJson, body);
         Assert.DoesNotContain("SENSITIVE_BAD", body);
         Assert.DoesNotContain("SENSITIVE_NOTE", body);
-        Assert.Null(await app.MedicalRecordRepository.GetByPatientIdAsync(19));
+        Assert.Null(await app.MedicalRecordRepository.GetByPatientIdAsync(19, CancellationToken.None));
     }
 
 
@@ -235,7 +235,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(6);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(6, "existing", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(6, "existing", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
         var response = await app.AuthorizedClient.PostAsJsonAsync("/api/patients/6/medical-record", new CreateMedicalRecordRequest("new", null));
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -246,7 +246,7 @@ public sealed class MedicalRecordsControllerTests
         using var app = CreateApp();
         app.PetRepository.AddPatient(7);
         var existing = MedicalRecord.Create(7, "before", "{\"v\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10));
-        await app.MedicalRecordRepository.AddAsync(existing);
+        await app.MedicalRecordRepository.AddAsync(existing, CancellationToken.None);
         var previousUpdatedAt = existing.UpdatedAt;
 
         var response = await app.AuthorizedClient.PutAsJsonAsync("/api/patients/7/medical-record", new UpdateMedicalRecordRequest(" after ", " {\"v\":2} "));
@@ -272,7 +272,7 @@ public sealed class MedicalRecordsControllerTests
         using var app = CreateApp();
         app.PetRepository.AddPatient(20);
         var existing = MedicalRecord.Create(20, "before", "{\"before\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10));
-        await app.MedicalRecordRepository.AddAsync(existing);
+        await app.MedicalRecordRepository.AddAsync(existing, CancellationToken.None);
         var originalUpdatedAt = existing.UpdatedAt;
 
         var response = await app.AuthorizedClient.PutAsJsonAsync(
@@ -299,7 +299,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(16);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(16, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(16, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClient(profile)
             .PutAsJsonAsync("/api/patients/16/medical-record", new UpdateMedicalRecordRequest("after", null));
@@ -312,7 +312,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(17);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(17, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(17, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClientWithoutProfile()
             .PutAsJsonAsync("/api/patients/17/medical-record", new UpdateMedicalRecordRequest("after", null));
@@ -327,7 +327,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(18);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(18, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(18, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClient(profile)
             .PutAsJsonAsync("/api/patients/18/medical-record", new UpdateMedicalRecordRequest("after", null));
@@ -345,7 +345,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(9);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(9, "old", "{\"old\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10)));
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(9, "old", "{\"old\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10)), CancellationToken.None);
         var response = await app.AuthorizedClient.PutAsJsonAsync("/api/patients/9/medical-record", new UpdateMedicalRecordRequest("   ", "   "));
         var body = await response.Content.ReadFromJsonAsync<MedicalRecordResponse>();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -434,12 +434,12 @@ public sealed class MedicalRecordsControllerTests
     {
         private readonly Dictionary<long, MedicalRecord> _items = [];
         private long _nextId = 1;
-        public Task<MedicalRecord?> GetByIdAsync(long id) => Task.FromResult(_items.Values.FirstOrDefault(x => x.Id == id && !x.IsDeleted));
-        public Task<MedicalRecord?> GetByPatientIdAsync(long patientId) => Task.FromResult(_items.TryGetValue(patientId, out var value) && !value.IsDeleted ? value : null);
-        public Task<bool> ExistsByPatientIdAsync(long patientId) => Task.FromResult(_items.TryGetValue(patientId, out var value) && !value.IsDeleted);
-        public Task<bool> ExistsIncludingSoftDeletedByPatientIdAsync(long patientId) => Task.FromResult(_items.ContainsKey(patientId));
-        public Task AddAsync(MedicalRecord medicalRecord) { SetId(medicalRecord, _nextId++); _items[medicalRecord.PatientId] = medicalRecord; return Task.CompletedTask; }
-        public Task UpdateAsync(MedicalRecord medicalRecord) { _items[medicalRecord.PatientId] = medicalRecord; return Task.CompletedTask; }
+        public Task<MedicalRecord?> GetByIdAsync(long id, CancellationToken cancellationToken) => Task.FromResult(_items.Values.FirstOrDefault(x => x.Id == id && !x.IsDeleted));
+        public Task<MedicalRecord?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken) => Task.FromResult(_items.TryGetValue(patientId, out var value) && !value.IsDeleted ? value : null);
+        public Task<bool> ExistsByPatientIdAsync(long patientId, CancellationToken cancellationToken) => Task.FromResult(_items.TryGetValue(patientId, out var value) && !value.IsDeleted);
+        public Task<bool> ExistsIncludingSoftDeletedByPatientIdAsync(long patientId, CancellationToken cancellationToken) => Task.FromResult(_items.ContainsKey(patientId));
+        public Task AddAsync(MedicalRecord medicalRecord, CancellationToken cancellationToken) { SetId(medicalRecord, _nextId++); _items[medicalRecord.PatientId] = medicalRecord; return Task.CompletedTask; }
+        public Task UpdateAsync(MedicalRecord medicalRecord, CancellationToken cancellationToken) { _items[medicalRecord.PatientId] = medicalRecord; return Task.CompletedTask; }
 
         private static void SetId(MedicalRecord medicalRecord, long id) => typeof(MedicalRecord).GetProperty(nameof(MedicalRecord.Id))!.SetValue(medicalRecord, id);
     }
