@@ -48,7 +48,7 @@ public class SoftDeleteMedicalRecordUseCase
             return ToMedicalRecordResponseResult(medicalRecordValidation);
         }
 
-        var medicalRecord = await _medicalRecordRepository.GetByPatientIdAsync(patientId);
+        var medicalRecord = await _medicalRecordRepository.GetByPatientIdAsync(patientId, cancellationToken);
         if (medicalRecord is null)
         {
             _logger.LogWarning("Medical record was not found after successful validations in soft delete flow. PatientId: {PatientId}", patientId);
@@ -60,7 +60,7 @@ public class SoftDeleteMedicalRecordUseCase
         try
         {
             medicalRecord.SoftDelete(currentUser.UserId, DateTime.UtcNow);
-            await _medicalRecordRepository.UpdateAsync(medicalRecord);
+            await _medicalRecordRepository.UpdateAsync(medicalRecord, cancellationToken);
 
             _logger.LogInformation("Medical record soft deleted successfully. PatientId: {PatientId}. MedicalRecordId: {MedicalRecordId}", patientId, medicalRecord.Id);
             return ApplicationResult<MedicalRecordResponse>.Success(ToResponse(medicalRecord));

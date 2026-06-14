@@ -12,6 +12,21 @@ namespace Togo.Application.Tests.MedicalRecords.UseCases;
 
 public sealed class CreateMedicalRecordUseCaseTests
 {
+    [Fact]
+    public async Task ExecuteAsync_ShouldPassCancellationToken_ToRepositoryOnCreate()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        using var cts = new CancellationTokenSource();
+
+        await CreateUseCase(repository, petRepository)
+            .ExecuteAsync(patientId, new CreateMedicalRecordRequest("note", "{}"), cts.Token);
+
+        Assert.Equal(cts.Token, repository.LastExistsIncludingSoftDeletedByPatientIdCancellationToken);
+        Assert.Equal(cts.Token, repository.LastAddCancellationToken);
+    }
+
     private static readonly Guid CurrentUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
     [Fact]

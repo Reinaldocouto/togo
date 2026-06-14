@@ -13,6 +13,23 @@ namespace Togo.Application.Tests.MedicalRecords.UseCases;
 
 public sealed class UpdateMedicalRecordUseCaseTests
 {
+    [Fact]
+    public async Task ExecuteAsync_ShouldPassCancellationToken_ToRepositoryOnUpdate()
+    {
+        var repository = new FakeMedicalRecordRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        repository.AddExisting(MedicalRecord.Create(patientId, "old", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1)));
+        using var cts = new CancellationTokenSource();
+
+        await CreateUseCase(repository, petRepository)
+            .ExecuteAsync(patientId, new UpdateMedicalRecordRequest("new", "{}"), cts.Token);
+
+        Assert.Equal(cts.Token, repository.LastExistsByPatientIdCancellationToken);
+        Assert.Equal(cts.Token, repository.LastGetByPatientIdCancellationToken);
+        Assert.Equal(cts.Token, repository.LastUpdateCancellationToken);
+    }
+
     private static readonly Guid CreatorUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
     private static readonly Guid UpdatingUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
