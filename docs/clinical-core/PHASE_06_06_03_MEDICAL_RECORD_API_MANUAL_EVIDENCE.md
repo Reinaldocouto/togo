@@ -347,7 +347,7 @@ Response esperado:
 
 ```json
 {
-  "message": "Medical record already exists for this patient."
+  "message": "Patient already has a medical record."
 }
 ```
 
