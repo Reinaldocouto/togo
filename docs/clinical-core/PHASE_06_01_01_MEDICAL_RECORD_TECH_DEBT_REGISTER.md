@@ -153,10 +153,16 @@ Esses itens são evoluções de qualidade e governança, relevantes para maturid
 
 Observação: MR-DEBT-008 foi retirado da fila aberta da Fase 6.5 porque `CreatedAt` foi implementado na Fase 6.3.3 como parte da autoria clínica mínima.
 
-### 6.6 — Qualidade operacional
-- MR-DEBT-010;
-- MR-DEBT-011;
-- MR-DEBT-012.
+### 6.6 — Qualidade operacional e evidências finais
+- MR-DEBT-010 — resolvido tecnicamente por propagação de `CancellationToken` no repository MedicalRecord na Fase 6.6.2;
+- MR-DEBT-011 — resolvido tecnicamente por evidência manual versionada de API/Swagger MedicalRecord na Fase 6.6.3, alinhado com PR 163;
+- MR-DEBT-012 — resolvido tecnicamente por decisão formal de manter `MedicalRecordListItemResponse` como contrato reservado para futura listagem segura na Fase 6.6.4, alinhado com PR 164.
+
+### Encerramento da Fase 6
+
+A Fase 6 está encerrada como trilha de hardening técnico da vertical `MedicalRecord`, com `MR-DEBT-001` a `MR-DEBT-012` tratados tecnicamente no escopo planejado. O encerramento técnico não equivale a liberação irrestrita para produção real com dados clínicos sensíveis.
+
+**Próxima macrofase recomendada:** Fase 7 — Expansão clínica e operacional pós-hardening MedicalRecord.
 
 ## 12. Como atualizar este registro
 
@@ -345,3 +351,24 @@ A consolidação técnica e os critérios finais de aceite da Fase 6.3 estão re
 
 - `docs/clinical-core/PHASE_06_03_05_MEDICAL_RECORD_AUTHORSHIP_AUDIT_EVIDENCE.md`;
 - `docs/clinical-core/PHASE_06_03_06_MEDICAL_RECORD_AUTHORSHIP_AUDIT_CLOSURE.md`.
+
+
+## 20. Atualização viva — encerramento da Fase 6
+
+A Fase 6 fica encerrada como trilha de hardening técnico da vertical `MedicalRecord`.
+
+### 20.1 Status consolidado dos débitos
+
+Todos os débitos `MR-DEBT-001` a `MR-DEBT-012` permanecem registrados no histórico e estão resolvidos tecnicamente no escopo planejado da Fase 6, conforme a tabela viva deste documento.
+
+### 20.2 Alinhamentos finais
+
+- `MR-DEBT-011` está alinhado com a evidência manual versionada da Fase 6.6.3 e com o fechamento conservador registrado para PR 163.
+- `MR-DEBT-012` está alinhado com a decisão formal da Fase 6.6.4 e com PR 164.
+- A Fase 6.6.5 não implementa código novo, não cria migrations e não altera regras de negócio.
+
+### 20.3 Próxima macrofase recomendada
+
+**Fase 7 — Expansão clínica e operacional pós-hardening MedicalRecord.**
+
+A próxima macrofase deve partir da vertical `MedicalRecord` tecnicamente mais madura e não reabrir os débitos da Fase 6 sem justificativa explícita.
