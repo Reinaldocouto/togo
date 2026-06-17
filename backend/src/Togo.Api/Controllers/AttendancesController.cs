@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Togo.Application.Attendances.Contracts;
 using Togo.Application.Attendances.UseCases;
+using Togo.Api.Security;
 using Togo.Application.Tutors;
 
 namespace Togo.Api.Controllers;
@@ -34,6 +35,7 @@ public class AttendancesController : ControllerBase
         _logger = logger;
     }
 
+    [Authorize(Policy = AttendancePolicies.Read)]
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
@@ -43,6 +45,7 @@ public class AttendancesController : ControllerBase
         return ToActionResult(result);
     }
 
+    [Authorize(Policy = AttendancePolicies.Read)]
     [HttpGet("{id:long}")]
     public async Task<IActionResult> GetById(long id, CancellationToken cancellationToken)
     {
@@ -52,6 +55,7 @@ public class AttendancesController : ControllerBase
         return ToActionResult(result);
     }
 
+    [Authorize(Policy = AttendancePolicies.Create)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateAttendanceRequest request, CancellationToken cancellationToken)
     {
@@ -66,6 +70,7 @@ public class AttendancesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result.Data);
     }
 
+    [Authorize(Policy = AttendancePolicies.Close)]
     [HttpPatch("{id:long}/close")]
     public async Task<IActionResult> Close(long id, [FromBody] CloseAttendanceRequest request, CancellationToken cancellationToken)
     {
@@ -75,6 +80,7 @@ public class AttendancesController : ControllerBase
         return ToActionResult(result);
     }
 
+    [Authorize(Policy = AttendancePolicies.Cancel)]
     [HttpPatch("{id:long}/cancel")]
     public async Task<IActionResult> Cancel(long id, CancellationToken cancellationToken)
     {
