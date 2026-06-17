@@ -1,6 +1,9 @@
+using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Togo.Api.Controllers;
+using Togo.Api.Security;
 using Togo.Application.Attendances.Contracts;
 using Togo.Application.Attendances.Repositories;
 using Togo.Application.Attendances.UseCases;
@@ -14,6 +17,31 @@ namespace Togo.Api.Tests.Controllers;
 
 public sealed class AttendancesControllerTests
 {
+    [Fact]
+    public void Controller_ShouldRequireAuthorization()
+    {
+        var attribute = Assert.Single(typeof(AttendancesController).GetCustomAttributes<AuthorizeAttribute>());
+
+        Assert.Null(attribute.Policy);
+    }
+
+    [Theory]
+    [InlineData(nameof(AttendancesController.List), AttendancePolicies.Read)]
+    [InlineData(nameof(AttendancesController.GetById), AttendancePolicies.Read)]
+    [InlineData(nameof(AttendancesController.Create), AttendancePolicies.Create)]
+    [InlineData(nameof(AttendancesController.Close), AttendancePolicies.Close)]
+    [InlineData(nameof(AttendancesController.Cancel), AttendancePolicies.Cancel)]
+    public void Actions_ShouldRequireExpectedAttendancePolicy(string actionName, string expectedPolicy)
+    {
+        var method = typeof(AttendancesController)
+            .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+            .Single(method => method.Name == actionName);
+
+        var attribute = Assert.Single(method.GetCustomAttributes<AuthorizeAttribute>());
+
+        Assert.Equal(expectedPolicy, attribute.Policy);
+    }
+
     [Fact]
     public async Task List_ShouldReturnOk_WhenUseCaseReturnsSuccess()
     {
