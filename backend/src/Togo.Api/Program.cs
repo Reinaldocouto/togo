@@ -102,7 +102,11 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization(options => options.AddMedicalRecordPolicies());
+builder.Services.AddAuthorization(options =>
+{
+    options.AddMedicalRecordPolicies();
+    options.AddAttendancePolicies();
+});
 
 // ====== CORS ======
 const string AllowFrontendPolicy = "AllowFrontend";
