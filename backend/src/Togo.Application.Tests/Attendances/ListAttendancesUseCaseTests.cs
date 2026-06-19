@@ -9,6 +9,8 @@ namespace Togo.Application.Tests.Attendances;
 
 public sealed class ListAttendancesUseCaseTests
 {
+    private static readonly Guid TestUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly DateTime TestCreatedAt = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     [Fact]
     public async Task ExecuteAsync_ShouldReturnSuccessWithEmptyList_WhenNoAttendancesExist()
     {
@@ -28,8 +30,8 @@ public sealed class ListAttendancesUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
 
-        var first = Attendance.Create(100, "ATT-LIST-001", new DateTime(2026, 03, 01, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
-        var second = Attendance.Create(200, "ATT-LIST-002", new DateTime(2026, 03, 02, 9, 30, 0, DateTimeKind.Utc), AttendanceType.Emergency);
+        var first = Attendance.Create(100, "ATT-LIST-001", new DateTime(2026, 03, 01, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var second = Attendance.Create(200, "ATT-LIST-002", new DateTime(2026, 03, 02, 9, 30, 0, DateTimeKind.Utc), AttendanceType.Emergency, TestUserId, TestCreatedAt);
 
         await repository.AddAsync(first, CancellationToken.None);
         await repository.AddAsync(second, CancellationToken.None);

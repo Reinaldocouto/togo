@@ -10,6 +10,8 @@ namespace Togo.Infrastructure.Tests.Repositories;
 
 public class AttendanceRepositoryTests
 {
+    private static readonly Guid TestUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly DateTime TestCreatedAt = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     [Fact]
     public async Task AddAsync_ShouldPersistAttendance_WhenAttendanceIsValid()
     {
@@ -19,7 +21,7 @@ public class AttendanceRepositoryTests
         var repository = new AttendanceRepository(context);
         var patient = await AddPatientAsync(context, "Patient Add");
         var openedAt = new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(patient.Id, "ATD-001", openedAt, AttendanceType.Consultation);
+        var attendance = Attendance.Create(patient.Id, "ATD-001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
 
         await repository.AddAsync(attendance);
 
@@ -30,6 +32,10 @@ public class AttendanceRepositoryTests
         Assert.Equal(AttendanceStatus.Open, persisted.Status);
         Assert.Equal(AttendanceType.Consultation, persisted.Type);
         Assert.Null(persisted.ClosedAt);
+        Assert.Equal(TestUserId, persisted.CreatedByUserId);
+        Assert.Equal(TestCreatedAt, persisted.CreatedAt);
+        Assert.Equal(TestUserId, persisted.UpdatedByUserId);
+        Assert.Equal(TestCreatedAt, persisted.UpdatedAt);
     }
 
     [Fact]
@@ -40,7 +46,7 @@ public class AttendanceRepositoryTests
 
         var repository = new AttendanceRepository(context);
         var patient = await AddPatientAsync(context, "Patient Get");
-        var attendance = Attendance.Create(patient.Id, "ATD-002", new DateTime(2026, 5, 2, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Emergency);
+        var attendance = Attendance.Create(patient.Id, "ATD-002", new DateTime(2026, 5, 2, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Emergency, TestUserId, TestCreatedAt);
         await repository.AddAsync(attendance);
 
         var result = await repository.GetByIdAsync(attendance.Id);
@@ -73,9 +79,9 @@ public class AttendanceRepositoryTests
         var repository = new AttendanceRepository(context);
         var patient = await AddPatientAsync(context, "Patient List");
 
-        var older = Attendance.Create(patient.Id, "ATD-003", new DateTime(2026, 5, 1, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Return);
-        var newerA = Attendance.Create(patient.Id, "ATD-004", new DateTime(2026, 5, 2, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Return);
-        var newerB = Attendance.Create(patient.Id, "ATD-005", new DateTime(2026, 5, 2, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Procedure);
+        var older = Attendance.Create(patient.Id, "ATD-003", new DateTime(2026, 5, 1, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Return, TestUserId, TestCreatedAt);
+        var newerA = Attendance.Create(patient.Id, "ATD-004", new DateTime(2026, 5, 2, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Return, TestUserId, TestCreatedAt);
+        var newerB = Attendance.Create(patient.Id, "ATD-005", new DateTime(2026, 5, 2, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Procedure, TestUserId, TestCreatedAt);
 
         await repository.AddAsync(older);
         await repository.AddAsync(newerA);
@@ -98,9 +104,9 @@ public class AttendanceRepositoryTests
         var patientA = await AddPatientAsync(context, "Patient A");
         var patientB = await AddPatientAsync(context, "Patient B");
 
-        var a1 = Attendance.Create(patientA.Id, "ATD-006", new DateTime(2026, 5, 1, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Other);
-        var a2 = Attendance.Create(patientA.Id, "ATD-007", new DateTime(2026, 5, 2, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Exam);
-        var b1 = Attendance.Create(patientB.Id, "ATD-008", new DateTime(2026, 5, 3, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Emergency);
+        var a1 = Attendance.Create(patientA.Id, "ATD-006", new DateTime(2026, 5, 1, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Other, TestUserId, TestCreatedAt);
+        var a2 = Attendance.Create(patientA.Id, "ATD-007", new DateTime(2026, 5, 2, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Exam, TestUserId, TestCreatedAt);
+        var b1 = Attendance.Create(patientB.Id, "ATD-008", new DateTime(2026, 5, 3, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Emergency, TestUserId, TestCreatedAt);
 
         await repository.AddAsync(a1);
         await repository.AddAsync(a2);
@@ -121,7 +127,7 @@ public class AttendanceRepositoryTests
 
         var repository = new AttendanceRepository(context);
         var patient = await AddPatientAsync(context, "Patient Exists");
-        await repository.AddAsync(Attendance.Create(patient.Id, "ATD-009", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation));
+        await repository.AddAsync(Attendance.Create(patient.Id, "ATD-009", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt));
 
         var exists = await repository.ExistsByAttendanceNumberAsync("ATD-009");
 
@@ -149,7 +155,7 @@ public class AttendanceRepositoryTests
 
         var repository = new AttendanceRepository(context);
         var patient = await AddPatientAsync(context, "Patient Open");
-        await repository.AddAsync(Attendance.Create(patient.Id, "ATD-010", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation));
+        await repository.AddAsync(Attendance.Create(patient.Id, "ATD-010", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt));
 
         var hasOpen = await repository.HasOpenAttendanceForPatientAsync(patient.Id);
 
@@ -179,11 +185,11 @@ public class AttendanceRepositoryTests
         var repository = new AttendanceRepository(context);
         var patient = await AddPatientAsync(context, "Patient Closed Canceled");
 
-        var closed = Attendance.Create(patient.Id, "ATD-011", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
-        closed.Close(new DateTime(2026, 5, 1, 11, 0, 0, DateTimeKind.Utc));
+        var closed = Attendance.Create(patient.Id, "ATD-011", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        closed.Close(new DateTime(2026, 5, 1, 11, 0, 0, DateTimeKind.Utc), TestUserId, TestCreatedAt.AddHours(1));
 
-        var canceled = Attendance.Create(patient.Id, "ATD-012", new DateTime(2026, 5, 2, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
-        canceled.Cancel();
+        var canceled = Attendance.Create(patient.Id, "ATD-012", new DateTime(2026, 5, 2, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        canceled.Cancel(TestUserId, TestCreatedAt.AddHours(1));
 
         await repository.AddAsync(closed);
         await repository.AddAsync(canceled);
@@ -202,16 +208,19 @@ public class AttendanceRepositoryTests
         var repository = new AttendanceRepository(context);
         var patient = await AddPatientAsync(context, "Patient Update Closed");
 
-        var attendance = Attendance.Create(patient.Id, "ATD-013", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
+        var attendance = Attendance.Create(patient.Id, "ATD-013", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         await repository.AddAsync(attendance);
 
-        attendance.Close(new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc));
+        attendance.Close(new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc), TestUserId, TestCreatedAt.AddHours(1));
         await repository.UpdateAsync(attendance);
 
         var persisted = await repository.GetByIdAsync(attendance.Id);
         Assert.NotNull(persisted);
         Assert.Equal(AttendanceStatus.Closed, persisted!.Status);
         Assert.NotNull(persisted.ClosedAt);
+        Assert.Equal(TestUserId, persisted.ClosedByUserId);
+        Assert.Equal(TestUserId, persisted.UpdatedByUserId);
+        Assert.Equal(TestCreatedAt.AddHours(1), persisted.UpdatedAt);
     }
 
     [Fact]
@@ -223,16 +232,20 @@ public class AttendanceRepositoryTests
         var repository = new AttendanceRepository(context);
         var patient = await AddPatientAsync(context, "Patient Update Canceled");
 
-        var attendance = Attendance.Create(patient.Id, "ATD-014", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
+        var attendance = Attendance.Create(patient.Id, "ATD-014", new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         await repository.AddAsync(attendance);
 
-        attendance.Cancel();
+        attendance.Cancel(TestUserId, TestCreatedAt.AddHours(1));
         await repository.UpdateAsync(attendance);
 
         var persisted = await repository.GetByIdAsync(attendance.Id);
         Assert.NotNull(persisted);
         Assert.Equal(AttendanceStatus.Canceled, persisted!.Status);
         Assert.Null(persisted.ClosedAt);
+        Assert.Equal(TestUserId, persisted.CanceledByUserId);
+        Assert.Equal(TestCreatedAt.AddHours(1), persisted.CanceledAt);
+        Assert.Equal(TestUserId, persisted.UpdatedByUserId);
+        Assert.Equal(TestCreatedAt.AddHours(1), persisted.UpdatedAt);
     }
 
     private static async Task<Patient> AddPatientAsync(AppDbContext context, string name)

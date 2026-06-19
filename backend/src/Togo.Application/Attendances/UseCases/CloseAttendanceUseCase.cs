@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Togo.Application.Attendances.Contracts;
 using Togo.Application.Attendances.Repositories;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
 
@@ -9,13 +10,16 @@ namespace Togo.Application.Attendances.UseCases;
 public class CloseAttendanceUseCase
 {
     private readonly IAttendanceRepository _attendanceRepository;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CloseAttendanceUseCase> _logger;
 
     public CloseAttendanceUseCase(
         IAttendanceRepository attendanceRepository,
+        ICurrentUserService currentUserService,
         ILogger<CloseAttendanceUseCase> logger)
     {
         _attendanceRepository = attendanceRepository;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -39,9 +43,11 @@ public class CloseAttendanceUseCase
             return ApplicationResult<AttendanceResponse>.NotFound("Attendance not found.");
         }
 
+        var currentUser = _currentUserService.GetCurrentUser();
+
         try
         {
-            attendance.Close(request.ClosedAt);
+            attendance.Close(request.ClosedAt, currentUser.UserId, DateTime.UtcNow);
             await _attendanceRepository.UpdateAsync(attendance, cancellationToken);
 
             _logger.LogInformation("Attendance closed successfully. AttendanceId: {AttendanceId}", id);

@@ -3,6 +3,8 @@ using Togo.Application.Attendances.UseCases;
 using Togo.Application.Attendances.Validators;
 using Togo.Application.Tests.Attendances.Fakes;
 using Togo.Application.Tests.Pets.Fakes;
+using Togo.Application.Tests.Security.Fakes;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 using Togo.Domain.Enums;
 
@@ -10,6 +12,7 @@ namespace Togo.Application.Tests.Attendances;
 
 public sealed class CreateAttendanceUseCaseTests
 {
+    private static readonly Guid CurrentUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     [Fact]
     public async Task ExecuteAsync_ShouldReturnSuccess_WhenRequestIsValid()
     {
@@ -137,9 +140,23 @@ public sealed class CreateAttendanceUseCaseTests
         Assert.Equal("ATT-TRIM-001", persisted.AttendanceNumber);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrowCurrentUserResolutionException_WhenCurrentUserDoesNotResolve()
+    {
+        var attendanceRepository = new FakeAttendanceRepository();
+        var petRepository = new FakePetRepository();
+        var patientId = petRepository.AddPet();
+        var currentUserService = new FakeCurrentUserService(CurrentUserId) { ThrowResolutionException = true };
+        var useCase = CreateUseCase(attendanceRepository, petRepository, currentUserService);
+
+        await Assert.ThrowsAsync<CurrentUserResolutionException>(() =>
+            useCase.ExecuteAsync(CreateValidRequest(patientId: patientId), CancellationToken.None));
+    }
+
     private static CreateAttendanceUseCase CreateUseCase(
         FakeAttendanceRepository attendanceRepository,
-        FakePetRepository petRepository)
+        FakePetRepository petRepository,
+        FakeCurrentUserService? currentUserService = null)
     {
         var patientExistsValidator = new AttendancePatientExistsValidator(
             petRepository,
@@ -156,6 +173,7 @@ public sealed class CreateAttendanceUseCaseTests
             patientExistsValidator,
             attendanceNumberUniqueValidator,
             openAttendanceValidator,
+            currentUserService ?? new FakeCurrentUserService(CurrentUserId),
             new TestLogger<CreateAttendanceUseCase>());
     }
 

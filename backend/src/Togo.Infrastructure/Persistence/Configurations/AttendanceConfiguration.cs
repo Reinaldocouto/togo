@@ -17,6 +17,13 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
         builder.Property(a => a.AttendanceNumber).IsRequired().HasMaxLength(30);
         builder.Property(a => a.OpenedAt).IsRequired();
         builder.Property(a => a.ClosedAt);
+        builder.Property(a => a.CreatedByUserId).IsRequired();
+        builder.Property(a => a.CreatedAt).IsRequired();
+        builder.Property(a => a.UpdatedByUserId).IsRequired();
+        builder.Property(a => a.UpdatedAt).IsRequired();
+        builder.Property(a => a.ClosedByUserId);
+        builder.Property(a => a.CanceledByUserId);
+        builder.Property(a => a.CanceledAt);
         builder.Property(a => a.Status).IsRequired().HasConversion<string>();
         builder.Property(a => a.Type).IsRequired().HasConversion<string>();
 

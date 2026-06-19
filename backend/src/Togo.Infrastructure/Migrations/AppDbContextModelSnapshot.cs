@@ -38,6 +38,21 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<DateTime?>("ClosedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("ClosedByUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CanceledAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CanceledByUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime>("OpenedAt")
                         .HasColumnType("datetime(6)");
 
@@ -51,6 +66,12 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 

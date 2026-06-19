@@ -1,5 +1,7 @@
 using Togo.Application.Attendances.UseCases;
 using Togo.Application.Tests.Attendances.Fakes;
+using Togo.Application.Security;
+using Togo.Application.Tests.Security.Fakes;
 using Togo.Application.Tests.Pets.Fakes;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
@@ -9,6 +11,9 @@ namespace Togo.Application.Tests.Attendances;
 
 public sealed class CancelAttendanceUseCaseTests
 {
+    private static readonly Guid CurrentUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid TestUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly DateTime TestCreatedAt = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -48,7 +53,7 @@ public sealed class CancelAttendanceUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
         const long lookupId = 223;
-        var attendance = Attendance.Create(12, "ATT-CANCEL-001", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
+        var attendance = Attendance.Create(12, "ATT-CANCEL-001", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
 
@@ -67,8 +72,8 @@ public sealed class CancelAttendanceUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
         const long lookupId = 224;
-        var attendance = Attendance.Create(12, "ATT-CANCEL-002", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
-        attendance.Close(new DateTime(2026, 03, 10, 10, 0, 0, DateTimeKind.Utc));
+        var attendance = Attendance.Create(12, "ATT-CANCEL-002", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        attendance.Close(new DateTime(2026, 03, 10, 10, 0, 0, DateTimeKind.Utc), TestUserId, TestCreatedAt.AddHours(1));
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
 
@@ -85,8 +90,8 @@ public sealed class CancelAttendanceUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
         const long lookupId = 225;
-        var attendance = Attendance.Create(12, "ATT-CANCEL-003", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
-        attendance.Cancel();
+        var attendance = Attendance.Create(12, "ATT-CANCEL-003", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        attendance.Cancel(TestUserId, TestCreatedAt.AddHours(1));
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
 
@@ -98,6 +103,20 @@ public sealed class CancelAttendanceUseCaseTests
         Assert.Equal(0, repository.UpdateCallsCount);
     }
 
-    private static CancelAttendanceUseCase CreateUseCase(FakeAttendanceRepository repository) =>
-        new(repository, new TestLogger<CancelAttendanceUseCase>());
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrowCurrentUserResolutionException_WhenCurrentUserDoesNotResolve()
+    {
+        var repository = new FakeAttendanceRepository();
+        var lookupId = 123L;
+        var attendance = Attendance.Create(12, "ATT-USER-FAIL", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        repository.AddAttendanceForLookup(lookupId, attendance);
+        var currentUserService = new FakeCurrentUserService(CurrentUserId) { ThrowResolutionException = true };
+        var useCase = CreateUseCase(repository, currentUserService);
+
+        await Assert.ThrowsAsync<CurrentUserResolutionException>(() =>
+            useCase.ExecuteAsync(lookupId, CancellationToken.None));
+    }
+
+    private static CancelAttendanceUseCase CreateUseCase(FakeAttendanceRepository repository, FakeCurrentUserService? currentUserService = null) =>
+        new(repository, currentUserService ?? new FakeCurrentUserService(CurrentUserId), new TestLogger<CancelAttendanceUseCase>());
 }

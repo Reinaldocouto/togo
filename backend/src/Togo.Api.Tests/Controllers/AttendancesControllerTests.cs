@@ -9,6 +9,7 @@ using Togo.Application.Attendances.Repositories;
 using Togo.Application.Attendances.UseCases;
 using Togo.Application.Attendances.Validators;
 using Togo.Application.Pets;
+using Togo.Application.Security;
 using Togo.Application.Pets.Contracts;
 using Togo.Domain.Entities;
 using Togo.Domain.Enums;
@@ -17,6 +18,8 @@ namespace Togo.Api.Tests.Controllers;
 
 public sealed class AttendancesControllerTests
 {
+    private static readonly Guid TestUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly DateTime TestCreatedAt = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     [Fact]
     public void Controller_ShouldRequireAuthorization()
     {
@@ -96,23 +99,23 @@ public sealed class AttendancesControllerTests
     [Fact] public async Task Close_ShouldReturnOk_WhenAttendanceIsClosed() { var context = CreateControllerContext(); var attendance = CreateAttendance("ATT-CLOSE"); context.Repository.MapAttendance(20, attendance); var result = await context.Controller.Close(20, new CloseAttendanceRequest(DateTime.UtcNow.AddMinutes(5)), CancellationToken.None); var ok = Assert.IsType<OkObjectResult>(result); var body = Assert.IsType<AttendanceResponse>(ok.Value); Assert.Equal(AttendanceStatus.Closed, body.Status); }
     [Fact] public async Task Close_ShouldReturnBadRequest_WhenValidationFails() { var context = CreateControllerContext(); var attendance = CreateAttendance("ATT-CLOSE-INVALID"); context.Repository.MapAttendance(21, attendance); var result = await context.Controller.Close(21, new CloseAttendanceRequest(default), CancellationToken.None); Assert.IsType<BadRequestObjectResult>(result); }
     [Fact] public async Task Close_ShouldReturnNotFound_WhenAttendanceDoesNotExist() { var context = CreateControllerContext(); var result = await context.Controller.Close(999, new CloseAttendanceRequest(DateTime.UtcNow), CancellationToken.None); Assert.IsType<NotFoundObjectResult>(result); }
-    [Fact] public async Task Close_ShouldReturnConflict_WhenAttendanceCannotBeClosed() { var context = CreateControllerContext(); var attendance = CreateAttendance("ATT-CLOSE-CONFLICT"); attendance.Cancel(); context.Repository.MapAttendance(22, attendance); var result = await context.Controller.Close(22, new CloseAttendanceRequest(DateTime.UtcNow), CancellationToken.None); Assert.IsType<ConflictObjectResult>(result); }
+    [Fact] public async Task Close_ShouldReturnConflict_WhenAttendanceCannotBeClosed() { var context = CreateControllerContext(); var attendance = CreateAttendance("ATT-CLOSE-CONFLICT"); attendance.Cancel(TestUserId, TestCreatedAt.AddHours(1)); context.Repository.MapAttendance(22, attendance); var result = await context.Controller.Close(22, new CloseAttendanceRequest(DateTime.UtcNow), CancellationToken.None); Assert.IsType<ConflictObjectResult>(result); }
 
     [Fact] public async Task Cancel_ShouldReturnOk_WhenAttendanceIsCanceled() { var context = CreateControllerContext(); var attendance = CreateAttendance("ATT-CANCEL"); context.Repository.MapAttendance(30, attendance); var result = await context.Controller.Cancel(30, CancellationToken.None); var ok = Assert.IsType<OkObjectResult>(result); var body = Assert.IsType<AttendanceResponse>(ok.Value); Assert.Equal(AttendanceStatus.Canceled, body.Status); }
     [Fact] public async Task Cancel_ShouldReturnBadRequest_WhenIdIsInvalid() { var context = CreateControllerContext(); var result = await context.Controller.Cancel(0, CancellationToken.None); Assert.IsType<BadRequestObjectResult>(result); }
     [Fact] public async Task Cancel_ShouldReturnNotFound_WhenAttendanceDoesNotExist() { var context = CreateControllerContext(); var result = await context.Controller.Cancel(999, CancellationToken.None); Assert.IsType<NotFoundObjectResult>(result); }
-    [Fact] public async Task Cancel_ShouldReturnConflict_WhenAttendanceCannotBeCanceled() { var context = CreateControllerContext(); var attendance = CreateAttendance("ATT-CANCEL-CONFLICT"); attendance.Close(DateTime.UtcNow.AddMinutes(3)); context.Repository.MapAttendance(31, attendance); var result = await context.Controller.Cancel(31, CancellationToken.None); Assert.IsType<ConflictObjectResult>(result); }
+    [Fact] public async Task Cancel_ShouldReturnConflict_WhenAttendanceCannotBeCanceled() { var context = CreateControllerContext(); var attendance = CreateAttendance("ATT-CANCEL-CONFLICT"); attendance.Close(DateTime.UtcNow.AddMinutes(3), TestUserId, TestCreatedAt.AddHours(1)); context.Repository.MapAttendance(31, attendance); var result = await context.Controller.Cancel(31, CancellationToken.None); Assert.IsType<ConflictObjectResult>(result); }
 
     private static TestContext CreateControllerContext(bool patientExists = true)
     {
         var repository = new FakeAttendanceRepository();
         var petRepository = new FakePetRepository(patientExists);
-        var createUseCase = new CreateAttendanceUseCase(repository, new AttendancePatientExistsValidator(petRepository, new NullLogger<AttendancePatientExistsValidator>()), new AttendanceNumberUniqueValidator(repository, new NullLogger<AttendanceNumberUniqueValidator>()), new OpenAttendanceValidator(repository, new NullLogger<OpenAttendanceValidator>()), new NullLogger<CreateAttendanceUseCase>());
-        var controller = new AttendancesController(createUseCase, new GetAttendanceByIdUseCase(repository, new NullLogger<GetAttendanceByIdUseCase>()), new ListAttendancesUseCase(repository, new NullLogger<ListAttendancesUseCase>()), new CloseAttendanceUseCase(repository, new NullLogger<CloseAttendanceUseCase>()), new CancelAttendanceUseCase(repository, new NullLogger<CancelAttendanceUseCase>()), new NullLogger<AttendancesController>());
+        var createUseCase = new CreateAttendanceUseCase(repository, new AttendancePatientExistsValidator(petRepository, new NullLogger<AttendancePatientExistsValidator>()), new AttendanceNumberUniqueValidator(repository, new NullLogger<AttendanceNumberUniqueValidator>()), new OpenAttendanceValidator(repository, new NullLogger<OpenAttendanceValidator>()), new FakeCurrentUserService(), new NullLogger<CreateAttendanceUseCase>());
+        var controller = new AttendancesController(createUseCase, new GetAttendanceByIdUseCase(repository, new NullLogger<GetAttendanceByIdUseCase>()), new ListAttendancesUseCase(repository, new NullLogger<ListAttendancesUseCase>()), new CloseAttendanceUseCase(repository, new FakeCurrentUserService(), new NullLogger<CloseAttendanceUseCase>()), new CancelAttendanceUseCase(repository, new FakeCurrentUserService(), new NullLogger<CancelAttendanceUseCase>()), new NullLogger<AttendancesController>());
         return new TestContext(controller, repository);
     }
 
-    private static Attendance CreateAttendance(string number) => Attendance.Create(1, number, DateTime.UtcNow, AttendanceType.Consultation);
+    private static Attendance CreateAttendance(string number) => Attendance.Create(1, number, DateTime.UtcNow, AttendanceType.Consultation, TestUserId, TestCreatedAt);
     private sealed record TestContext(AttendancesController Controller, FakeAttendanceRepository Repository);
 
     private sealed class NullLogger<T> : ILogger<T>
@@ -134,6 +137,11 @@ public sealed class AttendancesControllerTests
         public Task<bool> ExistsByAttendanceNumberAsync(string attendanceNumber, CancellationToken cancellationToken = default) => Task.FromResult(ExistingAttendanceNumbers.Contains(attendanceNumber));
         public Task<bool> HasOpenAttendanceForPatientAsync(long patientId, CancellationToken cancellationToken = default) => Task.FromResult(PatientsWithOpenAttendance.Contains(patientId));
     }
+    private sealed class FakeCurrentUserService : ICurrentUserService
+    {
+        public CurrentUserInfo GetCurrentUser() => new(TestUserId, Profile: "Veterinarian", IsAuthenticated: true);
+    }
+
     private sealed class FakePetRepository(bool patientExists) : IPetRepository
     {
         public Task<IReadOnlyList<PetListItemProjection>> ListAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<PetListItemProjection>>([]);
