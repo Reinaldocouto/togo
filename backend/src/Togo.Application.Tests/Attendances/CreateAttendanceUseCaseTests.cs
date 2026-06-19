@@ -66,7 +66,6 @@ public sealed class CreateAttendanceUseCaseTests
         Assert.Null(attendanceRepository.LastExistsByAttendanceNumberInput);
         Assert.Null(attendanceRepository.LastHasOpenAttendancePatientIdInput);
         Assert.Empty(auditLogWriter.Events);
-        Assert.Empty(auditLogWriter.Events);
     }
 
     [Fact]
