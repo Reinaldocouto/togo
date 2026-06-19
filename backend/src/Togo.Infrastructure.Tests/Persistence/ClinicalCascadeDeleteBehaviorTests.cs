@@ -10,6 +10,8 @@ namespace Togo.Infrastructure.Tests.Persistence;
 
 public class ClinicalCascadeDeleteBehaviorTests
 {
+    private static readonly Guid TestUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly DateTime TestCreatedAt = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     private static readonly Guid ClinicalUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
     private static readonly Guid DeletingUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
@@ -57,7 +59,7 @@ public class ClinicalCascadeDeleteBehaviorTests
         await using var _ = connection;
 
         var patient = await AddPatientAsync(context, "Patient with attendance and medical record");
-        var attendance = Attendance.Create(patient.Id, "ATD-CASCADE-001", new DateTime(2026, 6, 5, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
+        var attendance = Attendance.Create(patient.Id, "ATD-CASCADE-001", new DateTime(2026, 6, 5, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         var medicalRecord = MedicalRecord.Create(
             patient.Id,
             "Medical record must remain when patient delete is blocked",
@@ -160,7 +162,7 @@ public class ClinicalCascadeDeleteBehaviorTests
     private static async Task<Attendance> AddAttendanceAsync(AppDbContext context, string patientName, string attendanceNumber)
     {
         var patient = await AddPatientAsync(context, patientName);
-        var attendance = Attendance.Create(patient.Id, attendanceNumber, new DateTime(2026, 6, 5, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation);
+        var attendance = Attendance.Create(patient.Id, attendanceNumber, new DateTime(2026, 6, 5, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         context.Attendances.Add(attendance);
         await context.SaveChangesAsync();
         return attendance;

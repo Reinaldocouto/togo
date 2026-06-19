@@ -9,6 +9,8 @@ namespace Togo.Application.Tests.Attendances;
 
 public sealed class GetAttendanceByIdUseCaseTests
 {
+    private static readonly Guid TestUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly DateTime TestCreatedAt = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -47,7 +49,7 @@ public sealed class GetAttendanceByIdUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long attendanceLookupId = 123;
         var openedAt = new DateTime(2026, 02, 10, 09, 00, 00, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-GET-001", openedAt, AttendanceType.Consultation);
+        var attendance = Attendance.Create(12, "ATT-GET-001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(attendanceLookupId, attendance);
         var useCase = CreateUseCase(repository);
 

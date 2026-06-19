@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Togo.Application.Attendances.Contracts;
 using Togo.Application.Attendances.Repositories;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
 
@@ -9,13 +10,16 @@ namespace Togo.Application.Attendances.UseCases;
 public class CancelAttendanceUseCase
 {
     private readonly IAttendanceRepository _attendanceRepository;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CancelAttendanceUseCase> _logger;
 
     public CancelAttendanceUseCase(
         IAttendanceRepository attendanceRepository,
+        ICurrentUserService currentUserService,
         ILogger<CancelAttendanceUseCase> logger)
     {
         _attendanceRepository = attendanceRepository;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -38,9 +42,11 @@ public class CancelAttendanceUseCase
             return ApplicationResult<AttendanceResponse>.NotFound("Attendance not found.");
         }
 
+        var currentUser = _currentUserService.GetCurrentUser();
+
         try
         {
-            attendance.Cancel();
+            attendance.Cancel(currentUser.UserId, DateTime.UtcNow);
             await _attendanceRepository.UpdateAsync(attendance, cancellationToken);
 
             _logger.LogInformation("Attendance canceled successfully. AttendanceId: {AttendanceId}", id);

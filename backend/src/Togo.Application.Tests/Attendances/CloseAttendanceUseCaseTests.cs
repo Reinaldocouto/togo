@@ -1,6 +1,8 @@
 using Togo.Application.Attendances.Contracts;
 using Togo.Application.Attendances.UseCases;
 using Togo.Application.Tests.Attendances.Fakes;
+using Togo.Application.Security;
+using Togo.Application.Tests.Security.Fakes;
 using Togo.Application.Tests.Pets.Fakes;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
@@ -10,6 +12,9 @@ namespace Togo.Application.Tests.Attendances;
 
 public sealed class CloseAttendanceUseCaseTests
 {
+    private static readonly Guid CurrentUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid TestUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly DateTime TestCreatedAt = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -53,7 +58,7 @@ public sealed class CloseAttendanceUseCaseTests
         const long lookupId = 123;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
         var closedAt = new DateTime(2026, 02, 10, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-001", openedAt, AttendanceType.Consultation);
+        var attendance = Attendance.Create(12, "ATT-CLOSE-001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
 
@@ -74,7 +79,7 @@ public sealed class CloseAttendanceUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long lookupId = 124;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-002", openedAt, AttendanceType.Consultation);
+        var attendance = Attendance.Create(12, "ATT-CLOSE-002", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
         var closedAt = default(DateTime);
@@ -94,7 +99,7 @@ public sealed class CloseAttendanceUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long lookupId = 125;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-003", openedAt, AttendanceType.Consultation);
+        var attendance = Attendance.Create(12, "ATT-CLOSE-003", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
 
@@ -115,8 +120,8 @@ public sealed class CloseAttendanceUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long lookupId = 126;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-004", openedAt, AttendanceType.Consultation);
-        attendance.Close(new DateTime(2026, 02, 10, 10, 0, 0, DateTimeKind.Utc));
+        var attendance = Attendance.Create(12, "ATT-CLOSE-004", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        attendance.Close(new DateTime(2026, 02, 10, 10, 0, 0, DateTimeKind.Utc), TestUserId, TestCreatedAt.AddHours(1));
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
 
@@ -137,8 +142,8 @@ public sealed class CloseAttendanceUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long lookupId = 127;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-005", openedAt, AttendanceType.Consultation);
-        attendance.Cancel();
+        var attendance = Attendance.Create(12, "ATT-CLOSE-005", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        attendance.Cancel(TestUserId, TestCreatedAt.AddHours(1));
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
 
@@ -153,6 +158,20 @@ public sealed class CloseAttendanceUseCaseTests
         Assert.Equal(0, repository.UpdateCallsCount);
     }
 
-    private static CloseAttendanceUseCase CreateUseCase(FakeAttendanceRepository repository) =>
-        new(repository, new TestLogger<CloseAttendanceUseCase>());
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrowCurrentUserResolutionException_WhenCurrentUserDoesNotResolve()
+    {
+        var repository = new FakeAttendanceRepository();
+        var lookupId = 123L;
+        var attendance = Attendance.Create(12, "ATT-USER-FAIL", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        repository.AddAttendanceForLookup(lookupId, attendance);
+        var currentUserService = new FakeCurrentUserService(CurrentUserId) { ThrowResolutionException = true };
+        var useCase = CreateUseCase(repository, currentUserService);
+
+        await Assert.ThrowsAsync<CurrentUserResolutionException>(() =>
+            useCase.ExecuteAsync(lookupId, new CloseAttendanceRequest(new DateTime(2026, 03, 10, 10, 0, 0, DateTimeKind.Utc)), CancellationToken.None));
+    }
+
+    private static CloseAttendanceUseCase CreateUseCase(FakeAttendanceRepository repository, FakeCurrentUserService? currentUserService = null) =>
+        new(repository, currentUserService ?? new FakeCurrentUserService(CurrentUserId), new TestLogger<CloseAttendanceUseCase>());
 }

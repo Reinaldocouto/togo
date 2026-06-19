@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Togo.Application.Attendances.Contracts;
 using Togo.Application.Attendances.Repositories;
 using Togo.Application.Attendances.Validators;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
 
@@ -13,6 +14,7 @@ public class CreateAttendanceUseCase
     private readonly AttendancePatientExistsValidator _attendancePatientExistsValidator;
     private readonly AttendanceNumberUniqueValidator _attendanceNumberUniqueValidator;
     private readonly OpenAttendanceValidator _openAttendanceValidator;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CreateAttendanceUseCase> _logger;
 
     public CreateAttendanceUseCase(
@@ -20,12 +22,14 @@ public class CreateAttendanceUseCase
         AttendancePatientExistsValidator attendancePatientExistsValidator,
         AttendanceNumberUniqueValidator attendanceNumberUniqueValidator,
         OpenAttendanceValidator openAttendanceValidator,
+        ICurrentUserService currentUserService,
         ILogger<CreateAttendanceUseCase> logger)
     {
         _attendanceRepository = attendanceRepository;
         _attendancePatientExistsValidator = attendancePatientExistsValidator;
         _attendanceNumberUniqueValidator = attendanceNumberUniqueValidator;
         _openAttendanceValidator = openAttendanceValidator;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -58,7 +62,9 @@ public class CreateAttendanceUseCase
 
         try
         {
-            var attendance = Attendance.Create(request.PatientId, request.AttendanceNumber, request.OpenedAt, request.Type);
+            var currentUser = _currentUserService.GetCurrentUser();
+            var createdAtUtc = DateTime.UtcNow;
+            var attendance = Attendance.Create(request.PatientId, request.AttendanceNumber, request.OpenedAt, request.Type, currentUser.UserId, createdAtUtc);
             await _attendanceRepository.AddAsync(attendance, cancellationToken);
 
             _logger.LogInformation("Attendance created successfully. PatientId: {PatientId}. AttendanceId: {AttendanceId}", request.PatientId, attendance.Id);
