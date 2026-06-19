@@ -8,6 +8,7 @@ using Togo.Application.Attendances.Contracts;
 using Togo.Application.Attendances.Repositories;
 using Togo.Application.Attendances.UseCases;
 using Togo.Application.Attendances.Validators;
+using Togo.Application.Auditing;
 using Togo.Application.Pets;
 using Togo.Application.Security;
 using Togo.Application.Pets.Contracts;
@@ -110,8 +111,9 @@ public sealed class AttendancesControllerTests
     {
         var repository = new FakeAttendanceRepository();
         var petRepository = new FakePetRepository(patientExists);
-        var createUseCase = new CreateAttendanceUseCase(repository, new AttendancePatientExistsValidator(petRepository, new NullLogger<AttendancePatientExistsValidator>()), new AttendanceNumberUniqueValidator(repository, new NullLogger<AttendanceNumberUniqueValidator>()), new OpenAttendanceValidator(repository, new NullLogger<OpenAttendanceValidator>()), new FakeCurrentUserService(), new NullLogger<CreateAttendanceUseCase>());
-        var controller = new AttendancesController(createUseCase, new GetAttendanceByIdUseCase(repository, new NullLogger<GetAttendanceByIdUseCase>()), new ListAttendancesUseCase(repository, new NullLogger<ListAttendancesUseCase>()), new CloseAttendanceUseCase(repository, new FakeCurrentUserService(), new NullLogger<CloseAttendanceUseCase>()), new CancelAttendanceUseCase(repository, new FakeCurrentUserService(), new NullLogger<CancelAttendanceUseCase>()), new NullLogger<AttendancesController>());
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var createUseCase = new CreateAttendanceUseCase(repository, new AttendancePatientExistsValidator(petRepository, new NullLogger<AttendancePatientExistsValidator>()), new AttendanceNumberUniqueValidator(repository, new NullLogger<AttendanceNumberUniqueValidator>()), new OpenAttendanceValidator(repository, new NullLogger<OpenAttendanceValidator>()), new FakeCurrentUserService(), auditLogWriter, new NullLogger<CreateAttendanceUseCase>());
+        var controller = new AttendancesController(createUseCase, new GetAttendanceByIdUseCase(repository, new NullLogger<GetAttendanceByIdUseCase>()), new ListAttendancesUseCase(repository, new NullLogger<ListAttendancesUseCase>()), new CloseAttendanceUseCase(repository, new FakeCurrentUserService(), auditLogWriter, new NullLogger<CloseAttendanceUseCase>()), new CancelAttendanceUseCase(repository, new FakeCurrentUserService(), auditLogWriter, new NullLogger<CancelAttendanceUseCase>()), new NullLogger<AttendancesController>());
         return new TestContext(controller, repository);
     }
 
@@ -140,6 +142,11 @@ public sealed class AttendancesControllerTests
     private sealed class FakeCurrentUserService : ICurrentUserService
     {
         public CurrentUserInfo GetCurrentUser() => new(TestUserId, Profile: "Veterinarian", IsAuthenticated: true);
+    }
+
+    private sealed class FakeClinicalAuditLogWriter : IClinicalAuditLogWriter
+    {
+        public Task WriteAsync(ClinicalAuditEvent auditEvent, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakePetRepository(bool patientExists) : IPetRepository

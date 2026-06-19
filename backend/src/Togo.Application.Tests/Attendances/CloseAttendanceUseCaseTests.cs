@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Togo.Application.Attendances.Contracts;
+using Togo.Application.Auditing;
 using Togo.Application.Attendances.UseCases;
 using Togo.Application.Tests.Attendances.Fakes;
 using Togo.Application.Security;
@@ -21,7 +23,8 @@ public sealed class CloseAttendanceUseCaseTests
     public async Task ExecuteAsync_ShouldReturnValidationError_WhenIdIsInvalid(long id)
     {
         var repository = new FakeAttendanceRepository();
-        var useCase = CreateUseCase(repository);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var useCase = CreateUseCase(repository, auditLogWriter: auditLogWriter);
         var request = new CloseAttendanceRequest(new DateTime(2026, 02, 11, 9, 0, 0, DateTimeKind.Utc));
 
         var result = await useCase.ExecuteAsync(id, request, CancellationToken.None);
@@ -32,13 +35,15 @@ public sealed class CloseAttendanceUseCaseTests
         Assert.Null(result.Data);
         Assert.Equal(0, repository.GetByIdCallsCount);
         Assert.Equal(0, repository.UpdateCallsCount);
+        Assert.Empty(auditLogWriter.Events);
     }
 
     [Fact]
     public async Task ExecuteAsync_ShouldReturnNotFound_WhenAttendanceDoesNotExist()
     {
         var repository = new FakeAttendanceRepository();
-        var useCase = CreateUseCase(repository);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var useCase = CreateUseCase(repository, auditLogWriter: auditLogWriter);
         var request = new CloseAttendanceRequest(new DateTime(2026, 02, 11, 9, 0, 0, DateTimeKind.Utc));
 
         var result = await useCase.ExecuteAsync(999, request, CancellationToken.None);
@@ -49,6 +54,7 @@ public sealed class CloseAttendanceUseCaseTests
         Assert.Null(result.Data);
         Assert.Equal(1, repository.GetByIdCallsCount);
         Assert.Equal(0, repository.UpdateCallsCount);
+        Assert.Empty(auditLogWriter.Events);
     }
 
     [Fact]
@@ -60,7 +66,9 @@ public sealed class CloseAttendanceUseCaseTests
         var closedAt = new DateTime(2026, 02, 10, 10, 0, 0, DateTimeKind.Utc);
         var attendance = Attendance.Create(12, "ATT-CLOSE-001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
-        var useCase = CreateUseCase(repository);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var currentUserService = new FakeCurrentUserService(CurrentUserId) { CurrentUser = new CurrentUserInfo(CurrentUserId, "Veterinarian", true) };
+        var useCase = CreateUseCase(repository, currentUserService, auditLogWriter);
 
         var result = await useCase.ExecuteAsync(lookupId, new CloseAttendanceRequest(closedAt), CancellationToken.None);
 
@@ -71,6 +79,14 @@ public sealed class CloseAttendanceUseCaseTests
         Assert.Equal(closedAt, result.Data.ClosedAt);
         Assert.Equal(1, repository.GetByIdCallsCount);
         Assert.Equal(1, repository.UpdateCallsCount);
+
+        var auditEvent = Assert.Single(auditLogWriter.Events);
+        Assert.Equal(nameof(Attendance), auditEvent.EntityName);
+        Assert.Equal(attendance.Id.ToString(), auditEvent.EntityId);
+        Assert.Equal(AttendanceAuditActions.Closed, auditEvent.Action);
+        Assert.Equal(CurrentUserId, auditEvent.UserId);
+        Assert.Equal("Veterinarian", auditEvent.UserProfile);
+        AssertAuditMetadata(auditEvent.MetadataJson, attendance.PatientId, AttendanceStatus.Closed);
     }
 
     [Fact]
@@ -166,12 +182,37 @@ public sealed class CloseAttendanceUseCaseTests
         var attendance = Attendance.Create(12, "ATT-USER-FAIL", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var currentUserService = new FakeCurrentUserService(CurrentUserId) { ThrowResolutionException = true };
-        var useCase = CreateUseCase(repository, currentUserService);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var useCase = CreateUseCase(repository, currentUserService, auditLogWriter);
 
         await Assert.ThrowsAsync<CurrentUserResolutionException>(() =>
             useCase.ExecuteAsync(lookupId, new CloseAttendanceRequest(new DateTime(2026, 03, 10, 10, 0, 0, DateTimeKind.Utc)), CancellationToken.None));
+
+        Assert.Empty(auditLogWriter.Events);
     }
 
-    private static CloseAttendanceUseCase CreateUseCase(FakeAttendanceRepository repository, FakeCurrentUserService? currentUserService = null) =>
-        new(repository, currentUserService ?? new FakeCurrentUserService(CurrentUserId), new TestLogger<CloseAttendanceUseCase>());
+    private static CloseAttendanceUseCase CreateUseCase(
+        FakeAttendanceRepository repository,
+        FakeCurrentUserService? currentUserService = null,
+        FakeClinicalAuditLogWriter? auditLogWriter = null) =>
+        new(
+            repository,
+            currentUserService ?? new FakeCurrentUserService(CurrentUserId),
+            auditLogWriter ?? new FakeClinicalAuditLogWriter(),
+            new TestLogger<CloseAttendanceUseCase>());
+
+    private static void AssertAuditMetadata(string? metadataJson, long expectedPatientId, AttendanceStatus expectedStatus)
+    {
+        Assert.False(string.IsNullOrWhiteSpace(metadataJson));
+        using var metadata = JsonDocument.Parse(metadataJson);
+        var root = metadata.RootElement;
+
+        Assert.Equal(2, root.EnumerateObject().Count());
+        Assert.Equal(expectedPatientId, root.GetProperty("PatientId").GetInt64());
+        Assert.Equal(expectedStatus.ToString(), root.GetProperty("Status").GetString());
+        Assert.False(root.TryGetProperty("GeneralNotes", out _));
+        Assert.False(root.TryGetProperty("FlagsJson", out _));
+        Assert.False(root.TryGetProperty("Prescription", out _));
+        Assert.False(root.TryGetProperty("ClinicalEvolution", out _));
+    }
 }

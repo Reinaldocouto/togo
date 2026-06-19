@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Togo.Application.Attendances.Contracts;
+using Togo.Application.Auditing;
 using Togo.Application.Attendances.UseCases;
 using Togo.Application.Attendances.Validators;
 using Togo.Application.Tests.Attendances.Fakes;
@@ -19,7 +21,9 @@ public sealed class CreateAttendanceUseCaseTests
         var attendanceRepository = new FakeAttendanceRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        var useCase = CreateUseCase(attendanceRepository, petRepository);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var currentUserService = new FakeCurrentUserService(CurrentUserId) { CurrentUser = new CurrentUserInfo(CurrentUserId, "Veterinarian", true) };
+        var useCase = CreateUseCase(attendanceRepository, petRepository, currentUserService, auditLogWriter);
         var request = CreateValidRequest(patientId: patientId);
 
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
@@ -35,6 +39,14 @@ public sealed class CreateAttendanceUseCaseTests
         Assert.Equal(request.Type, result.Data.Type);
 
         Assert.Equal(1, attendanceRepository.AddCallsCount);
+
+        var auditEvent = Assert.Single(auditLogWriter.Events);
+        Assert.Equal(nameof(Togo.Domain.Entities.Attendance), auditEvent.EntityName);
+        Assert.Equal(AttendanceAuditActions.Created, auditEvent.Action);
+        Assert.Equal(CurrentUserId, auditEvent.UserId);
+        Assert.Equal("Veterinarian", auditEvent.UserProfile);
+        Assert.Equal(result.Data.Id.ToString(), auditEvent.EntityId);
+        AssertAuditMetadata(auditEvent.MetadataJson, patientId, AttendanceStatus.Open);
     }
 
     [Fact]
@@ -42,7 +54,8 @@ public sealed class CreateAttendanceUseCaseTests
     {
         var attendanceRepository = new FakeAttendanceRepository();
         var petRepository = new FakePetRepository();
-        var useCase = CreateUseCase(attendanceRepository, petRepository);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var useCase = CreateUseCase(attendanceRepository, petRepository, auditLogWriter: auditLogWriter);
         var request = CreateValidRequest(patientId: 999);
 
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
@@ -52,6 +65,8 @@ public sealed class CreateAttendanceUseCaseTests
         Assert.Equal(0, attendanceRepository.AddCallsCount);
         Assert.Null(attendanceRepository.LastExistsByAttendanceNumberInput);
         Assert.Null(attendanceRepository.LastHasOpenAttendancePatientIdInput);
+        Assert.Empty(auditLogWriter.Events);
+        Assert.Empty(auditLogWriter.Events);
     }
 
     [Fact]
@@ -61,7 +76,8 @@ public sealed class CreateAttendanceUseCaseTests
         attendanceRepository.AddExistingAttendanceNumber("ATT-001");
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        var useCase = CreateUseCase(attendanceRepository, petRepository);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var useCase = CreateUseCase(attendanceRepository, petRepository, auditLogWriter: auditLogWriter);
         var request = CreateValidRequest(patientId: patientId, attendanceNumber: "ATT-001");
 
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
@@ -70,6 +86,7 @@ public sealed class CreateAttendanceUseCaseTests
         Assert.Equal("An attendance with this number already exists.", result.Error);
         Assert.Equal(0, attendanceRepository.AddCallsCount);
         Assert.Null(attendanceRepository.LastHasOpenAttendancePatientIdInput);
+        Assert.Empty(auditLogWriter.Events);
     }
 
     [Fact]
@@ -79,7 +96,8 @@ public sealed class CreateAttendanceUseCaseTests
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
         attendanceRepository.AddOpenAttendancePatient(patientId);
-        var useCase = CreateUseCase(attendanceRepository, petRepository);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var useCase = CreateUseCase(attendanceRepository, petRepository, auditLogWriter: auditLogWriter);
         var request = CreateValidRequest(patientId: patientId);
 
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
@@ -87,6 +105,7 @@ public sealed class CreateAttendanceUseCaseTests
         Assert.Equal(ApplicationResultType.Conflict, result.Type);
         Assert.Equal("Patient already has an open attendance.", result.Error);
         Assert.Equal(0, attendanceRepository.AddCallsCount);
+        Assert.Empty(auditLogWriter.Events);
     }
 
     [Fact]
@@ -147,16 +166,20 @@ public sealed class CreateAttendanceUseCaseTests
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
         var currentUserService = new FakeCurrentUserService(CurrentUserId) { ThrowResolutionException = true };
-        var useCase = CreateUseCase(attendanceRepository, petRepository, currentUserService);
+        var auditLogWriter = new FakeClinicalAuditLogWriter();
+        var useCase = CreateUseCase(attendanceRepository, petRepository, currentUserService, auditLogWriter);
 
         await Assert.ThrowsAsync<CurrentUserResolutionException>(() =>
             useCase.ExecuteAsync(CreateValidRequest(patientId: patientId), CancellationToken.None));
+
+        Assert.Empty(auditLogWriter.Events);
     }
 
     private static CreateAttendanceUseCase CreateUseCase(
         FakeAttendanceRepository attendanceRepository,
         FakePetRepository petRepository,
-        FakeCurrentUserService? currentUserService = null)
+        FakeCurrentUserService? currentUserService = null,
+        FakeClinicalAuditLogWriter? auditLogWriter = null)
     {
         var patientExistsValidator = new AttendancePatientExistsValidator(
             petRepository,
@@ -174,7 +197,23 @@ public sealed class CreateAttendanceUseCaseTests
             attendanceNumberUniqueValidator,
             openAttendanceValidator,
             currentUserService ?? new FakeCurrentUserService(CurrentUserId),
+            auditLogWriter ?? new FakeClinicalAuditLogWriter(),
             new TestLogger<CreateAttendanceUseCase>());
+    }
+
+    private static void AssertAuditMetadata(string? metadataJson, long expectedPatientId, AttendanceStatus expectedStatus)
+    {
+        Assert.False(string.IsNullOrWhiteSpace(metadataJson));
+        using var metadata = JsonDocument.Parse(metadataJson);
+        var root = metadata.RootElement;
+
+        Assert.Equal(2, root.EnumerateObject().Count());
+        Assert.Equal(expectedPatientId, root.GetProperty("PatientId").GetInt64());
+        Assert.Equal(expectedStatus.ToString(), root.GetProperty("Status").GetString());
+        Assert.False(root.TryGetProperty("GeneralNotes", out _));
+        Assert.False(root.TryGetProperty("FlagsJson", out _));
+        Assert.False(root.TryGetProperty("Prescription", out _));
+        Assert.False(root.TryGetProperty("ClinicalEvolution", out _));
     }
 
     private static CreateAttendanceRequest CreateValidRequest(
