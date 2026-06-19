@@ -35,8 +35,8 @@ Foram adicionados a `Attendance`:
 - `backend/src/Togo.Application/Attendances/UseCases/CloseAttendanceUseCase.cs`
 - `backend/src/Togo.Application/Attendances/UseCases/CancelAttendanceUseCase.cs`
 - `backend/src/Togo.Infrastructure/Persistence/Configurations/AttendanceConfiguration.cs`
-- `backend/src/Togo.Infrastructure/Persistence/Migrations/20260619120000_AddAttendanceAuthorship.cs`
-- `backend/src/Togo.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs`
+- `backend/src/Togo.Infrastructure/Migrations/20260619120000_AddAttendanceAuthorship.cs`
+- `backend/src/Togo.Infrastructure/Migrations/AppDbContextModelSnapshot.cs`
 - Testes de domínio, aplicação, API e infraestrutura relacionados a `Attendance`.
 
 ## 7. Impacto em domínio
