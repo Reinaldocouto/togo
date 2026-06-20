@@ -11,6 +11,8 @@ using Togo.Application.Security;
 using Togo.Application.Attendances.UseCases;
 using Togo.Application.Attendances.Validators;
 using Togo.Application.Attendances.Repositories;
+using Togo.Application.ClinicalEvolutions.Repositories;
+using Togo.Application.ClinicalEvolutions.UseCases;
 using Togo.Application.MedicalRecords.Repositories;
 using Togo.Application.MedicalRecords.UseCases;
 using Togo.Application.MedicalRecords.Validators;
@@ -51,6 +53,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITutorRepository, TutorRepository>();
 builder.Services.AddScoped<IPetRepository, PetRepository>();
 builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+builder.Services.AddScoped<IClinicalEvolutionRepository, ClinicalEvolutionRepository>();
 builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
 builder.Services.AddScoped<IClinicalAuditLogWriter, EfClinicalAuditLogWriter>();
 builder.Services.AddScoped<IAuthenticateUser, AuthenticateUserService>();
@@ -69,6 +72,8 @@ builder.Services.AddScoped<GetAttendanceByIdUseCase>();
 builder.Services.AddScoped<ListAttendancesUseCase>();
 builder.Services.AddScoped<CloseAttendanceUseCase>();
 builder.Services.AddScoped<CancelAttendanceUseCase>();
+builder.Services.AddScoped<CreateClinicalEvolutionUseCase>();
+builder.Services.AddScoped<ListClinicalEvolutionsByAttendanceUseCase>();
 builder.Services.AddScoped<CreateMedicalRecordUseCase>();
 builder.Services.AddScoped<GetMedicalRecordByPatientIdUseCase>();
 builder.Services.AddScoped<UpdateMedicalRecordUseCase>();
@@ -106,6 +111,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddMedicalRecordPolicies();
     options.AddAttendancePolicies();
+    options.AddClinicalEvolutionPolicies();
 });
 
 // ====== CORS ======
