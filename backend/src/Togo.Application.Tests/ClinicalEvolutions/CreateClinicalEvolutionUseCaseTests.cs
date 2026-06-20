@@ -113,7 +113,7 @@ public sealed class CreateClinicalEvolutionUseCaseTests
         attendanceRepository.AddAttendanceForLookup(10, CreateOpenAttendance());
         var repository = new FakeClinicalEvolutionRepository();
 
-        var result = await CreateUseCase(attendanceRepository, repository).ExecuteAsync(10, CreateRequest(10, registeredAt: default), CancellationToken.None);
+        var result = await CreateUseCase(attendanceRepository, repository).ExecuteAsync(10, CreateRequest(10, registeredAt: default(DateTime)), CancellationToken.None);
 
         Assert.Equal(ApplicationResultType.ValidationError, result.Type);
         Assert.Equal(0, repository.AddCallsCount);
