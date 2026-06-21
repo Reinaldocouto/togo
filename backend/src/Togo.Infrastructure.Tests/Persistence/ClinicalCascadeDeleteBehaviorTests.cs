@@ -90,7 +90,9 @@ public class ClinicalCascadeDeleteBehaviorTests
             attendance.Id,
             new DateTime(2026, 6, 5, 9, 0, 0, DateTimeKind.Utc),
             EvolutionType.ClinicalNote,
-            "Evolution must not be physically deleted through Attendance cascade.");
+            "Evolution must not be physically deleted through Attendance cascade.",
+            Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            new DateTime(2026, 6, 5, 10, 0, 0, DateTimeKind.Utc));
 
         context.ClinicalEvolutions.Add(evolution);
         await context.SaveChangesAsync();

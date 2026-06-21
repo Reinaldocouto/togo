@@ -17,6 +17,10 @@ public class ClinicalEvolutionConfiguration : IEntityTypeConfiguration<ClinicalE
         builder.Property(e => e.RegisteredAt).IsRequired();
         builder.Property(e => e.Type).IsRequired().HasConversion<string>();
         builder.Property(e => e.Text).IsRequired().HasColumnType("text");
+        builder.Property(e => e.CreatedByUserId).IsRequired();
+        builder.Property(e => e.CreatedAt).IsRequired();
+        builder.Property(e => e.UpdatedByUserId).IsRequired();
+        builder.Property(e => e.UpdatedAt).IsRequired();
 
         builder.HasOne<Attendance>()
             .WithMany()

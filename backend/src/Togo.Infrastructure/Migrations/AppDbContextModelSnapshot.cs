@@ -73,6 +73,12 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<Guid>("UpdatedByUserId")
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AttendanceNumber")
@@ -96,6 +102,12 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<long>("AttendanceId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime>("RegisteredAt")
                         .HasColumnType("datetime(6)");
 
@@ -106,6 +118,12 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -242,6 +260,12 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");

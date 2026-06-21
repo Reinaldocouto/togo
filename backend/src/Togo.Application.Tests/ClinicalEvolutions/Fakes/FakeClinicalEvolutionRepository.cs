@@ -7,6 +7,8 @@ internal sealed class FakeClinicalEvolutionRepository : IClinicalEvolutionReposi
 {
     private readonly List<ClinicalEvolution> _items = [];
 
+    public IReadOnlyList<ClinicalEvolution> Items => _items;
+
     public int AddCallsCount { get; private set; }
     public int ListByAttendanceIdCallsCount { get; private set; }
 

@@ -19,7 +19,7 @@ public sealed class ListClinicalEvolutionsByAttendanceUseCaseTests
         var attendanceRepository = new FakeAttendanceRepository();
         attendanceRepository.AddAttendanceForLookup(10, CreateOpenAttendance());
         var repository = new FakeClinicalEvolutionRepository();
-        repository.AddClinicalEvolution(ClinicalEvolution.Create(10, RegisteredAt, EvolutionType.ClinicalNote, "Sensitive text"));
+        repository.AddClinicalEvolution(ClinicalEvolution.Create(10, RegisteredAt, EvolutionType.ClinicalNote, "Sensitive text", TestUserId, TestCreatedAt));
 
         var result = await new ListClinicalEvolutionsByAttendanceUseCase(attendanceRepository, repository).ExecuteAsync(10, CancellationToken.None);
 
