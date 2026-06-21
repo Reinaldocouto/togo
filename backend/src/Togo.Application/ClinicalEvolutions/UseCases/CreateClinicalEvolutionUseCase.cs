@@ -1,7 +1,10 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Togo.Application.Attendances.Repositories;
+using Togo.Application.Auditing;
 using Togo.Application.ClinicalEvolutions.Contracts;
 using Togo.Application.ClinicalEvolutions.Repositories;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
 using Togo.Domain.Enums;
@@ -12,15 +15,21 @@ public class CreateClinicalEvolutionUseCase
 {
     private readonly IAttendanceRepository _attendanceRepository;
     private readonly IClinicalEvolutionRepository _clinicalEvolutionRepository;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IClinicalAuditLogWriter _clinicalAuditLogWriter;
     private readonly ILogger<CreateClinicalEvolutionUseCase> _logger;
 
     public CreateClinicalEvolutionUseCase(
         IAttendanceRepository attendanceRepository,
         IClinicalEvolutionRepository clinicalEvolutionRepository,
+        ICurrentUserService currentUserService,
+        IClinicalAuditLogWriter clinicalAuditLogWriter,
         ILogger<CreateClinicalEvolutionUseCase> logger)
     {
         _attendanceRepository = attendanceRepository;
         _clinicalEvolutionRepository = clinicalEvolutionRepository;
+        _currentUserService = currentUserService;
+        _clinicalAuditLogWriter = clinicalAuditLogWriter;
         _logger = logger;
     }
 
@@ -62,13 +71,18 @@ public class CreateClinicalEvolutionUseCase
 
         try
         {
+            var currentUser = _currentUserService.GetCurrentUser();
+            var createdAtUtc = DateTime.UtcNow;
             var clinicalEvolution = ClinicalEvolution.Create(
                 request.AttendanceId,
                 request.RegisteredAt,
                 request.Type,
-                request.Text);
+                request.Text,
+                currentUser.UserId,
+                createdAtUtc);
 
             await _clinicalEvolutionRepository.AddAsync(clinicalEvolution, cancellationToken);
+            await WriteCreatedAuditLogAsync(clinicalEvolution, currentUser, cancellationToken);
 
             return ApplicationResult<ClinicalEvolutionResponse>.Success(ToResponse(clinicalEvolution));
         }
@@ -78,6 +92,23 @@ public class CreateClinicalEvolutionUseCase
             return ApplicationResult<ClinicalEvolutionResponse>.ValidationError(ex.Message);
         }
     }
+
+    private async Task WriteCreatedAuditLogAsync(ClinicalEvolution clinicalEvolution, CurrentUserInfo currentUser, CancellationToken cancellationToken)
+    {
+        var auditEvent = new ClinicalAuditEvent(
+            EntityName: nameof(ClinicalEvolution),
+            EntityId: clinicalEvolution.Id.ToString(),
+            Action: ClinicalEvolutionAuditActions.Created,
+            UserId: currentUser.UserId,
+            UserProfile: currentUser.Profile,
+            OccurredAt: DateTime.UtcNow,
+            MetadataJson: CreateMetadataJson(clinicalEvolution.AttendanceId, clinicalEvolution.Type));
+
+        await _clinicalAuditLogWriter.WriteAsync(auditEvent, cancellationToken);
+    }
+
+    private static string CreateMetadataJson(long attendanceId, EvolutionType type) =>
+        JsonSerializer.Serialize(new { AttendanceId = attendanceId, Type = type.ToString() });
 
     private static ClinicalEvolutionResponse ToResponse(ClinicalEvolution clinicalEvolution) =>
         new(

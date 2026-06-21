@@ -8,6 +8,8 @@ namespace Togo.Infrastructure.Tests.Repositories;
 
 public class ClinicalEvolutionRepositoryTests
 {
+    private static readonly Guid UserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly DateTime CreatedAt = new(2026, 6, 20, 12, 0, 0, DateTimeKind.Utc);
     [Fact]
     public async Task AddAsync_ShouldPersistClinicalEvolution()
     {
@@ -15,13 +17,17 @@ public class ClinicalEvolutionRepositoryTests
         await using var _ = connection;
         var repository = new ClinicalEvolutionRepository(context);
         var attendance = await AddAttendanceAsync(context, "ATT-CE-001");
-        var evolution = ClinicalEvolution.Create(attendance.Id, new DateTime(2026, 6, 20, 10, 0, 0, DateTimeKind.Utc), EvolutionType.ClinicalNote, "note");
+        var evolution = ClinicalEvolution.Create(attendance.Id, new DateTime(2026, 6, 20, 10, 0, 0, DateTimeKind.Utc), EvolutionType.ClinicalNote, "note", UserId, CreatedAt);
 
         await repository.AddAsync(evolution);
 
         var persisted = await context.ClinicalEvolutions.AsNoTracking().SingleAsync();
         Assert.Equal(attendance.Id, persisted.AttendanceId);
         Assert.Equal("note", persisted.Text);
+        Assert.Equal(UserId, persisted.CreatedByUserId);
+        Assert.Equal(CreatedAt, persisted.CreatedAt);
+        Assert.Equal(UserId, persisted.UpdatedByUserId);
+        Assert.Equal(CreatedAt, persisted.UpdatedAt);
     }
 
     [Fact]
@@ -32,9 +38,9 @@ public class ClinicalEvolutionRepositoryTests
         var repository = new ClinicalEvolutionRepository(context);
         var attendance = await AddAttendanceAsync(context, "ATT-CE-002");
         var otherAttendance = await AddAttendanceAsync(context, "ATT-CE-003");
-        var later = ClinicalEvolution.Create(attendance.Id, new DateTime(2026, 6, 20, 11, 0, 0, DateTimeKind.Utc), EvolutionType.ClinicalNote, "later");
-        var earlier = ClinicalEvolution.Create(attendance.Id, new DateTime(2026, 6, 20, 9, 0, 0, DateTimeKind.Utc), EvolutionType.ClinicalNote, "earlier");
-        var other = ClinicalEvolution.Create(otherAttendance.Id, new DateTime(2026, 6, 20, 8, 0, 0, DateTimeKind.Utc), EvolutionType.ClinicalNote, "other");
+        var later = ClinicalEvolution.Create(attendance.Id, new DateTime(2026, 6, 20, 11, 0, 0, DateTimeKind.Utc), EvolutionType.ClinicalNote, "later", UserId, CreatedAt);
+        var earlier = ClinicalEvolution.Create(attendance.Id, new DateTime(2026, 6, 20, 9, 0, 0, DateTimeKind.Utc), EvolutionType.ClinicalNote, "earlier", UserId, CreatedAt);
+        var other = ClinicalEvolution.Create(otherAttendance.Id, new DateTime(2026, 6, 20, 8, 0, 0, DateTimeKind.Utc), EvolutionType.ClinicalNote, "other", UserId, CreatedAt);
         context.ClinicalEvolutions.AddRange(later, earlier, other);
         await context.SaveChangesAsync();
 
