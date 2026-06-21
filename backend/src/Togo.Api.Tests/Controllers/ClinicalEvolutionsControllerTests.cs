@@ -42,6 +42,19 @@ public sealed class ClinicalEvolutionsControllerTests
     }
 
     [Fact]
+    public void Controller_ShouldNotExposeUpdateOrDeleteEndpoints()
+    {
+        var publicInstanceMethods = typeof(ClinicalEvolutionsController)
+            .GetMethods()
+            .Where(method => method.DeclaringType == typeof(ClinicalEvolutionsController))
+            .ToArray();
+
+        Assert.DoesNotContain(publicInstanceMethods, method => method.GetCustomAttributes(typeof(HttpPutAttribute), inherit: true).Any());
+        Assert.DoesNotContain(publicInstanceMethods, method => method.GetCustomAttributes(typeof(HttpPatchAttribute), inherit: true).Any());
+        Assert.DoesNotContain(publicInstanceMethods, method => method.GetCustomAttributes(typeof(HttpDeleteAttribute), inherit: true).Any());
+    }
+
+    [Fact]
     public void ListItemResponse_ShouldNotExposeText()
     {
         Assert.DoesNotContain(typeof(ClinicalEvolutionListItemResponse).GetProperties(), property => property.Name == "Text");
