@@ -431,14 +431,23 @@ Fracionamento recomendado da Fase 7.5:
 7.5.6 — Encerramento da trilha Prescription
 ```
 
-Se a implementação mínima ficar grande, recomenda-se dividir 7.5.3 em duas subfases menores:
+A fase 7.5.2 pode preparar permissões, contracts e audit actions necessários para a trilha, sem expor endpoint público de criação de Prescription.
+
+Se a implementação mínima ficar grande, recomenda-se dividir 7.5.3 em subfases menores, mas sem expor endpoint público de criação antes de autoria e AuditLog mínimos.
+
+Opção segura de fracionamento:
 
 ```text
-7.5.3.1 — Repository/use case mínimo sem endpoint amplo
-7.5.3.2 — Controller mínimo por AttendanceId com autorização granular
+7.5.3.1 — Repository/use case mínimo interno de Prescription, sem endpoint público de criação
+7.5.3.2 — Autoria e AuditLog mínimos de Prescription aplicados ao fluxo de criação
+7.5.3.3 — Controller mínimo por AttendanceId com autorização granular, expondo POST/GET somente após autoria e AuditLog estarem disponíveis
 ```
 
-A divisão deve preservar escopo pequeno e evitar misturar contratos, endpoints, autoria, auditoria, estoque e cancelamento em uma única PR.
+Alternativamente, manter 7.5.3 e 7.5.4 como fases separadas, desde que a 7.5.3 não exponha POST público de criação antes da 7.5.4.
+
+Prescrição clínica é dado sensível. Não deve haver superfície pública de criação de Prescription sem autoria técnica e AuditLog mínimo desde o primeiro endpoint público.
+
+A divisão deve preservar escopo pequeno e evitar misturar contratos, endpoints, autoria, auditoria, estoque e cancelamento em uma única PR. Caso a implementação seja dividida, o controller público deve vir junto com autoria/AuditLog ou depois deles.
 
 ## 20. Fora do escopo desta fase
 
