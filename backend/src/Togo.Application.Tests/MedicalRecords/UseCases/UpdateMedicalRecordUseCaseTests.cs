@@ -2,6 +2,7 @@ using Togo.Application.Auditing;
 using Togo.Application.MedicalRecords.Contracts;
 using Togo.Application.MedicalRecords.UseCases;
 using Togo.Application.MedicalRecords.Validators;
+using Togo.Application.Tests.Attendances.Fakes;
 using Togo.Application.Tests.MedicalRecords.Fakes;
 using Togo.Application.Tests.Pets.Fakes;
 using Togo.Application.Tests.Security.Fakes;
