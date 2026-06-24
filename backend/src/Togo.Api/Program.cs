@@ -117,6 +117,7 @@ builder.Services.AddAuthorization(options =>
     options.AddMedicalRecordPolicies();
     options.AddAttendancePolicies();
     options.AddClinicalEvolutionPolicies();
+    options.AddPrescriptionPolicies();
 });
 
 // ====== CORS ======
