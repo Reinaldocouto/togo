@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -49,6 +50,50 @@ public sealed class PrescriptionsControllerTests
         var create = typeof(PrescriptionsController).GetMethod(nameof(PrescriptionsController.Create))!;
         Assert.Contains(create.GetCustomAttributes(typeof(HttpPostAttribute), true), a => a is HttpPostAttribute);
         Assert.Equal(PrescriptionPolicies.Create, Assert.Single(create.GetCustomAttributes(typeof(AuthorizeAttribute), true).Cast<AuthorizeAttribute>()).Policy);
+    }
+
+    [Fact]
+    public void Controller_ShouldNotExposeGlobalPrescriptionRoute()
+    {
+        var routes = typeof(PrescriptionsController)
+            .GetCustomAttributes(typeof(RouteAttribute), inherit: true)
+            .Cast<RouteAttribute>()
+            .Select(route => route.Template)
+            .ToArray();
+
+        Assert.DoesNotContain("api/prescriptions", routes);
+        Assert.DoesNotContain("api/prescriptions/{id:long}", routes);
+    }
+
+    [Fact]
+    public void Controller_ShouldOnlyExposeGetAndPostBoundToAttendance()
+    {
+        var actions = typeof(PrescriptionsController)
+            .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+            .Where(method => method.GetCustomAttributes().Any(attribute => attribute is HttpMethodAttribute))
+            .ToArray();
+
+        Assert.Equal([nameof(PrescriptionsController.Create), nameof(PrescriptionsController.ListByAttendance)], actions.Select(action => action.Name).Order().ToArray());
+        Assert.All(actions, action =>
+        {
+            Assert.Contains(action.GetParameters(), parameter => parameter.Name == "attendanceId" && parameter.ParameterType == typeof(long));
+            Assert.DoesNotContain(action.GetCustomAttributes<HttpMethodAttribute>(), attribute => attribute.HttpMethods.Except(["GET", "POST"]).Any());
+        });
+    }
+
+    [Fact]
+    public void CreateAction_ShouldReturnIActionResultAndMapToCreatedResponseContract()
+    {
+        var create = typeof(PrescriptionsController).GetMethod(nameof(PrescriptionsController.Create))!;
+
+        Assert.Equal(typeof(Task<IActionResult>), create.ReturnType);
+
+        var createdProperties = typeof(PrescriptionCreatedResponse).GetProperties().Select(property => property.Name).ToArray();
+        var internalProperties = typeof(PrescriptionResponse).GetProperties().Select(property => property.Name).ToArray();
+
+        Assert.Equal(["Id", "AttendanceId", "IssuedAt", "ItemCount"], createdProperties);
+        Assert.Contains("Items", internalProperties);
+        Assert.Contains("Notes", internalProperties);
     }
 
     [Fact]
@@ -139,6 +184,8 @@ public sealed class PrescriptionsControllerTests
     public void ListItemResponse_ShouldNotExposeSensitiveFields()
     {
         var properties = typeof(PrescriptionListItemResponse).GetProperties().Select(p => p.Name).ToArray();
+
+        Assert.Equal(["Id", "AttendanceId", "IssuedAt", "ItemCount"], properties);
         Assert.DoesNotContain("Notes", properties);
         Assert.DoesNotContain("Dosage", properties);
         Assert.DoesNotContain("Items", properties);
