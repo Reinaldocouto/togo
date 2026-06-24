@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Togo.Api.Models;
 using Togo.Api.Security;
 using Togo.Application.Prescriptions.Contracts;
 using Togo.Application.Prescriptions.UseCases;
@@ -46,14 +47,20 @@ public class PrescriptionsController : ControllerBase
         _logger.LogInformation("Prescription creation request received. AttendanceId: {AttendanceId}", attendanceId);
 
         var result = await _createPrescriptionUseCase.ExecuteAsync(attendanceId, request, cancellationToken);
-        return ToActionResult(result);
+        return ToActionResult(result, prescription => new PrescriptionCreatedResponse(
+            prescription.Id,
+            prescription.AttendanceId,
+            prescription.IssuedAt,
+            prescription.Items.Count));
     }
 
-    private IActionResult ToActionResult<T>(ApplicationResult<T> result)
+    private IActionResult ToActionResult<T>(ApplicationResult<T> result) => ToActionResult(result, data => data);
+
+    private IActionResult ToActionResult<T, TResponse>(ApplicationResult<T> result, Func<T, TResponse> responseMapper)
     {
         return result.Type switch
         {
-            ApplicationResultType.Success => Ok(result.Data),
+            ApplicationResultType.Success => Ok(responseMapper(result.Data!)),
             ApplicationResultType.NotFound => NotFound(new { message = result.Error }),
             ApplicationResultType.ValidationError => BadRequest(new { message = result.Error }),
             ApplicationResultType.Conflict => Conflict(new { message = result.Error }),

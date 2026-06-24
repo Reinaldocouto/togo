@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Togo.Api.Controllers;
+using Togo.Api.Models;
 using Togo.Api.Security;
 using Togo.Application.Attendances.Repositories;
 using Togo.Application.Auditing;
@@ -57,13 +58,23 @@ public sealed class PrescriptionsControllerTests
         app.AttendanceRepository.AddAttendance(1, AttendanceStatus.Open);
 
         var response = await app.AuthorizedClient.PostAsJsonAsync("/api/attendances/1/prescriptions", ValidRequest(1));
-        var body = await response.Content.ReadFromJsonAsync<PrescriptionResponse>();
+        var json = await response.Content.ReadAsStringAsync();
+        var body = JsonSerializer.Deserialize<PrescriptionCreatedResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
         Assert.True(body!.Id > 0);
         Assert.Equal(1, body.AttendanceId);
-        Assert.Single(body.Items);
+        Assert.Equal(1, body.ItemCount);
+        Assert.DoesNotContain("Notes", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Dosage", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Items", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ProductId", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Quantity", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Unit", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DurationDays", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secret note", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("q12h", json, StringComparison.OrdinalIgnoreCase);
         var audit = Assert.Single(app.AuditLogWriter.Events);
         Assert.Equal(PrescriptionAuditActions.Created, audit.Action);
         Assert.Equal(nameof(Prescription), audit.EntityName);
@@ -132,6 +143,21 @@ public sealed class PrescriptionsControllerTests
         Assert.DoesNotContain("Dosage", properties);
         Assert.DoesNotContain("Items", properties);
         Assert.DoesNotContain("ProductId", properties);
+    }
+
+    [Fact]
+    public void CreatedResponse_ShouldNotExposeSensitiveFields()
+    {
+        var properties = typeof(PrescriptionCreatedResponse).GetProperties().Select(p => p.Name).ToArray();
+
+        Assert.Equal(["Id", "AttendanceId", "IssuedAt", "ItemCount"], properties);
+        Assert.DoesNotContain("Notes", properties);
+        Assert.DoesNotContain("Dosage", properties);
+        Assert.DoesNotContain("Items", properties);
+        Assert.DoesNotContain("ProductId", properties);
+        Assert.DoesNotContain("Quantity", properties);
+        Assert.DoesNotContain("Unit", properties);
+        Assert.DoesNotContain("DurationDays", properties);
     }
 
     private static CreatePrescriptionRequest ValidRequest(long attendanceId) => new(attendanceId, DateTime.UtcNow, "secret note", [new CreatePrescriptionItemRequest(123, 1, " ml ", " q12h ", 7)]);
