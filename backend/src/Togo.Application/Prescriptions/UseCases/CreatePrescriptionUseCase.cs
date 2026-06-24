@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Togo.Application.Attendances.Repositories;
+using Togo.Application.Auditing;
 using Togo.Application.Prescriptions.Contracts;
 using Togo.Application.Prescriptions.Repositories;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 using Togo.Domain.Entities;
 using Togo.Domain.Enums;
@@ -11,11 +14,19 @@ public class CreatePrescriptionUseCase
 {
     private readonly IAttendanceRepository _attendanceRepository;
     private readonly IPrescriptionRepository _prescriptionRepository;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IClinicalAuditLogWriter _clinicalAuditLogWriter;
 
-    public CreatePrescriptionUseCase(IAttendanceRepository attendanceRepository, IPrescriptionRepository prescriptionRepository)
+    public CreatePrescriptionUseCase(
+        IAttendanceRepository attendanceRepository,
+        IPrescriptionRepository prescriptionRepository,
+        ICurrentUserService currentUserService,
+        IClinicalAuditLogWriter clinicalAuditLogWriter)
     {
         _attendanceRepository = attendanceRepository;
         _prescriptionRepository = prescriptionRepository;
+        _currentUserService = currentUserService;
+        _clinicalAuditLogWriter = clinicalAuditLogWriter;
     }
 
     public async Task<ApplicationResult<PrescriptionResponse>> ExecuteAsync(long attendanceId, CreatePrescriptionRequest request, CancellationToken cancellationToken)
@@ -37,12 +48,14 @@ public class CreatePrescriptionUseCase
             return ApplicationResult<PrescriptionResponse>.Conflict("Prescription can only be created for open attendances.");
         }
 
+        var currentUser = _currentUserService.GetCurrentUser();
         var prescription = Prescription.Create(request.AttendanceId, request.IssuedAt, request.Notes);
         var itemDrafts = request.Items
             .Select(item => new PrescriptionItemDraft(item.ProductId, item.Quantity, item.Unit, item.Dosage, item.DurationDays))
             .ToList();
 
         await _prescriptionRepository.AddAsync(prescription, itemDrafts, cancellationToken);
+        await WriteCreatedAuditLogAsync(prescription, currentUser, cancellationToken);
 
         var responseItems = itemDrafts
             .Select(item => new PrescriptionItemResponse(0, item.ProductId, item.Quantity, item.Unit.Trim(), item.Dosage.Trim(), item.DurationDays))
@@ -55,6 +68,23 @@ public class CreatePrescriptionUseCase
             prescription.Notes,
             responseItems));
     }
+
+    private async Task WriteCreatedAuditLogAsync(Prescription prescription, CurrentUserInfo currentUser, CancellationToken cancellationToken)
+    {
+        var auditEvent = new ClinicalAuditEvent(
+            EntityName: nameof(Prescription),
+            EntityId: prescription.Id.ToString(),
+            Action: PrescriptionAuditActions.Created,
+            UserId: currentUser.UserId,
+            UserProfile: currentUser.Profile,
+            OccurredAt: DateTime.UtcNow,
+            MetadataJson: CreateMetadataJson(prescription.AttendanceId));
+
+        await _clinicalAuditLogWriter.WriteAsync(auditEvent, cancellationToken);
+    }
+
+    private static string CreateMetadataJson(long attendanceId) =>
+        JsonSerializer.Serialize(new { AttendanceId = attendanceId });
 
     private static string? Validate(long attendanceId, CreatePrescriptionRequest request)
     {
