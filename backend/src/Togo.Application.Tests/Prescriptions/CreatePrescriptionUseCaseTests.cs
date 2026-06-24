@@ -17,7 +17,7 @@ public class CreatePrescriptionUseCaseTests
     [Theory][InlineData(0)][InlineData(-1)] public async Task ExecuteAsync_ShouldValidateRouteAttendanceId(long id) => await AssertValidation(id, ValidRequest());
     [Theory][InlineData(0)][InlineData(-1)] public async Task ExecuteAsync_ShouldValidateRequestAttendanceId(long id) => await AssertValidation(10, ValidRequest(id));
     [Fact] public async Task ExecuteAsync_ShouldValidateDivergentIds() => await AssertValidation(10, ValidRequest(11));
-    [Fact] public async Task ExecuteAsync_ShouldValidateIssuedAt() => await AssertValidation(10, ValidRequest(10, default));
+    [Fact] public async Task ExecuteAsync_ShouldValidateIssuedAt() => await AssertValidation(10, new CreatePrescriptionRequest(10, default, null, [new CreatePrescriptionItemRequest(1, 2, " ml ", " bid ", 7)]));
     [Fact] public async Task ExecuteAsync_ShouldValidateNullItems() => await AssertValidation(10, new CreatePrescriptionRequest(10, Now, null, null!));
     [Fact] public async Task ExecuteAsync_ShouldValidateEmptyItems() => await AssertValidation(10, new CreatePrescriptionRequest(10, Now, null, []));
     [Fact] public async Task ExecuteAsync_ShouldValidateQuantity() => await AssertValidation(10, ValidRequest(item: new(null, 0, "ml", "bid", null)));

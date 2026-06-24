@@ -29,20 +29,28 @@ public class PrescriptionRepository : IPrescriptionRepository
 
     public async Task<IReadOnlyList<PrescriptionListItemProjection>> ListByAttendanceIdAsync(long attendanceId, CancellationToken cancellationToken = default)
     {
-        return await _context.Prescriptions
+        var items = await _context.Prescriptions
             .AsNoTracking()
             .Where(prescription => prescription.AttendanceId == attendanceId)
-            .GroupJoin(
-                _context.PrescriptionItems.AsNoTracking(),
-                prescription => prescription.Id,
-                item => item.PrescriptionId,
-                (prescription, items) => new PrescriptionListItemProjection(
-                    prescription.Id,
-                    prescription.AttendanceId,
-                    prescription.IssuedAt,
-                    items.Count()))
+            .Select(prescription => new
+            {
+                prescription.Id,
+                prescription.AttendanceId,
+                prescription.IssuedAt,
+                ItemCount = _context.PrescriptionItems
+                    .AsNoTracking()
+                    .Count(item => item.PrescriptionId == prescription.Id)
+            })
             .OrderBy(item => item.IssuedAt)
             .ThenBy(item => item.Id)
             .ToListAsync(cancellationToken);
+
+        return items
+            .Select(item => new PrescriptionListItemProjection(
+                item.Id,
+                item.AttendanceId,
+                item.IssuedAt,
+                item.ItemCount))
+            .ToList();
     }
 }
