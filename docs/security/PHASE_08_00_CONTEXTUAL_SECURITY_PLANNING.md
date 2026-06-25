@@ -26,7 +26,7 @@ A Fase 8 resolve esse problema por meio de:
 - registro de leituras sensíveis e tentativas negadas;
 - guardrails automatizados para reduzir o risco de novas rotas ou consultas sem escopo.
 
-## 3. Riscos que a fase pretende mitigar
+## 3. Riscos mitigados
 
 | Risco | Impacto | Mitigação esperada na Fase 8 |
 | --- | --- | --- |
@@ -41,56 +41,68 @@ A Fase 8 resolve esse problema por meio de:
 | Auditoria com dados sensíveis demais | Logs passam a vazar conteúdo clínico. | Metadados mínimos, sem copiar conteúdo clínico integral. |
 | Solução multi-tenant excessivamente genérica | Complexidade prematura e alto custo de manutenção. | Modelo mínimo suficiente para isolamento clínico atual. |
 
-## 4. Conceitos principais
+## 4. Conceitos centrais
 
-### Organização
+### Organization
 
 Representa o agrupador administrativo superior. Uma organização pode possuir uma ou mais clínicas. Nesta fase, a organização deve ser modelada de forma mínima para sustentar governança, segregação futura e auditoria, sem tentar resolver billing, contratos comerciais, SaaS completo ou hierarquias corporativas complexas.
 
-### Clínica
+### Clinic
 
 Representa o principal limite de isolamento clínico-operacional da Fase 8. A clínica é o escopo primário para filtrar dados como pacientes, tutores, atendimentos, prontuários, evoluções, prescrições e logs clínicos. Quando houver dúvida entre organização, clínica e unidade, a decisão inicial recomendada é tratar `ClinicId` como escopo obrigatório para fluxos clínicos sensíveis.
 
-### Unidade
+### ClinicUnit
 
 Representa uma filial, local físico, sala operacional ou subdivisão da clínica. A unidade deve ser planejada como escopo complementar. A implementação inicial pode permitir `UnitId` opcional em alguns fluxos, desde que `ClinicId` permaneça obrigatório para isolamento. Regras mais avançadas por unidade podem ser evoluídas após a consolidação do filtro por clínica.
 
-### Usuário
+### User
 
 Representa a identidade autenticada que executa ações no sistema. O usuário já possui vínculo com autenticação/autorização e deve passar a ser relacionado ao contexto clínico permitido. O planejamento deve prever como validar se o usuário pode atuar em uma clínica/unidade, sem embutir essa regra diretamente nos controllers.
 
-### Perfil/permissão
+### Profile/Permission
 
 Representa o que o usuário pode fazer funcionalmente, por exemplo ler prontuário, criar atendimento ou emitir prescrição. Na Fase 8, perfil/permissão deixa de ser suficiente isoladamente: uma ação só deve ser permitida quando a permissão funcional e o escopo clínico forem válidos simultaneamente.
 
-### Escopo clínico
+### UserClinicAccess
+
+Representa o vínculo autorizativo entre `User` e os escopos clínicos nos quais ele pode atuar. Deve permitir validar, no backend, se o usuário autenticado possui acesso à `Clinic` e, quando aplicável, à `ClinicUnit` selecionada. Esse vínculo não substitui `Profile/Permission`: ele limita territorialmente permissões funcionais já concedidas.
+
+### Clinical Scope
 
 É o conjunto mínimo de identificadores que delimita onde uma operação pode ocorrer. A proposta inicial é que o escopo clínico contenha pelo menos `OrganizationId`, `ClinicId` e, quando aplicável, `UnitId`. O escopo deve ser persistido nos registros sensíveis e usado em criação, consulta, atualização, listagem e auditoria.
 
-### Contexto ativo
+### Active Clinical Context
 
 É a representação do escopo clínico selecionado para a requisição atual. Deve ser resolvido na borda HTTP, por header, claim, rota ou combinação controlada, e exposto à Application por uma abstração como `ICurrentClinicalContext`. O contexto ativo não deve carregar regra de negócio de autorização; ele deve informar a identidade do escopo selecionado para que use cases e serviços de autorização contextual validem a operação.
 
-### Auditoria contextual
+### Contextual Audit
 
 É a evolução do AuditLog clínico para registrar não apenas usuário, perfil, ação e entidade, mas também organização, clínica, unidade, resultado da decisão, origem da requisição e metadados mínimos de correlação. A auditoria contextual deve preservar minimização de dados e não deve copiar conteúdo clínico integral para logs.
 
-## 5. Proposta de divisão da fase em subfases
+### Regras explícitas de segurança contextual
+
+- Qualquer `ClinicId`, `OrganizationId` ou `ClinicUnitId` recebido por header, claim, rota, query string ou corpo da requisição deve ser validado contra `UserClinicAccess` antes de autorizar operação clínica sensível.
+- O backend não deve confiar em contexto informado pelo cliente sem validação server-side. Headers e payloads são apenas candidatos a contexto, não evidência suficiente de autorização.
+- Queries clínicas sensíveis não devem possuir listagens globais sem decisão técnica explícita, justificativa documentada e controles compensatórios.
+- Identificadores de recursos clínicos recebidos por rota devem ser resolvidos junto com o escopo ativo; consultar por ID sem validar `ClinicId` equivale a risco de acesso cruzado.
+
+## 5. Divisão da Fase 8 em subfases
 
 A Fase 8 deve ser dividida em subfases pequenas para reduzir risco de regressão, facilitar review e permitir validação incremental:
 
 1. **8.0 — Planejamento da segurança contextual**: documento técnico, escopo, riscos e critérios de aceite.
-2. **8.1 — Modelo mínimo de Organização/Clínica/Unidade**: entidades, invariantes mínimas e testes de domínio.
-3. **8.2 — Persistência do escopo clínico**: mapeamentos EF, migrations e índices.
-4. **8.3 — Propagação de ClinicId nos fluxos clínicos**: criação e atualização de fluxos para gravar escopo.
-5. **8.4 — CurrentClinicalContext**: abstração de contexto ativo e implementação HTTP.
-6. **8.5 — Autorização contextual**: combinação de permissões existentes com validação de escopo.
-7. **8.6 — Filtros de consulta por contexto**: repositories e listagens protegidas por escopo.
-8. **8.7 — Auditoria contextual enriquecida**: AuditLog com identificadores de escopo.
-9. **8.8 — Auditoria de leitura e acesso negado**: eventos para leituras sensíveis e negações.
-10. **8.9 — Guardrails contra bypass de escopo**: testes arquiteturais e padrões obrigatórios.
-11. **8.10 — Evidências manuais de segurança**: roteiros e evidências de testes manuais.
-12. **8.11 — Encerramento técnico da Fase 8**: relatório final, riscos remanescentes e recomendações.
+2. **8.0.1 — Refinamento documental do planejamento da Fase 8**: revisão técnica do documento, remoção de linguagem conversacional, formalização de conceitos e delimitação de decisões pendentes.
+3. **8.1 — Modelo mínimo de Organização/Clínica/Unidade**: entidades, invariantes mínimas e testes de domínio.
+4. **8.2 — Persistência do escopo clínico**: mapeamentos EF, migrations e índices.
+5. **8.3 — Propagação de ClinicId nos fluxos clínicos**: criação e atualização de fluxos para gravar escopo.
+6. **8.4 — CurrentClinicalContext**: abstração de contexto ativo e implementação HTTP.
+7. **8.5 — Autorização contextual**: combinação de permissões existentes com validação de escopo.
+8. **8.6 — Filtros de consulta por contexto**: repositories e listagens protegidas por escopo.
+9. **8.7 — Auditoria contextual enriquecida**: AuditLog com identificadores de escopo.
+10. **8.8 — Auditoria de leitura e acesso negado**: eventos para leituras sensíveis e negações.
+11. **8.9 — Guardrails contra bypass de escopo**: testes arquiteturais e padrões obrigatórios.
+12. **8.10 — Evidências manuais de segurança**: roteiros e evidências de testes manuais.
+13. **8.11 — Encerramento técnico da Fase 8**: relatório final, riscos remanescentes e recomendações.
 
 ## 6. Subfases detalhadas
 
@@ -130,6 +142,42 @@ Definir o plano técnico da Fase 8 antes de qualquer implementação, documentan
 - Planejamento amplo demais para implementação incremental.
 - Definições conceituais ambíguas entre clínica e unidade.
 - Falta de alinhamento futuro sobre origem do contexto ativo.
+
+### 8.0.1 — Refinamento documental do planejamento da Fase 8
+
+**Objetivo**
+
+Refinar o documento da Fase 8.0 para torná-lo um planejamento técnico completo, neutro e acionável, sem iniciar implementação de sistema.
+
+**Escopo**
+
+- Revisar linguagem para remover formulações conversacionais e substituir por termos técnicos.
+- Formalizar conceitos centrais em nomenclatura alinhada ao domínio e à arquitetura esperada.
+- Reforçar fora de escopo, riscos mitigados, decisões pendentes e checklist de aceite.
+- Detalhar cada subfase de 8.0 a 8.11 com objetivo, escopo, arquivos prováveis, entregáveis, critérios de aceite e riscos técnicos.
+
+**Arquivos prováveis impactados**
+
+- `docs/security/PHASE_08_00_CONTEXTUAL_SECURITY_PLANNING.md`.
+
+**Entregáveis esperados**
+
+- Documento refinado de planejamento técnico.
+- Subfase 8.0.1 registrada como ajuste documental.
+- Critérios de segurança contextual explicitados para orientar a Fase 8.1.
+
+**Critérios de aceite**
+
+- Nenhum código produtivo é alterado.
+- Nenhuma entidade, migration, API, Application, Domain ou Infrastructure é implementada.
+- Documento permite iniciar a Fase 8.1 com decisões delimitadas e riscos conhecidos.
+- Checklist da Fase 8.0 reflete o refinamento documental.
+
+**Riscos técnicos**
+
+- Documento ficar prescritivo demais e antecipar desenho que deveria ser validado na Fase 8.1.
+- Manter decisões críticas implícitas, especialmente sobre escopo inicial e validação de contexto.
+- Confundir refinamento documental com implementação antecipada.
 
 ### 8.1 — Modelo mínimo de Organização/Clínica/Unidade
 
@@ -581,7 +629,7 @@ Consolidar o estado final da Fase 8, registrar evidências, decisões tomadas, r
 - Documentação divergir do comportamento real.
 - Guardrails não cobrirem fluxos futuros prioritários.
 
-## 7. Itens fora do escopo da Fase 8
+## 7. Fora do escopo da Fase 8
 
 A Fase 8 não deve incluir:
 
@@ -591,7 +639,7 @@ A Fase 8 não deve incluir:
 - infraestrutura cloud definitiva;
 - deploy em produção;
 - LGPD completa em nível jurídico;
-- integração externa com clínicas reais;
+- integrações externas com clínicas reais;
 - federação de identidade corporativa;
 - hierarquia organizacional complexa com grupos econômicos, franquias e holdings;
 - particionamento físico por tenant, schema por tenant ou banco por clínica;
@@ -600,8 +648,10 @@ A Fase 8 não deve incluir:
 - workflow completo de convite, aceite e gestão avançada de usuários por unidade;
 - relatórios gerenciais multiunidade avançados;
 - BI, data warehouse ou exportação analítica;
-- integrações fiscais, estoque, laboratório, seguradora ou convênios;
-- assinatura digital, impressão regulatória ou PDF clínico;
+- integrações fiscais, laboratório, seguradora ou convênios;
+- estoque avançado;
+- financeiro avançado;
+- PDF, assinatura e impressão;
 - revisão jurídica final de termos, consentimentos e retenção de dados.
 
 Esses temas podem ser planejados em fases futuras, mas não devem bloquear o objetivo de isolamento contextual mínimo, seguro e testável.
@@ -660,32 +710,35 @@ Ao final da Fase 8, a arquitetura esperada deve preservar as responsabilidades d
 
 ## 9. Decisões técnicas pendentes para validação futura
 
-As decisões abaixo devem ser validadas antes ou durante as subfases correspondentes:
+As decisões abaixo devem ser validadas antes ou durante as subfases correspondentes. Enquanto não forem decididas, o documento deve tratá-las como restrições de planejamento, não como implementação aprovada:
 
-1. Qual será a fonte oficial do contexto ativo: claim, header, rota, seleção persistida do usuário ou combinação?
-2. `ClinicId` será obrigatório em todos os registros clínicos existentes ou haverá período de transição com registros legados?
-3. `UnitId` será obrigatório, opcional ou ausente nos primeiros fluxos clínicos?
-4. Como representar vínculo usuário-clínica-unidade: tabela própria, claim do token, repository de membership ou modelo híbrido?
-5. A resposta para recurso fora de escopo deve ser `403 Forbidden`, `404 Not Found` ou política híbrida por tipo de endpoint?
-6. Quais leituras serão consideradas sensíveis e obrigatoriamente auditadas na primeira entrega?
-7. Qual o nível mínimo de metadados de auditoria: IP, user agent, correlation id, request id, rota e método HTTP?
-8. Como evitar spoofing de `ClinicId` quando a fonte for header?
-9. Como executar backfill seguro de `ClinicId` em ambientes com dados pré-existentes?
-10. Quais entidades recebem `OrganizationId` além de `ClinicId`, considerando normalização versus performance?
-11. Quais índices compostos são necessários para os endpoints atuais?
-12. Deve existir filtro global do EF Core por contexto ou a fase deve preferir filtros explícitos em repositories?
-13. Como documentar exceções legítimas a escopo, por exemplo usuário administrador interno ou suporte técnico?
-14. Como auditar acesso negado quando o contexto ativo está ausente ou inválido?
-15. Como versionar contratos públicos se algum payload precisar receber informação de escopo no futuro?
-16. Como integrar esta fase com seeds, testes E2E e dados de desenvolvimento?
-17. Qual nomenclatura final será adotada: `Clinic`, `ClinicalUnit`, `Unit`, `Organization`, `Tenant` ou termos equivalentes?
-18. Quais guardrails serão obrigatórios para aprovação de PRs futuros?
+1. Se o escopo inicial obrigatório será `Clinic` ou `Organization`, considerando isolamento clínico, auditoria e evolução multiunidade.
+2. Se `ClinicUnit` entra na implementação inicial ou permanece como planejamento futuro com campo opcional/reservado.
+3. Se `Tutor` terá `ClinicId` direto ou relacionamento intermediário para suportar tutor atendido por múltiplas clínicas.
+4. Quais entidades receberão `ClinicId` direto, incluindo tutor, paciente, atendimento, prontuário, evolução, prescrição, auditoria e entidades administrativas sensíveis.
+5. Se `MedicalRecord` terá `ClinicId` direto ou herdará o escopo de `Patient`, considerando performance, integridade e facilidade de auditoria.
+6. Como o contexto ativo será resolvido: claim, header, rota, seleção persistida do usuário ou combinação controlada.
+7. Como evitar confiança cega em header de `ClinicId`, exigindo validação contra `UserClinicAccess` no backend.
+8. Onde ficarão os filtros por contexto: repositories explícitos, especificações, handlers de Application, filtros globais EF Core ou combinação documentada.
+9. Como auditar leitura sensível sem gerar volume excessivo, definindo eventos obrigatórios, amostragem quando aplicável e retenção.
+10. `ClinicId` será obrigatório em todos os registros clínicos existentes ou haverá período de transição com registros legados?
+11. Como representar vínculo usuário-clínica-unidade: tabela própria, claim do token, repository de membership ou modelo híbrido?
+12. A resposta para recurso fora de escopo deve ser `403 Forbidden`, `404 Not Found` ou política híbrida por tipo de endpoint?
+13. Quais leituras serão consideradas sensíveis e obrigatoriamente auditadas na primeira entrega?
+14. Qual o nível mínimo de metadados de auditoria: IP, user agent, correlation id, request id, rota e método HTTP?
+15. Como executar backfill seguro de `ClinicId` em ambientes com dados pré-existentes?
+16. Quais índices compostos são necessários para os endpoints atuais?
+17. Como documentar exceções legítimas a escopo, por exemplo administrador interno ou suporte técnico?
+18. Como versionar contratos públicos se algum payload precisar receber informação de escopo no futuro?
+19. Como integrar esta fase com seeds, testes E2E e dados de desenvolvimento?
+20. Qual nomenclatura final será adotada: `Clinic`, `ClinicUnit`, `ClinicalUnit`, `Unit`, `Organization`, `Tenant` ou termos equivalentes?
+21. Quais guardrails serão obrigatórios para aprovação de PRs futuros?
 
-## 10. Resumo do que foi criado
+## 10. Resumo do refinamento
 
-Foi criado o planejamento técnico da Fase 8.0 para orientar a implementação gradual de segurança contextual, escopo clínico e governança multiunidade no TOGO. O documento define o problema, os riscos, os conceitos principais, a divisão em subfases, os itens fora de escopo, a arquitetura esperada após a fase e as decisões pendentes para validação futura.
+Foi refinado o planejamento técnico da Fase 8.0 para orientar a implementação gradual de segurança contextual, escopo clínico e governança multiunidade no TOGO. O documento define o problema, os riscos, os conceitos principais, a divisão em subfases, os itens fora de escopo, a arquitetura esperada após a fase e as decisões pendentes para validação futura.
 
-## 11. Arquivo criado
+## 11. Arquivo ajustado
 
 - `docs/security/PHASE_08_00_CONTEXTUAL_SECURITY_PLANNING.md`
 
@@ -702,9 +755,12 @@ A próxima fase deve introduzir apenas o modelo mínimo de domínio, com testes,
 - [x] Problema resolvido pela Fase 8 documentado.
 - [x] Riscos mitigados pela fase documentados.
 - [x] Conceitos principais definidos.
-- [x] Subfases 8.0 a 8.11 propostas.
+- [x] Subfases 8.0, 8.0.1 e 8.1 a 8.11 propostas.
 - [x] Cada subfase contém objetivo, escopo, arquivos prováveis impactados, entregáveis, critérios de aceite e riscos técnicos.
 - [x] Itens fora do escopo definidos.
 - [x] Visão de arquitetura esperada após a Fase 8 documentada.
 - [x] Decisões técnicas pendentes registradas.
 - [x] Próxima fase recomendada indicada.
+- [x] Refinamento documental 8.0.1 registrado sem alteração de código produtivo.
+- [x] Segurança contra confiança cega em `ClinicId` de header, claim, rota ou request explicitada.
+- [x] Decisões sobre `Clinic`, `Organization`, `ClinicUnit`, `Tutor`, `MedicalRecord`, filtros e auditoria de leitura registradas como pendentes.
