@@ -134,6 +134,77 @@ namespace Togo.Infrastructure.Migrations
                     b.ToTable("ClinicalEvolutions", (string)null);
                 });
 
+
+            modelBuilder.Entity("Togo.Domain.Entities.Clinic", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Clinics", (string)null);
+                });
+
+            modelBuilder.Entity("Togo.Domain.Entities.ClinicUnit", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("ClinicId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClinicId");
+
+                    b.HasIndex("ClinicId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("ClinicUnits", (string)null);
+                });
+
             modelBuilder.Entity("Togo.Domain.Entities.ClinicalAuditLog", b =>
                 {
                     b.Property<long>("Id")
@@ -185,6 +256,25 @@ namespace Togo.Infrastructure.Migrations
                     b.ToTable("ClinicalAuditLogs", (string)null);
                 });
 
+
+            modelBuilder.Entity("Togo.Domain.Entities.Clinic", b =>
+                {
+                    b.HasOne("Togo.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Togo.Domain.Entities.ClinicUnit", b =>
+                {
+                    b.HasOne("Togo.Domain.Entities.Clinic", null)
+                        .WithMany()
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Togo.Domain.Entities.MedicalRecord", b =>
                 {
                     b.Property<long>("Id")
@@ -231,6 +321,36 @@ namespace Togo.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("MedicalRecords", (string)null);
+                });
+
+
+            modelBuilder.Entity("Togo.Domain.Entities.Organization", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("Organizations", (string)null);
                 });
 
             modelBuilder.Entity("Togo.Domain.Entities.Patient", b =>
