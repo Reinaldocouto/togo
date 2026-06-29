@@ -160,6 +160,35 @@ public sealed class CreatePetUseCaseTests
             entry => entry.Message.Contains("Pet created successfully", StringComparison.Ordinal));
     }
 
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnValidationError_WhenClinicIdIsInvalid()
+    {
+        var repository = new FakePetRepository();
+        repository.AddExistingTutor(1);
+        var useCase = CreateUseCase(repository);
+        var request = CreateValidRequest(clinicId: 0);
+
+        var result = await useCase.ExecuteAsync(request, CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.ValidationError, result.Type);
+        Assert.Equal("ClinicId must be greater than zero.", result.Error);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnValidationError_WhenTutorBelongsToAnotherClinic()
+    {
+        var repository = new FakePetRepository();
+        repository.AddExistingTutor(1, clinicId: 2);
+        var useCase = CreateUseCase(repository);
+        var request = CreateValidRequest(clinicId: 1, tutorId: 1);
+
+        var result = await useCase.ExecuteAsync(request, CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.ValidationError, result.Type);
+        Assert.Equal("Tutor does not belong to the informed clinic.", result.Error);
+    }
+
     private static CreatePetUseCase CreateUseCase(
         FakePetRepository repository,
         TestLogger<CreatePetUseCase>? logger = null)
@@ -179,6 +208,7 @@ public sealed class CreatePetUseCaseTests
     }
 
     private static CreatePetRequest CreateValidRequest(
+        long clinicId = 1,
         long tutorId = 1,
         string name = "Thor",
         DateOnly? birthDate = null,
@@ -189,6 +219,7 @@ public sealed class CreatePetUseCaseTests
         decimal? weightKg = 10.5m,
         string? microchip = "MICROCHIP-001") =>
         new(
+            clinicId,
             tutorId,
             name,
             birthDate,

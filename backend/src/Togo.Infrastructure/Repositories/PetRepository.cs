@@ -64,6 +64,13 @@ public class PetRepository : IPetRepository
             .AnyAsync(tutor => tutor.Id == tutorId, cancellationToken);
     }
 
+    public async Task<bool> TutorBelongsToClinicAsync(long tutorId, long clinicId, CancellationToken cancellationToken)
+    {
+        return await _context.Tutors
+            .AsNoTracking()
+            .AnyAsync(tutor => tutor.Id == tutorId && tutor.ClinicId == clinicId, cancellationToken);
+    }
+
     public async Task<bool> MicrochipExistsAsync(string microchip, long? ignorePatientId, CancellationToken cancellationToken)
     {
         return await _context.Pets
@@ -80,7 +87,7 @@ public class PetRepository : IPetRepository
 
         try
         {
-            var patient = Patient.Create(data.PatientType, data.Name, data.BirthDate, data.Status, data.CreatedAt);
+            var patient = Patient.Create(data.ClinicId, data.PatientType, data.Name, data.BirthDate, data.Status, data.CreatedAt);
 
             await _context.Patients.AddAsync(patient, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);

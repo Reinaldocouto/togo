@@ -14,9 +14,10 @@ public class PatientTests
         var birthDate = new DateOnly(2021, 5, 10);
 
         // Act
-        var patient = Patient.Create(PatientType.Pet, "  Thor  ", birthDate, "  Active  ", createdAt);
+        var patient = Patient.Create(1, PatientType.Pet, "  Thor  ", birthDate, "  Active  ", createdAt);
 
         // Assert
+        Assert.Equal(1, patient.ClinicId);
         Assert.Equal(PatientType.Pet, patient.Type);
         Assert.Equal("Thor", patient.Name);
         Assert.Equal(birthDate, patient.BirthDate);
@@ -32,7 +33,7 @@ public class PatientTests
         var createdAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var patient = Patient.Create(PatientType.Pet, "Thor", null, "Active", createdAt);
+        var patient = Patient.Create(1, PatientType.Pet, "Thor", null, "Active", createdAt);
 
         // Assert
         Assert.Equal(PatientType.Pet, patient.Type);
@@ -43,6 +44,20 @@ public class PatientTests
         Assert.Null(patient.UpdatedAt);
     }
 
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_ShouldThrowArgumentOutOfRangeException_WhenClinicIdIsInvalid(long clinicId)
+    {
+        var createdAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
+
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Patient.Create(clinicId, PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt));
+
+        Assert.Equal("clinicId", exception.ParamName);
+    }
+
     [Fact]
     public void Create_ShouldThrowArgumentException_WhenNameIsEmpty()
     {
@@ -51,7 +66,7 @@ public class PatientTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            Patient.Create(PatientType.Pet, "   ", new DateOnly(2021, 5, 10), "Active", createdAt));
+            Patient.Create(1, PatientType.Pet, "   ", new DateOnly(2021, 5, 10), "Active", createdAt));
         Assert.StartsWith("Name is required", exception.Message);
         Assert.Equal("name", exception.ParamName);
     }
@@ -64,7 +79,7 @@ public class PatientTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            Patient.Create(PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "   ", createdAt));
+            Patient.Create(1, PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "   ", createdAt));
         Assert.StartsWith("Status is required", exception.Message);
         Assert.Equal("status", exception.ParamName);
     }
@@ -77,7 +92,7 @@ public class PatientTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            Patient.Create(PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt));
+            Patient.Create(1, PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt));
         Assert.StartsWith("Date is required", exception.Message);
         Assert.Equal("createdAt", exception.ParamName);
     }
@@ -89,12 +104,13 @@ public class PatientTests
         var createdAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
         var updatedAt = new DateTime(2026, 5, 12, 10, 0, 0, DateTimeKind.Utc);
         var newBirthDate = new DateOnly(2022, 6, 15);
-        var patient = Patient.Create(PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
+        var patient = Patient.Create(1, PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
 
         // Act
         patient.Update("  Loki  ", newBirthDate, "  Inactive  ", updatedAt);
 
         // Assert
+        Assert.Equal(1, patient.ClinicId);
         Assert.Equal(PatientType.Pet, patient.Type);
         Assert.Equal("Loki", patient.Name);
         Assert.Equal(newBirthDate, patient.BirthDate);
@@ -109,7 +125,7 @@ public class PatientTests
         // Arrange
         var createdAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
         var updatedAt = new DateTime(2026, 5, 12, 10, 0, 0, DateTimeKind.Utc);
-        var patient = Patient.Create(PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
+        var patient = Patient.Create(1, PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
 
         // Act
         patient.Update("Thor", null, "Active", updatedAt);
@@ -125,7 +141,7 @@ public class PatientTests
         // Arrange
         var createdAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
         var updatedAt = new DateTime(2026, 5, 12, 10, 0, 0, DateTimeKind.Utc);
-        var patient = Patient.Create(PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
+        var patient = Patient.Create(1, PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
@@ -140,7 +156,7 @@ public class PatientTests
         // Arrange
         var createdAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
         var updatedAt = new DateTime(2026, 5, 12, 10, 0, 0, DateTimeKind.Utc);
-        var patient = Patient.Create(PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
+        var patient = Patient.Create(1, PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
@@ -155,7 +171,7 @@ public class PatientTests
         // Arrange
         var createdAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
         var updatedAt = default(DateTime);
-        var patient = Patient.Create(PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
+        var patient = Patient.Create(1, PatientType.Pet, "Thor", new DateOnly(2021, 5, 10), "Active", createdAt);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>

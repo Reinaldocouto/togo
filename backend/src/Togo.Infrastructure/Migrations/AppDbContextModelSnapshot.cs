@@ -367,6 +367,9 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<long>("ClinicId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -392,9 +395,22 @@ namespace Togo.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClinicId");
+
+                    b.HasIndex("ClinicId", "Name");
+
                     b.HasIndex("Status");
 
                     b.ToTable("Patients", (string)null);
+                });
+
+            modelBuilder.Entity("Togo.Domain.Entities.Patient", b =>
+                {
+                    b.HasOne("Togo.Domain.Entities.Clinic", null)
+                        .WithMany()
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Togo.Domain.Entities.Pet", b =>
@@ -512,6 +528,9 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<long>("ClinicId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Document")
                         .HasMaxLength(30)
                         .HasColumnType("varchar(30)");
@@ -534,9 +553,20 @@ namespace Togo.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Document");
+                    b.HasIndex("ClinicId");
+
+                    b.HasIndex("ClinicId", "Document");
 
                     b.ToTable("Tutors", (string)null);
+                });
+
+            modelBuilder.Entity("Togo.Domain.Entities.Tutor", b =>
+                {
+                    b.HasOne("Togo.Domain.Entities.Clinic", null)
+                        .WithMany()
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Togo.Domain.Entities.User", b =>

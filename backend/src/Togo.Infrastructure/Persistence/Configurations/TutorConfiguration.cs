@@ -13,6 +13,7 @@ public class TutorConfiguration : IEntityTypeConfiguration<Tutor>
         builder.HasKey(t => t.Id);
         builder.Property(t => t.Id).ValueGeneratedOnAdd();
 
+        builder.Property(t => t.ClinicId).IsRequired();
         builder.Property(t => t.Name).IsRequired().HasMaxLength(120);
         builder.Property(t => t.Document).HasMaxLength(30);
         builder.Property(t => t.Email).HasMaxLength(120);
@@ -20,6 +21,12 @@ public class TutorConfiguration : IEntityTypeConfiguration<Tutor>
         builder.Property(t => t.CreatedAt).IsRequired();
         builder.Property(t => t.UpdatedAt);
 
-        builder.HasIndex(t => t.Document);
+        builder.HasOne<Clinic>()
+            .WithMany()
+            .HasForeignKey(t => t.ClinicId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(t => t.ClinicId);
+        builder.HasIndex(t => new { t.ClinicId, t.Document });
     }
 }

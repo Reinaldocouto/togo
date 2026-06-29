@@ -464,6 +464,7 @@ public sealed class MedicalRecordsControllerTests
         }
         public Task<IReadOnlyList<PetListItemProjection>> ListAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<PetListItemProjection>>([]);
         public Task<bool> TutorExistsAsync(long tutorId, CancellationToken cancellationToken) => Task.FromResult(true);
+        public Task<bool> TutorBelongsToClinicAsync(long tutorId, long clinicId, CancellationToken cancellationToken) => Task.FromResult(true);
         public Task<bool> MicrochipExistsAsync(string microchip, long? ignorePatientId, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<PetDetailsProjection> CreateAsync(CreatePetRepositoryData data, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<PetDetailsProjection?> UpdateAsync(UpdatePetRepositoryData data, CancellationToken cancellationToken) => throw new NotImplementedException();

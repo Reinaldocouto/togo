@@ -6,12 +6,14 @@ public class Patient
 {
     private Patient() { }
 
-    private Patient(PatientType type, string name, DateOnly? birthDate, string status, DateTime createdAt)
+    private Patient(long clinicId, PatientType type, string name, DateOnly? birthDate, string status, DateTime createdAt)
     {
+        ValidateClinicId(clinicId);
         ValidateName(name);
         ValidateStatus(status);
         ValidateDate(createdAt, nameof(createdAt));
 
+        ClinicId = clinicId;
         Type = type;
         Name = name.Trim();
         BirthDate = birthDate;
@@ -20,6 +22,7 @@ public class Patient
     }
 
     public long Id { get; private set; }
+    public long ClinicId { get; private set; }
     public PatientType Type { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public DateOnly? BirthDate { get; private set; }
@@ -27,8 +30,8 @@ public class Patient
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public static Patient Create(PatientType type, string name, DateOnly? birthDate, string status, DateTime createdAt) =>
-        new(type, name, birthDate, status, createdAt);
+    public static Patient Create(long clinicId, PatientType type, string name, DateOnly? birthDate, string status, DateTime createdAt) =>
+        new(clinicId, type, name, birthDate, status, createdAt);
 
     public void Update(string name, DateOnly? birthDate, string status, DateTime updatedAt)
     {
@@ -40,6 +43,14 @@ public class Patient
         BirthDate = birthDate;
         Status = status.Trim();
         UpdatedAt = updatedAt;
+    }
+
+    private static void ValidateClinicId(long clinicId)
+    {
+        if (clinicId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(clinicId), "ClinicId must be greater than zero");
+        }
     }
 
     private static void ValidateName(string name)

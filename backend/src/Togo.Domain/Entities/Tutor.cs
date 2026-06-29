@@ -4,11 +4,13 @@ public class Tutor
 {
     private Tutor() { }
 
-    private Tutor(string name, string? document, string? email, string? phone, DateTime createdAt)
+    private Tutor(long clinicId, string name, string? document, string? email, string? phone, DateTime createdAt)
     {
+        ValidateClinicId(clinicId);
         ValidateName(name);
         ValidateDate(createdAt, nameof(createdAt));
 
+        ClinicId = clinicId;
         Name = name.Trim();
         Document = NormalizeOptional(document);
         Email = NormalizeOptional(email);
@@ -17,6 +19,7 @@ public class Tutor
     }
 
     public long Id { get; private set; }
+    public long ClinicId { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public string? Document { get; private set; }
     public string? Email { get; private set; }
@@ -24,8 +27,8 @@ public class Tutor
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public static Tutor Create(string name, string? document, string? email, string? phone, DateTime createdAt) =>
-        new(name, document, email, phone, createdAt);
+    public static Tutor Create(long clinicId, string name, string? document, string? email, string? phone, DateTime createdAt) =>
+        new(clinicId, name, document, email, phone, createdAt);
 
     public void UpdateContact(string? document, string? email, string? phone, DateTime updatedAt)
     {
@@ -44,6 +47,14 @@ public class Tutor
 
         Name = name.Trim();
         UpdatedAt = updatedAt;
+    }
+
+    private static void ValidateClinicId(long clinicId)
+    {
+        if (clinicId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(clinicId), "ClinicId must be greater than zero");
+        }
     }
 
     private static void ValidateName(string name)

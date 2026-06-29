@@ -9,5 +9,5 @@ public interface ITutorRepository
     Task AddAsync(Tutor tutor, CancellationToken cancellationToken);
     Task UpdateAsync(Tutor tutor, CancellationToken cancellationToken);
     Task DeleteAsync(Tutor tutor, CancellationToken cancellationToken);
-    Task<bool> ExistsByDocumentAsync(string document, long? ignoreTutorId, CancellationToken cancellationToken);
+    Task<bool> ExistsByDocumentAsync(long clinicId, string document, long? ignoreTutorId, CancellationToken cancellationToken);
 }
