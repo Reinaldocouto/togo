@@ -16,15 +16,28 @@ public class TutorTests
         var createdAt = DateTime.Now;
 
         // Act
-        var tutor = Tutor.Create(name, document, email, phone, createdAt);
+        var tutor = Tutor.Create(1, name, document, email, phone, createdAt);
 
         // Assert
+        Assert.Equal(1, tutor.ClinicId);
         Assert.Equal(name, tutor.Name);
         Assert.Equal(document, tutor.Document);
         Assert.Equal(email, tutor.Email);
         Assert.Equal(phone, tutor.Phone);
         Assert.Equal(createdAt, tutor.CreatedAt);
         Assert.Null(tutor.UpdatedAt);
+    }
+
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_InvalidClinicId_ShouldThrowArgumentOutOfRangeException(long clinicId)
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Tutor.Create(clinicId, "John Doe", "123456789", "john@example.com", "123-456-7890", DateTime.UtcNow));
+
+        Assert.Equal("clinicId", exception.ParamName);
     }
 
     [Fact]
@@ -38,7 +51,7 @@ public class TutorTests
         var createdAt = DateTime.Now;
 
         // Act & Assert
-        var exception = Assert.Throws<ArgumentException>(() => Tutor.Create(name, document, email, phone, createdAt));
+        var exception = Assert.Throws<ArgumentException>(() => Tutor.Create(1, name, document, email, phone, createdAt));
         Assert.StartsWith("Name is required", exception.Message);
         Assert.Equal("name", exception.ParamName);
     }
@@ -54,7 +67,7 @@ public class TutorTests
         var createdAt = DateTime.Now;
 
         // Act & Assert
-        var exception = Assert.Throws<ArgumentException>(() => Tutor.Create(name, document, email, phone, createdAt));
+        var exception = Assert.Throws<ArgumentException>(() => Tutor.Create(1, name, document, email, phone, createdAt));
         Assert.StartsWith("Name is required", exception.Message);
         Assert.Equal("name", exception.ParamName);
     }
@@ -70,7 +83,7 @@ public class TutorTests
         var createdAt = default(DateTime);
 
         // Act & Assert
-        var exception = Assert.Throws<ArgumentException>(() => Tutor.Create(name, document, email, phone, createdAt));
+        var exception = Assert.Throws<ArgumentException>(() => Tutor.Create(1, name, document, email, phone, createdAt));
         Assert.StartsWith("Date is required", exception.Message);
         Assert.Equal("createdAt", exception.ParamName);
     }
@@ -86,7 +99,7 @@ public class TutorTests
         var createdAt = DateTime.Now;
 
         // Act
-        var tutor = Tutor.Create(name, document, email, phone, createdAt);
+        var tutor = Tutor.Create(1, name, document, email, phone, createdAt);
 
         // Assert
         Assert.Equal("John Doe", tutor.Name);
@@ -103,7 +116,7 @@ public class TutorTests
         var createdAt = DateTime.Now;
 
         // Act
-        var tutor = Tutor.Create(name, document, email, phone, createdAt);
+        var tutor = Tutor.Create(1, name, document, email, phone, createdAt);
 
         // Assert
         Assert.Null(tutor.Document);
@@ -120,7 +133,7 @@ public class TutorTests
         var createdAt = DateTime.Now;
 
         // Act
-        var tutor = Tutor.Create(name, document, email, phone, createdAt);
+        var tutor = Tutor.Create(1, name, document, email, phone, createdAt);
 
         // Assert
         Assert.Null(tutor.Document);
@@ -137,7 +150,7 @@ public class TutorTests
         var createdAt = DateTime.Now;
 
         // Act
-        var tutor = Tutor.Create(name, document, email, phone, createdAt);
+        var tutor = Tutor.Create(1, name, document, email, phone, createdAt);
 
         // Assert
         Assert.Equal("123456789", tutor.Document);
@@ -147,7 +160,7 @@ public class TutorTests
     public void UpdateContact_ValidData_ShouldUpdate()
     {
         // Arrange
-        var tutor = Tutor.Create("John Doe", "123", "john@example.com", "123", DateTime.Now);
+        var tutor = Tutor.Create(1, "John Doe", "123", "john@example.com", "123", DateTime.Now);
         var newDocument = "987654321";
         var newEmail = "jane@example.com";
         var newPhone = "987-654-3210";
@@ -167,7 +180,7 @@ public class TutorTests
     public void UpdateContact_DefaultUpdatedAt_ShouldThrowArgumentException()
     {
         // Arrange
-        var tutor = Tutor.Create("John Doe", "123", "john@example.com", "123", DateTime.Now);
+        var tutor = Tutor.Create(1, "John Doe", "123", "john@example.com", "123", DateTime.Now);
         var updatedAt = default(DateTime);
 
         // Act & Assert
@@ -180,7 +193,7 @@ public class TutorTests
     public void UpdateName_ValidData_ShouldUpdate()
     {
         // Arrange
-        var tutor = Tutor.Create("John Doe", "123", "john@example.com", "123", DateTime.Now);
+        var tutor = Tutor.Create(1, "John Doe", "123", "john@example.com", "123", DateTime.Now);
         var newName = "Jane Doe";
         var updatedAt = DateTime.Now.AddDays(1);
 
@@ -196,7 +209,7 @@ public class TutorTests
     public void UpdateName_EmptyName_ShouldThrowArgumentException()
     {
         // Arrange
-        var tutor = Tutor.Create("John Doe", "123", "john@example.com", "123", DateTime.Now);
+        var tutor = Tutor.Create(1, "John Doe", "123", "john@example.com", "123", DateTime.Now);
         var newName = "";
         var updatedAt = DateTime.Now.AddDays(1);
 
@@ -210,7 +223,7 @@ public class TutorTests
     public void UpdateName_WhitespaceName_ShouldThrowArgumentException()
     {
         // Arrange
-        var tutor = Tutor.Create("John Doe", "123", "john@example.com", "123", DateTime.Now);
+        var tutor = Tutor.Create(1, "John Doe", "123", "john@example.com", "123", DateTime.Now);
         var newName = "   ";
         var updatedAt = DateTime.Now.AddDays(1);
 
@@ -224,7 +237,7 @@ public class TutorTests
     public void UpdateName_DefaultUpdatedAt_ShouldThrowArgumentException()
     {
         // Arrange
-        var tutor = Tutor.Create("John Doe", "123", "john@example.com", "123", DateTime.Now);
+        var tutor = Tutor.Create(1, "John Doe", "123", "john@example.com", "123", DateTime.Now);
         var newName = "Jane Doe";
         var updatedAt = default(DateTime);
 
@@ -238,7 +251,7 @@ public class TutorTests
     public void UpdateName_NameWithWhitespace_ShouldTrim()
     {
         // Arrange
-        var tutor = Tutor.Create("John Doe", "123", "john@example.com", "123", DateTime.Now);
+        var tutor = Tutor.Create(1, "John Doe", "123", "john@example.com", "123", DateTime.Now);
         var newName = "  Jane Doe  ";
         var updatedAt = DateTime.Now.AddDays(1);
 

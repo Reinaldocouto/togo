@@ -26,6 +26,12 @@ public class CreateTutorUseCase
         var hasDocument = !string.IsNullOrWhiteSpace(request.Document);
         _logger.LogInformation("Creating tutor. HasDocument: {HasDocument}", hasDocument);
 
+        if (request.ClinicId <= 0)
+        {
+            _logger.LogWarning("Tutor creation failed because clinic id is invalid");
+            return ApplicationResult<TutorResponse>.ValidationError("ClinicId must be greater than zero.");
+        }
+
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             _logger.LogWarning("Tutor creation failed due to validation error");
@@ -33,7 +39,7 @@ public class CreateTutorUseCase
         }
 
         var documentUniquenessValidation = await _documentUniquenessValidator
-            .ValidateAsync(request.Document, null, cancellationToken);
+            .ValidateAsync(request.ClinicId, request.Document, null, cancellationToken);
 
         if (!documentUniquenessValidation.IsSuccess)
         {
@@ -41,7 +47,7 @@ public class CreateTutorUseCase
             return ApplicationResult<TutorResponse>.Conflict(documentUniquenessValidation.Error!);
         }
 
-        var tutor = Tutor.Create(request.Name, request.Document, request.Email, request.Phone, DateTime.UtcNow);
+        var tutor = Tutor.Create(request.ClinicId, request.Name, request.Document, request.Email, request.Phone, DateTime.UtcNow);
         await _tutorRepository.AddAsync(tutor, cancellationToken);
 
         _logger.LogInformation("Tutor created successfully. TutorId: {TutorId}", tutor.Id);

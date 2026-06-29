@@ -265,6 +265,47 @@ public sealed class UpdatePetUseCaseTests
         Assert.NotEqual(default, result.Data.UpdatedAt.Value);
     }
 
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnSuccess_WhenTutorBelongsToExistingPatientClinic()
+    {
+        var repository = new FakePetRepository();
+        var patientId = repository.AddPet(tutorId: 1, clinicId: 3);
+        repository.AddExistingTutor(2, clinicId: 3);
+        var useCase = CreateUseCase(repository);
+        var request = CreateValidRequest(tutorId: 2);
+
+        var result = await useCase.ExecuteAsync(patientId, request, CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.Success, result.Type);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Data!.TutorId);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnValidationError_WhenTutorBelongsToAnotherClinic()
+    {
+        var repository = new FakePetRepository();
+        var patientId = repository.AddPet(tutorId: 1, clinicId: 3);
+        repository.AddExistingTutor(2, clinicId: 4);
+        var useCase = CreateUseCase(repository);
+        var request = CreateValidRequest(tutorId: 2);
+
+        var result = await useCase.ExecuteAsync(patientId, request, CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.ValidationError, result.Type);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Tutor does not belong to the informed clinic.", result.Error);
+    }
+
+    [Fact]
+    public void UpdatePetRequest_ShouldNotExposeClinicId()
+    {
+        var clinicIdProperty = typeof(UpdatePetRequest).GetProperty("ClinicId");
+
+        Assert.Null(clinicIdProperty);
+    }
+
     private static UpdatePetUseCase CreateUseCase(
         FakePetRepository repository,
         TestLogger<UpdatePetUseCase>? logger = null)

@@ -53,12 +53,12 @@ public class TutorRepository : ITutorRepository
         }
     }
 
-    public async Task<bool> ExistsByDocumentAsync(string document, long? ignoreTutorId, CancellationToken cancellationToken)
+    public async Task<bool> ExistsByDocumentAsync(long clinicId, string document, long? ignoreTutorId, CancellationToken cancellationToken)
     {
         var normalizedDocument = document.Trim();
 
         return await _context.Tutors
             .AsNoTracking()
-            .AnyAsync(t => t.Document == normalizedDocument && (!ignoreTutorId.HasValue || t.Id != ignoreTutorId.Value), cancellationToken);
+            .AnyAsync(t => t.ClinicId == clinicId && t.Document == normalizedDocument && (!ignoreTutorId.HasValue || t.Id != ignoreTutorId.Value), cancellationToken);
     }
 }

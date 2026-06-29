@@ -10,6 +10,8 @@ public interface IPetRepository
 
     Task<bool> TutorExistsAsync(long tutorId, CancellationToken cancellationToken);
 
+    Task<bool> TutorBelongsToClinicAsync(long tutorId, long clinicId, CancellationToken cancellationToken);
+
     Task<bool> MicrochipExistsAsync(string microchip, long? ignorePatientId, CancellationToken cancellationToken);
 
     Task<PetDetailsProjection> CreateAsync(CreatePetRepositoryData data, CancellationToken cancellationToken);

@@ -45,7 +45,7 @@ public class UpdateTutorUseCase
         }
 
         var documentUniquenessValidation = await _documentUniquenessValidator
-            .ValidateAsync(request.Document, id, cancellationToken);
+            .ValidateAsync(tutor.ClinicId, request.Document, id, cancellationToken);
 
         if (!documentUniquenessValidation.IsSuccess)
         {

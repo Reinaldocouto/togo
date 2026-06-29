@@ -18,7 +18,8 @@ public class PrescriptionRepositoryTests
 
     private static async Task<Attendance> AddAttendanceAsync(AppDbContext context, string attendanceNumber)
     {
-        var patient = Patient.Create(PatientType.Pet, attendanceNumber + " Patient", null, "Active", DateTime.UtcNow);
+        var clinic = await ClinicalScopeTestData.EnsureClinicAsync(context);
+        var patient = Patient.Create(clinic.Id, PatientType.Pet, attendanceNumber + " Patient", null, "Active", DateTime.UtcNow);
         context.Patients.Add(patient);
         await context.SaveChangesAsync();
         var attendance = Attendance.Create(patient.Id, attendanceNumber, DateTime.UtcNow, AttendanceType.Consultation, UserId, DateTime.UtcNow);

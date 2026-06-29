@@ -17,12 +17,28 @@ public sealed class PetTutorExistsValidatorTests
         var validator = new PetTutorExistsValidator(repository, logger);
 
         // Act
-        var result = await validator.ValidateAsync(tutorId, CancellationToken.None);
+        var result = await validator.ValidateAsync(tutorId, 1, CancellationToken.None);
 
         // Assert
         Assert.Equal(ApplicationResultType.ValidationError, result.Type);
         Assert.False(result.IsSuccess);
         Assert.Equal("Tutor id is invalid.", result.Error);
+    }
+
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task ValidateAsync_ShouldReturnValidationError_WhenClinicIdIsInvalid(long clinicId)
+    {
+        var repository = new FakePetRepository();
+        repository.AddExistingTutor(1);
+        var validator = new PetTutorExistsValidator(repository, new TestLogger<PetTutorExistsValidator>());
+
+        var result = await validator.ValidateAsync(1, clinicId, CancellationToken.None);
+
+        Assert.Equal(ApplicationResultType.ValidationError, result.Type);
+        Assert.Equal("ClinicId must be greater than zero.", result.Error);
     }
 
     [Fact]
@@ -34,7 +50,7 @@ public sealed class PetTutorExistsValidatorTests
         var validator = new PetTutorExistsValidator(repository, logger);
 
         // Act
-        var result = await validator.ValidateAsync(999, CancellationToken.None);
+        var result = await validator.ValidateAsync(999, 1, CancellationToken.None);
 
         // Assert
         Assert.Equal(ApplicationResultType.NotFound, result.Type);
@@ -52,7 +68,7 @@ public sealed class PetTutorExistsValidatorTests
         var validator = new PetTutorExistsValidator(repository, logger);
 
         // Act
-        var result = await validator.ValidateAsync(1, CancellationToken.None);
+        var result = await validator.ValidateAsync(1, 1, CancellationToken.None);
 
         // Assert
         Assert.Equal(ApplicationResultType.Success, result.Type);

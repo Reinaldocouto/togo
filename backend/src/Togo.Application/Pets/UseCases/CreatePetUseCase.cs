@@ -35,7 +35,7 @@ public class CreatePetUseCase
             request.TutorId,
             hasMicrochip);
 
-        var tutorValidation = await _petTutorExistsValidator.ValidateAsync(request.TutorId, cancellationToken);
+        var tutorValidation = await _petTutorExistsValidator.ValidateAsync(request.TutorId, request.ClinicId, cancellationToken);
         if (!tutorValidation.IsSuccess)
         {
             _logger.LogWarning(
@@ -55,6 +55,7 @@ public class CreatePetUseCase
         }
 
         var data = new CreatePetRepositoryData(
+            request.ClinicId,
             request.TutorId,
             PatientType.Pet,
             request.Name,

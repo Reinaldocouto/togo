@@ -16,6 +16,7 @@ public class TutorDocumentUniquenessValidator
     }
 
     public async Task<ApplicationResult<bool>> ValidateAsync(
+        long clinicId,
         string? document,
         long? ignoreTutorId,
         CancellationToken cancellationToken)
@@ -26,14 +27,14 @@ public class TutorDocumentUniquenessValidator
             return ApplicationResult<bool>.Success(true);
         }
 
-        var documentExists = await _tutorRepository.ExistsByDocumentAsync(document, ignoreTutorId, cancellationToken);
+        var documentExists = await _tutorRepository.ExistsByDocumentAsync(clinicId, document, ignoreTutorId, cancellationToken);
         if (documentExists)
         {
-            _logger.LogWarning("Tutor document uniqueness validation failed. IgnoreTutorId: {IgnoreTutorId}", ignoreTutorId);
+            _logger.LogWarning("Tutor document uniqueness validation failed. ClinicId: {ClinicId}. IgnoreTutorId: {IgnoreTutorId}", clinicId, ignoreTutorId);
             return ApplicationResult<bool>.Conflict("A tutor with this document already exists.");
         }
 
-        _logger.LogDebug("Tutor document uniqueness validation succeeded. IgnoreTutorId: {IgnoreTutorId}", ignoreTutorId);
+        _logger.LogDebug("Tutor document uniqueness validation succeeded. ClinicId: {ClinicId}. IgnoreTutorId: {IgnoreTutorId}", clinicId, ignoreTutorId);
 
         return ApplicationResult<bool>.Success(true);
     }

@@ -7,17 +7,18 @@ namespace Togo.Application.Tests.Pets.Fakes;
 internal sealed class FakePetRepository : IPetRepository
 {
     private readonly List<PetState> _pets = [];
-    private readonly HashSet<long> _existingTutorIds = [];
+    private readonly Dictionary<long, long> _existingTutorClinics = [];
     private readonly HashSet<long> _deleteConflictPatientIds = [];
     private long _nextPatientId = 1;
 
-    public void AddExistingTutor(long tutorId)
+    public void AddExistingTutor(long tutorId, long clinicId = 1)
     {
-        _existingTutorIds.Add(tutorId);
+        _existingTutorClinics[tutorId] = clinicId;
     }
 
     public long AddPet(
         long tutorId = 1,
+        long clinicId = 1,
         string name = "Thor",
         DateOnly? birthDate = null,
         string status = "Active",
@@ -29,12 +30,13 @@ internal sealed class FakePetRepository : IPetRepository
         DateTime? createdAt = null,
         DateTime? updatedAt = null)
     {
-        AddExistingTutor(tutorId);
+        AddExistingTutor(tutorId, clinicId);
 
         var patientId = GetNextPatientId();
         _pets.Add(new PetState(
             patientId,
             tutorId,
+            clinicId,
             PatientType.Pet,
             name,
             birthDate,
@@ -79,7 +81,14 @@ internal sealed class FakePetRepository : IPetRepository
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        return Task.FromResult(_existingTutorIds.Contains(tutorId));
+        return Task.FromResult(_existingTutorClinics.ContainsKey(tutorId));
+    }
+
+    public Task<bool> TutorBelongsToClinicAsync(long tutorId, long clinicId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return Task.FromResult(_existingTutorClinics.TryGetValue(tutorId, out var tutorClinicId) && tutorClinicId == clinicId);
     }
 
     public Task<bool> MicrochipExistsAsync(string microchip, long? ignorePatientId, CancellationToken cancellationToken)
@@ -107,6 +116,7 @@ internal sealed class FakePetRepository : IPetRepository
         var pet = new PetState(
             GetNextPatientId(),
             data.TutorId,
+            data.ClinicId,
             data.PatientType,
             data.Name,
             data.BirthDate,
@@ -197,6 +207,7 @@ internal sealed class FakePetRepository : IPetRepository
     {
         return new PetDetailsProjection(
             pet.PatientId,
+            pet.ClinicId,
             pet.TutorId,
             pet.Name,
             pet.BirthDate,
@@ -213,6 +224,7 @@ internal sealed class FakePetRepository : IPetRepository
     private sealed record PetState(
         long PatientId,
         long TutorId,
+        long ClinicId,
         PatientType PatientType,
         string Name,
         DateOnly? BirthDate,
