@@ -250,7 +250,8 @@ public class AttendanceRepositoryTests
 
     private static async Task<Patient> AddPatientAsync(AppDbContext context, string name)
     {
-        var patient = Patient.Create(1, PatientType.Pet, name, new DateOnly(2020, 1, 1), "Active", DateTime.UtcNow);
+        var clinic = await ClinicalScopeTestData.EnsureClinicAsync(context);
+        var patient = Patient.Create(clinic.Id, PatientType.Pet, name, new DateOnly(2020, 1, 1), "Active", DateTime.UtcNow);
         context.Patients.Add(patient);
         await context.SaveChangesAsync();
         return patient;
