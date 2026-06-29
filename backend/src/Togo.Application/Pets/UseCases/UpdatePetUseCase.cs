@@ -49,7 +49,7 @@ public class UpdatePetUseCase
             return ApplicationResult<PetResponse>.NotFound("Pet not found.");
         }
 
-        var tutorValidation = await _petTutorExistsValidator.ValidateAsync(request.TutorId, cancellationToken);
+        var tutorValidation = await _petTutorExistsValidator.ValidateAsync(request.TutorId, existingPet.ClinicId, cancellationToken);
         if (!tutorValidation.IsSuccess)
         {
             _logger.LogWarning(

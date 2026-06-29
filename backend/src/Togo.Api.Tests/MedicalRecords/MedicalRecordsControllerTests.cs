@@ -460,7 +460,7 @@ public sealed class MedicalRecordsControllerTests
         public Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken)
         {
             if (!_patientIds.Contains(patientId)) return Task.FromResult<PetDetailsProjection?>(null);
-            return Task.FromResult<PetDetailsProjection?>(new PetDetailsProjection(patientId, 1, "Pet", DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-1)), "Active", "Dog", "Mixed", PetSex.NotInformed, null, null, DateTime.UtcNow, DateTime.UtcNow));
+            return Task.FromResult<PetDetailsProjection?>(new PetDetailsProjection(patientId, 1, 1, "Pet", DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-1)), "Active", "Dog", "Mixed", PetSex.NotInformed, null, null, DateTime.UtcNow, DateTime.UtcNow));
         }
         public Task<IReadOnlyList<PetListItemProjection>> ListAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<PetListItemProjection>>([]);
         public Task<bool> TutorExistsAsync(long tutorId, CancellationToken cancellationToken) => Task.FromResult(true);

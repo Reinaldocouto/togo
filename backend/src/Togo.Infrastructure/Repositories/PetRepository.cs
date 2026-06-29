@@ -43,6 +43,7 @@ public class PetRepository : IPetRepository
             where patient.Id == patientId
             select new PetDetailsProjection(
                 patient.Id,
+                patient.ClinicId,
                 pet.TutorId,
                 patient.Name,
                 patient.BirthDate,
@@ -167,6 +168,7 @@ public class PetRepository : IPetRepository
                 patient => patient.Id,
                 (pet, patient) => new PetDetailsProjection(
                     patient.Id,
+                    patient.ClinicId,
                     pet.TutorId,
                     patient.Name,
                     patient.BirthDate,
@@ -184,6 +186,7 @@ public class PetRepository : IPetRepository
     {
         return new PetDetailsProjection(
             patient.Id,
+            patient.ClinicId,
             pet.TutorId,
             patient.Name,
             patient.BirthDate,

@@ -18,6 +18,7 @@ internal sealed class FakePetRepository : IPetRepository
 
     public long AddPet(
         long tutorId = 1,
+        long clinicId = 1,
         string name = "Thor",
         DateOnly? birthDate = null,
         string status = "Active",
@@ -29,13 +30,13 @@ internal sealed class FakePetRepository : IPetRepository
         DateTime? createdAt = null,
         DateTime? updatedAt = null)
     {
-        AddExistingTutor(tutorId);
+        AddExistingTutor(tutorId, clinicId);
 
         var patientId = GetNextPatientId();
         _pets.Add(new PetState(
             patientId,
             tutorId,
-            1,
+            clinicId,
             PatientType.Pet,
             name,
             birthDate,
@@ -206,6 +207,7 @@ internal sealed class FakePetRepository : IPetRepository
     {
         return new PetDetailsProjection(
             pet.PatientId,
+            pet.ClinicId,
             pet.TutorId,
             pet.Name,
             pet.BirthDate,

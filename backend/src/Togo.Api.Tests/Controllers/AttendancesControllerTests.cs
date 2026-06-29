@@ -161,6 +161,7 @@ public sealed class AttendancesControllerTests
 
             var projection = new PetDetailsProjection(
                 PatientId: patientId,
+                ClinicId: 1,
                 TutorId: 1,
                 Name: "Pet",
                 BirthDate: DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-1)),

@@ -4,6 +4,7 @@ namespace Togo.Application.Pets.Contracts;
 
 public record PetDetailsProjection(
     long PatientId,
+    long ClinicId,
     long TutorId,
     string Name,
     DateOnly? BirthDate,
