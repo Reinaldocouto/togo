@@ -74,6 +74,7 @@ public class CreateClinicalEvolutionUseCase
             var currentUser = _currentUserService.GetCurrentUser();
             var createdAtUtc = DateTime.UtcNow;
             var clinicalEvolution = ClinicalEvolution.Create(
+                attendance.ClinicId,
                 request.AttendanceId,
                 request.RegisteredAt,
                 request.Type,
@@ -102,17 +103,18 @@ public class CreateClinicalEvolutionUseCase
             UserId: currentUser.UserId,
             UserProfile: currentUser.Profile,
             OccurredAt: DateTime.UtcNow,
-            MetadataJson: CreateMetadataJson(clinicalEvolution.AttendanceId, clinicalEvolution.Type));
+            MetadataJson: CreateMetadataJson(clinicalEvolution.ClinicId, clinicalEvolution.AttendanceId, clinicalEvolution.Type));
 
         await _clinicalAuditLogWriter.WriteAsync(auditEvent, cancellationToken);
     }
 
-    private static string CreateMetadataJson(long attendanceId, EvolutionType type) =>
-        JsonSerializer.Serialize(new { AttendanceId = attendanceId, Type = type.ToString() });
+    private static string CreateMetadataJson(long clinicId, long attendanceId, EvolutionType type) =>
+        JsonSerializer.Serialize(new { ClinicId = clinicId, AttendanceId = attendanceId, Type = type.ToString() });
 
     private static ClinicalEvolutionResponse ToResponse(ClinicalEvolution clinicalEvolution) =>
         new(
             clinicalEvolution.Id,
+            clinicalEvolution.ClinicId,
             clinicalEvolution.AttendanceId,
             clinicalEvolution.RegisteredAt,
             clinicalEvolution.Type,

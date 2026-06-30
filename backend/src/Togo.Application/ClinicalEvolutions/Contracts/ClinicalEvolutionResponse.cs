@@ -4,6 +4,7 @@ namespace Togo.Application.ClinicalEvolutions.Contracts;
 
 public sealed record ClinicalEvolutionResponse(
     long Id,
+    long ClinicId,
     long AttendanceId,
     DateTime RegisteredAt,
     EvolutionType Type,

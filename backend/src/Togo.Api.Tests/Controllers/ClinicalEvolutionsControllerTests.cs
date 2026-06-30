@@ -61,8 +61,9 @@ public sealed class ClinicalEvolutionsControllerTests
     }
 
     [Fact]
-    public void DetailResponse_ShouldExposeTextForCreationResponse()
+    public void DetailResponse_ShouldExposeTextAndClinicIdForCreationResponse()
     {
         Assert.Contains(typeof(ClinicalEvolutionResponse).GetProperties(), property => property.Name == "Text");
+        Assert.Contains(typeof(ClinicalEvolutionResponse).GetProperties(), property => property.Name == "ClinicId");
     }
 }
