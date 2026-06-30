@@ -64,7 +64,7 @@ public sealed class CloseAttendanceUseCaseTests
         const long lookupId = 123;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
         var closedAt = new DateTime(2026, 02, 10, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-CLOSE-001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var auditLogWriter = new FakeClinicalAuditLogWriter();
         var currentUserService = new FakeCurrentUserService(CurrentUserId) { CurrentUser = new CurrentUserInfo(CurrentUserId, "Veterinarian", true) };
@@ -95,7 +95,7 @@ public sealed class CloseAttendanceUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long lookupId = 124;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-002", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-CLOSE-002", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
         var closedAt = default(DateTime);
@@ -115,7 +115,7 @@ public sealed class CloseAttendanceUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long lookupId = 125;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-003", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-CLOSE-003", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
 
@@ -136,7 +136,7 @@ public sealed class CloseAttendanceUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long lookupId = 126;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-004", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-CLOSE-004", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         attendance.Close(new DateTime(2026, 02, 10, 10, 0, 0, DateTimeKind.Utc), TestUserId, TestCreatedAt.AddHours(1));
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
@@ -158,7 +158,7 @@ public sealed class CloseAttendanceUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long lookupId = 127;
         var openedAt = new DateTime(2026, 02, 10, 9, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-CLOSE-005", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-CLOSE-005", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         attendance.Cancel(TestUserId, TestCreatedAt.AddHours(1));
         repository.AddAttendanceForLookup(lookupId, attendance);
         var useCase = CreateUseCase(repository);
@@ -179,7 +179,7 @@ public sealed class CloseAttendanceUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
         var lookupId = 123L;
-        var attendance = Attendance.Create(12, "ATT-USER-FAIL", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-USER-FAIL", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var currentUserService = new FakeCurrentUserService(CurrentUserId) { ThrowResolutionException = true };
         var auditLogWriter = new FakeClinicalAuditLogWriter();

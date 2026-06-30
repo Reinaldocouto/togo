@@ -271,7 +271,7 @@ public sealed class PrescriptionsControllerTests
         private readonly Dictionary<long, Attendance> _items = [];
         public void AddAttendance(long id, AttendanceStatus status)
         {
-            var attendance = Attendance.Create(1, $"ATT-{id}", DateTime.UtcNow.AddHours(-1), AttendanceType.Consultation, Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
+            var attendance = Attendance.Create(1, 1, $"ATT-{id}", DateTime.UtcNow.AddHours(-1), AttendanceType.Consultation, Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow.AddHours(-1));
             typeof(Attendance).GetProperty(nameof(Attendance.Id))!.SetValue(attendance, id);
             if (status == AttendanceStatus.Closed) attendance.Close(DateTime.UtcNow, Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow);
             if (status == AttendanceStatus.Canceled) attendance.Cancel(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow);

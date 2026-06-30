@@ -50,6 +50,9 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<long>("ClinicId")
+                        .HasColumnType("bigint");
+
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("char(36)");
 
@@ -84,6 +87,12 @@ namespace Togo.Infrastructure.Migrations
                     b.HasIndex("AttendanceNumber")
                         .IsUnique();
 
+                    b.HasIndex("ClinicId");
+
+                    b.HasIndex("ClinicId", "OpenedAt");
+
+                    b.HasIndex("ClinicId", "Status");
+
                     b.HasIndex("OpenedAt");
 
                     b.HasIndex("PatientId");
@@ -104,6 +113,9 @@ namespace Togo.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<long>("ClinicId")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("char(36)");
@@ -302,6 +314,9 @@ namespace Togo.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<long>("ClinicId")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("char(36)");
@@ -604,6 +619,12 @@ namespace Togo.Infrastructure.Migrations
 
             modelBuilder.Entity("Togo.Domain.Entities.Attendance", b =>
                 {
+                    b.HasOne("Togo.Domain.Entities.Clinic", null)
+                        .WithMany()
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Togo.Domain.Entities.Patient", null)
                         .WithMany()
                         .HasForeignKey("PatientId")

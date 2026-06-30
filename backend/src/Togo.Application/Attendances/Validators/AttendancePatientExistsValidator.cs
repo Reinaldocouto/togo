@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Togo.Application.Attendances.Contracts;
 using Togo.Application.Pets;
 using Togo.Application.Tutors;
 
@@ -17,22 +18,22 @@ public class AttendancePatientExistsValidator
         _logger = logger;
     }
 
-    public async Task<ApplicationResult<bool>> ValidateAsync(long patientId, CancellationToken cancellationToken)
+    public async Task<ApplicationResult<AttendancePatientScope>> ValidateAsync(long patientId, CancellationToken cancellationToken)
     {
         if (patientId <= 0)
         {
             _logger.LogWarning("Attendance patient existence validation failed because patient id is invalid. PatientId: {PatientId}", patientId);
-            return ApplicationResult<bool>.ValidationError("Patient id is invalid.");
+            return ApplicationResult<AttendancePatientScope>.ValidationError("Patient id is invalid.");
         }
 
         var patient = await _petRepository.GetByPatientIdAsync(patientId, cancellationToken);
         if (patient is null)
         {
             _logger.LogWarning("Attendance patient existence validation failed because patient was not found. PatientId: {PatientId}", patientId);
-            return ApplicationResult<bool>.NotFound("Patient not found.");
+            return ApplicationResult<AttendancePatientScope>.NotFound("Patient not found.");
         }
 
         _logger.LogDebug("Attendance patient existence validation succeeded. PatientId: {PatientId}", patientId);
-        return ApplicationResult<bool>.Success(true);
+        return ApplicationResult<AttendancePatientScope>.Success(new AttendancePatientScope(patient.PatientId, patient.ClinicId));
     }
 }

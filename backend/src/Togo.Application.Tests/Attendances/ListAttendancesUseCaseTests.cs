@@ -30,8 +30,8 @@ public sealed class ListAttendancesUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
 
-        var first = Attendance.Create(100, "ATT-LIST-001", new DateTime(2026, 03, 01, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
-        var second = Attendance.Create(200, "ATT-LIST-002", new DateTime(2026, 03, 02, 9, 30, 0, DateTimeKind.Utc), AttendanceType.Emergency, TestUserId, TestCreatedAt);
+        var first = Attendance.Create(1, 100, "ATT-LIST-001", new DateTime(2026, 03, 01, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var second = Attendance.Create(1, 200, "ATT-LIST-002", new DateTime(2026, 03, 02, 9, 30, 0, DateTimeKind.Utc), AttendanceType.Emergency, TestUserId, TestCreatedAt);
 
         await repository.AddAsync(first, CancellationToken.None);
         await repository.AddAsync(second, CancellationToken.None);

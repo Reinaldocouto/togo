@@ -40,7 +40,7 @@ public sealed class AttendancePatientExistsValidatorTests
     public async Task ValidateAsync_ShouldReturnSuccess_WhenPatientExists()
     {
         var repository = new FakePetRepository();
-        var patientId = repository.AddPet();
+        var patientId = repository.AddPet(clinicId: 42);
         var logger = new TestLogger<AttendancePatientExistsValidator>();
         var validator = new AttendancePatientExistsValidator(repository, logger);
 
@@ -48,6 +48,8 @@ public sealed class AttendancePatientExistsValidatorTests
 
         Assert.Equal(ApplicationResultType.Success, result.Type);
         Assert.True(result.IsSuccess);
-        Assert.True(result.Data);
+        Assert.NotNull(result.Data);
+        Assert.Equal(patientId, result.Data.PatientId);
+        Assert.Equal(42, result.Data.ClinicId);
     }
 }

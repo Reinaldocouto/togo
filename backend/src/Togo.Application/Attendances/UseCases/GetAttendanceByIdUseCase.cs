@@ -48,6 +48,7 @@ public class GetAttendanceByIdUseCase
     private static AttendanceResponse ToResponse(Attendance attendance) =>
         new(
             attendance.Id,
+            attendance.ClinicId,
             attendance.PatientId,
             attendance.AttendanceNumber,
             attendance.OpenedAt,

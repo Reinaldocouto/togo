@@ -11,8 +11,8 @@ public sealed class FakeAttendanceRepositoryTests
     public async Task AddAsync_ShouldNotOverwriteAttendances_WhenEntitiesHaveDefaultId()
     {
         var repository = new FakeAttendanceRepository();
-        var attendanceOne = Attendance.Create(1, "ATT-001", new DateTime(2026, 1, 1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
-        var attendanceTwo = Attendance.Create(2, "ATT-002", new DateTime(2026, 1, 2), AttendanceType.Emergency, TestUserId, TestCreatedAt);
+        var attendanceOne = Attendance.Create(1, 1, "ATT-001", new DateTime(2026, 1, 1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendanceTwo = Attendance.Create(1, 2, "ATT-002", new DateTime(2026, 1, 2), AttendanceType.Emergency, TestUserId, TestCreatedAt);
 
         await repository.AddAsync(attendanceOne, CancellationToken.None);
         await repository.AddAsync(attendanceTwo, CancellationToken.None);
@@ -28,7 +28,7 @@ public sealed class FakeAttendanceRepositoryTests
     public async Task GetByIdAsync_ShouldReturnConfiguredLookupAttendance()
     {
         var repository = new FakeAttendanceRepository();
-        var attendance = Attendance.Create(3, "ATT-LOOKUP", new DateTime(2026, 1, 3), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 3, "ATT-LOOKUP", new DateTime(2026, 1, 3), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(999, attendance);
 
         var result = await repository.GetByIdAsync(999, CancellationToken.None);
@@ -41,8 +41,8 @@ public sealed class FakeAttendanceRepositoryTests
     public async Task UpdateAsync_ShouldIncrementUpdateCallsCount_AndKeepMultipleItems()
     {
         var repository = new FakeAttendanceRepository();
-        var attendanceOne = Attendance.Create(1, "ATT-001", new DateTime(2026, 1, 1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
-        var attendanceTwo = Attendance.Create(2, "ATT-002", new DateTime(2026, 1, 2), AttendanceType.Emergency, TestUserId, TestCreatedAt);
+        var attendanceOne = Attendance.Create(1, 1, "ATT-001", new DateTime(2026, 1, 1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendanceTwo = Attendance.Create(1, 2, "ATT-002", new DateTime(2026, 1, 2), AttendanceType.Emergency, TestUserId, TestCreatedAt);
 
         await repository.AddAsync(attendanceOne, CancellationToken.None);
         await repository.AddAsync(attendanceTwo, CancellationToken.None);

@@ -63,5 +63,5 @@ public sealed class ListClinicalEvolutionsByAttendanceUseCaseTests
         Assert.Equal(0, repository.ListByAttendanceIdCallsCount);
     }
 
-    private static Attendance CreateOpenAttendance() => Attendance.Create(1, "ATT-001", RegisteredAt.AddHours(-1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+    private static Attendance CreateOpenAttendance() => Attendance.Create(1, 1, "ATT-001", RegisteredAt.AddHours(-1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
 }

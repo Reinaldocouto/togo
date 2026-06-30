@@ -59,7 +59,7 @@ public sealed class CancelAttendanceUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
         const long lookupId = 223;
-        var attendance = Attendance.Create(12, "ATT-CANCEL-001", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-CANCEL-001", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var auditLogWriter = new FakeClinicalAuditLogWriter();
         var currentUserService = new FakeCurrentUserService(CurrentUserId) { CurrentUser = new CurrentUserInfo(CurrentUserId, "Receptionist", true) };
@@ -88,7 +88,7 @@ public sealed class CancelAttendanceUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
         const long lookupId = 224;
-        var attendance = Attendance.Create(12, "ATT-CANCEL-002", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-CANCEL-002", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         attendance.Close(new DateTime(2026, 03, 10, 10, 0, 0, DateTimeKind.Utc), TestUserId, TestCreatedAt.AddHours(1));
         repository.AddAttendanceForLookup(lookupId, attendance);
         var auditLogWriter = new FakeClinicalAuditLogWriter();
@@ -108,7 +108,7 @@ public sealed class CancelAttendanceUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
         const long lookupId = 225;
-        var attendance = Attendance.Create(12, "ATT-CANCEL-003", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-CANCEL-003", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         attendance.Cancel(TestUserId, TestCreatedAt.AddHours(1));
         repository.AddAttendanceForLookup(lookupId, attendance);
         var auditLogWriter = new FakeClinicalAuditLogWriter();
@@ -128,7 +128,7 @@ public sealed class CancelAttendanceUseCaseTests
     {
         var repository = new FakeAttendanceRepository();
         var lookupId = 123L;
-        var attendance = Attendance.Create(12, "ATT-USER-FAIL", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-USER-FAIL", new DateTime(2026, 03, 10, 9, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(lookupId, attendance);
         var currentUserService = new FakeCurrentUserService(CurrentUserId) { ThrowResolutionException = true };
         var auditLogWriter = new FakeClinicalAuditLogWriter();

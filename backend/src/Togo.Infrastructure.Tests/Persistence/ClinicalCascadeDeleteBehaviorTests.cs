@@ -59,7 +59,7 @@ public class ClinicalCascadeDeleteBehaviorTests
         await using var _ = connection;
 
         var patient = await AddPatientAsync(context, "Patient with attendance and medical record");
-        var attendance = Attendance.Create(patient.Id, "ATD-CASCADE-001", new DateTime(2026, 6, 5, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(patient.ClinicId, patient.Id, "ATD-CASCADE-001", new DateTime(2026, 6, 5, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         var medicalRecord = MedicalRecord.Create(
             patient.Id,
             "Medical record must remain when patient delete is blocked",
@@ -164,7 +164,7 @@ public class ClinicalCascadeDeleteBehaviorTests
     private static async Task<Attendance> AddAttendanceAsync(AppDbContext context, string patientName, string attendanceNumber)
     {
         var patient = await AddPatientAsync(context, patientName);
-        var attendance = Attendance.Create(patient.Id, attendanceNumber, new DateTime(2026, 6, 5, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(patient.ClinicId, patient.Id, attendanceNumber, new DateTime(2026, 6, 5, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
         context.Attendances.Add(attendance);
         await context.SaveChangesAsync();
         return attendance;
