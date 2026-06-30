@@ -36,13 +36,15 @@ public sealed class MedicalRecordPatientExistsValidatorTests
     public async Task ValidateAsync_ShouldReturnSuccess_WhenPatientExists()
     {
         var petRepository = new FakePetRepository();
-        var patientId = petRepository.AddPet();
+        var patientId = petRepository.AddPet(clinicId: 42);
         var validator = new MedicalRecordPatientExistsValidator(petRepository, new TestLogger<MedicalRecordPatientExistsValidator>());
 
         var result = await validator.ValidateAsync(patientId, CancellationToken.None);
 
         Assert.Equal(ApplicationResultType.Success, result.Type);
         Assert.True(result.IsSuccess);
-        Assert.True(result.Data);
+        Assert.NotNull(result.Data);
+        Assert.Equal(patientId, result.Data!.PatientId);
+        Assert.Equal(42, result.Data.ClinicId);
     }
 }

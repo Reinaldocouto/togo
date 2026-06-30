@@ -57,7 +57,7 @@ public class GetMedicalRecordByPatientIdUseCase
         return ApplicationResult<MedicalRecordResponse>.Success(ToResponse(medicalRecord));
     }
 
-    private static ApplicationResult<MedicalRecordResponse> ToMedicalRecordResponseResult(ApplicationResult<bool> validationResult) =>
+    private static ApplicationResult<MedicalRecordResponse> ToMedicalRecordResponseResult<T>(ApplicationResult<T> validationResult) =>
         validationResult.Type switch
         {
             ApplicationResultType.NotFound => ApplicationResult<MedicalRecordResponse>.NotFound(validationResult.Error!),
@@ -69,6 +69,7 @@ public class GetMedicalRecordByPatientIdUseCase
     private static MedicalRecordResponse ToResponse(MedicalRecord medicalRecord) =>
         new(
             medicalRecord.Id,
+            medicalRecord.ClinicId,
             medicalRecord.PatientId,
             medicalRecord.GeneralNotes,
             medicalRecord.FlagsJson,

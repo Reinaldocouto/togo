@@ -22,6 +22,7 @@ public class ClinicalCascadeDeleteBehaviorTests
         using var _ = connection;
 
         AssertDeleteBehavior<Attendance>(context, nameof(Attendance.PatientId), DeleteBehavior.Restrict);
+        AssertDeleteBehavior<MedicalRecord>(context, nameof(MedicalRecord.ClinicId), DeleteBehavior.Restrict);
         AssertDeleteBehavior<MedicalRecord>(context, nameof(MedicalRecord.PatientId), DeleteBehavior.Restrict);
         AssertDeleteBehavior<ClinicalEvolution>(context, nameof(ClinicalEvolution.AttendanceId), DeleteBehavior.Restrict);
         AssertDeleteBehavior<Prescription>(context, nameof(Prescription.AttendanceId), DeleteBehavior.Restrict);
@@ -35,7 +36,7 @@ public class ClinicalCascadeDeleteBehaviorTests
         await using var _ = connection;
 
         var patient = await AddPatientAsync(context, "Patient with protected medical record");
-        var medicalRecord = MedicalRecord.Create(
+        var medicalRecord = MedicalRecord.Create(1,
             patient.Id,
             "Clinical history must survive principal physical delete attempts",
             "{\"protected\":true}",
@@ -60,7 +61,7 @@ public class ClinicalCascadeDeleteBehaviorTests
 
         var patient = await AddPatientAsync(context, "Patient with attendance and medical record");
         var attendance = Attendance.Create(patient.ClinicId, patient.Id, "ATD-CASCADE-001", new DateTime(2026, 6, 5, 8, 0, 0, DateTimeKind.Utc), AttendanceType.Consultation, TestUserId, TestCreatedAt);
-        var medicalRecord = MedicalRecord.Create(
+        var medicalRecord = MedicalRecord.Create(1,
             patient.Id,
             "Medical record must remain when patient delete is blocked",
             null,
@@ -135,7 +136,7 @@ public class ClinicalCascadeDeleteBehaviorTests
 
         var repository = new MedicalRecordRepository(context);
         var patient = await AddPatientAsync(context, "Patient soft delete after cascade review");
-        var medicalRecord = MedicalRecord.Create(
+        var medicalRecord = MedicalRecord.Create(1,
             patient.Id,
             "Soft deleted record must remain persisted.",
             null,

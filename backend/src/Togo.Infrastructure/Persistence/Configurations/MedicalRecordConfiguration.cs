@@ -13,6 +13,7 @@ public class MedicalRecordConfiguration : IEntityTypeConfiguration<MedicalRecord
         builder.HasKey(m => m.Id);
         builder.Property(m => m.Id).ValueGeneratedOnAdd();
 
+        builder.Property(m => m.ClinicId).IsRequired();
         builder.Property(m => m.PatientId).IsRequired();
         builder.Property(m => m.GeneralNotes).HasColumnType("text");
         builder.Property(m => m.FlagsJson).HasColumnType("longtext");
@@ -24,11 +25,18 @@ public class MedicalRecordConfiguration : IEntityTypeConfiguration<MedicalRecord
         builder.Property(m => m.DeletedAt);
         builder.Property(m => m.DeletedByUserId);
 
+        builder.HasOne<Clinic>()
+            .WithMany()
+            .HasForeignKey(m => m.ClinicId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne<Patient>()
             .WithMany()
             .HasForeignKey(m => m.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasIndex(m => m.ClinicId).HasDatabaseName("IX_MedicalRecords_ClinicId");
+        builder.HasIndex(m => new { m.ClinicId, m.PatientId }).HasDatabaseName("IX_MedicalRecords_ClinicId_PatientId");
         builder.HasIndex(m => m.PatientId).IsUnique().HasDatabaseName("IX_MedicalRecords_PatientId");
     }
 }

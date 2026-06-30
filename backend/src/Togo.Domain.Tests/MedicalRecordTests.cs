@@ -12,7 +12,7 @@ public class MedicalRecordTests
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var medicalRecord = MedicalRecord.Create(
+        var medicalRecord = MedicalRecord.Create(1,
             patientId: 10,
             generalNotes: "  Stable patient  ",
             flagsJson: "  {\"risk\":\"low\"}  ",
@@ -21,6 +21,7 @@ public class MedicalRecordTests
 
         // Assert
         Assert.Equal(0, medicalRecord.Id);
+        Assert.Equal(1, medicalRecord.ClinicId);
         Assert.Equal(10, medicalRecord.PatientId);
         Assert.Equal("Stable patient", medicalRecord.GeneralNotes);
         Assert.Equal("{\"risk\":\"low\"}", medicalRecord.FlagsJson);
@@ -28,6 +29,21 @@ public class MedicalRecordTests
         Assert.Equal(updatedAt, medicalRecord.CreatedAt);
         Assert.Equal(Guid.Parse("11111111-2222-3333-4444-555555555555"), medicalRecord.UpdatedByUserId);
         Assert.Equal(updatedAt, medicalRecord.UpdatedAt);
+    }
+
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_ShouldThrowArgumentOutOfRangeException_WhenClinicIdIsInvalid(long clinicId)
+    {
+        var createdAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
+
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            MedicalRecord.Create(clinicId, 10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), createdAt));
+
+        Assert.StartsWith("Id must be greater than zero", exception.Message);
+        Assert.Equal("clinicId", exception.ParamName);
     }
 
     [Theory]
@@ -40,7 +56,7 @@ public class MedicalRecordTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            MedicalRecord.Create(patientId, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt));
+            MedicalRecord.Create(1, patientId, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt));
         Assert.StartsWith("Id must be greater than zero", exception.Message);
         Assert.Equal("patientId", exception.ParamName);
     }
@@ -50,7 +66,7 @@ public class MedicalRecordTests
     {
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), default));
+            MedicalRecord.Create(1, 10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), default));
         Assert.StartsWith("Date is required", exception.Message);
         Assert.Equal("createdAt", exception.ParamName);
     }
@@ -62,7 +78,7 @@ public class MedicalRecordTests
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var medicalRecord = MedicalRecord.Create(10, "  needs check  ", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "  needs check  ", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Assert
         Assert.Equal("needs check", medicalRecord.GeneralNotes);
@@ -75,7 +91,7 @@ public class MedicalRecordTests
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var medicalRecord = MedicalRecord.Create(10, "notes", "  {\"k\":1}  ", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "notes", "  {\"k\":1}  ", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Assert
         Assert.Equal("{\"k\":1}", medicalRecord.FlagsJson);
@@ -88,7 +104,7 @@ public class MedicalRecordTests
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var medicalRecord = MedicalRecord.Create(10, null, null, Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, null, null, Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Assert
         Assert.Null(medicalRecord.GeneralNotes);
@@ -104,7 +120,7 @@ public class MedicalRecordTests
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var medicalRecord = MedicalRecord.Create(10, value, value, Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, value, value, Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Assert
         Assert.Null(medicalRecord.GeneralNotes);
@@ -115,7 +131,7 @@ public class MedicalRecordTests
     public void Create_ShouldThrowArgumentException_WhenCreatedByUserIdIsEmpty()
     {
         var exception = Assert.Throws<ArgumentException>(() =>
-            MedicalRecord.Create(10, "notes", "{}", Guid.Empty, DateTime.UtcNow));
+            MedicalRecord.Create(1, 10, "notes", "{}", Guid.Empty, DateTime.UtcNow));
 
         Assert.StartsWith("User id is required", exception.Message);
         Assert.Equal("createdByUserId", exception.ParamName);
@@ -124,7 +140,7 @@ public class MedicalRecordTests
     [Fact]
     public void UpdateNotes_ShouldThrowArgumentException_WhenUpdatedByUserIdIsEmpty()
     {
-        var medicalRecord = MedicalRecord.Create(10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
 
         var exception = Assert.Throws<ArgumentException>(() => medicalRecord.UpdateNotes("new", "{}", Guid.Empty, DateTime.UtcNow));
 
@@ -138,7 +154,7 @@ public class MedicalRecordTests
         // Arrange
         var initialUpdatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
         var newUpdatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(10, "old", "{\"old\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), initialUpdatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{\"old\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), initialUpdatedAt);
 
         // Act
         medicalRecord.UpdateNotes("new notes", "{\"new\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), newUpdatedAt);
@@ -158,7 +174,7 @@ public class MedicalRecordTests
         // Arrange
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
         var newUpdatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Act
         medicalRecord.UpdateNotes("  trimmed notes  ", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), newUpdatedAt);
@@ -173,7 +189,7 @@ public class MedicalRecordTests
         // Arrange
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
         var newUpdatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Act
         medicalRecord.UpdateNotes("notes", "  {\"f\":true}  ", Guid.Parse("11111111-2222-3333-4444-555555555555"), newUpdatedAt);
@@ -188,7 +204,7 @@ public class MedicalRecordTests
         // Arrange
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
         var newUpdatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(10, "old", "{\"old\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{\"old\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Act
         medicalRecord.UpdateNotes(null, null, Guid.Parse("11111111-2222-3333-4444-555555555555"), newUpdatedAt);
@@ -206,7 +222,7 @@ public class MedicalRecordTests
         // Arrange
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
         var newUpdatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(10, "old", "{\"old\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{\"old\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Act
         medicalRecord.UpdateNotes(value, value, Guid.Parse("11111111-2222-3333-4444-555555555555"), newUpdatedAt);
@@ -221,7 +237,7 @@ public class MedicalRecordTests
     {
         // Arrange
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(10, "old", "{\"old\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{\"old\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => medicalRecord.UpdateNotes("new", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), default));
@@ -235,7 +251,7 @@ public class MedicalRecordTests
         // Arrange
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
         var newUpdatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
 
         // Act
         medicalRecord.UpdateNotes("new", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), newUpdatedAt);
@@ -250,7 +266,7 @@ public class MedicalRecordTests
         // Arrange
         var updatedAt = new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc);
         var newUpdatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
-        var medicalRecord = MedicalRecord.Create(10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), updatedAt);
         var initialId = medicalRecord.Id;
 
         // Act
@@ -263,7 +279,7 @@ public class MedicalRecordTests
     [Fact]
     public void Create_ShouldInitializeSoftDeleteFieldsAsNotDeleted()
     {
-        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+        var medicalRecord = MedicalRecord.Create(1, 10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
 
         Assert.False(medicalRecord.IsDeleted);
         Assert.Null(medicalRecord.DeletedAt);
@@ -277,7 +293,7 @@ public class MedicalRecordTests
         var deletedAt = new DateTime(2026, 5, 23, 11, 0, 0, DateTimeKind.Utc);
         var createdByUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
         var deletedByUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
-        var medicalRecord = MedicalRecord.Create(10, "notes", "{\"flag\":true}", createdByUserId, createdAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "notes", "{\"flag\":true}", createdByUserId, createdAt);
 
         medicalRecord.SoftDelete(deletedByUserId, deletedAt);
 
@@ -289,7 +305,7 @@ public class MedicalRecordTests
     [Fact]
     public void SoftDelete_ShouldThrowArgumentException_WhenDeletedByUserIdIsEmpty()
     {
-        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+        var medicalRecord = MedicalRecord.Create(1, 10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
 
         var exception = Assert.Throws<ArgumentException>(() => medicalRecord.SoftDelete(Guid.Empty, DateTime.UtcNow));
 
@@ -300,7 +316,7 @@ public class MedicalRecordTests
     [Fact]
     public void SoftDelete_ShouldThrowArgumentException_WhenDeletedAtIsDefault()
     {
-        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+        var medicalRecord = MedicalRecord.Create(1, 10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
 
         var exception = Assert.Throws<ArgumentException>(() => medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), default));
 
@@ -311,7 +327,7 @@ public class MedicalRecordTests
     [Fact]
     public void SoftDelete_ShouldThrowArgumentException_WhenDeletedAtIsNotUtc()
     {
-        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
+        var medicalRecord = MedicalRecord.Create(1, 10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow);
         var localDeletedAt = new DateTime(2026, 5, 23, 11, 0, 0, DateTimeKind.Local);
 
         var exception = Assert.Throws<ArgumentException>(() => medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), localDeletedAt));
@@ -329,7 +345,7 @@ public class MedicalRecordTests
         var createdByUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
         var updatedByUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
         var deletedByUserId = Guid.Parse("99999999-8888-7777-6666-555555555555");
-        var medicalRecord = MedicalRecord.Create(10, "notes", "{\"flag\":true}", createdByUserId, createdAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "notes", "{\"flag\":true}", createdByUserId, createdAt);
         medicalRecord.UpdateNotes("updated notes", "{\"flag\":false}", updatedByUserId, updatedAt);
 
         medicalRecord.SoftDelete(deletedByUserId, deletedAt);
@@ -346,7 +362,7 @@ public class MedicalRecordTests
     [Fact]
     public void SoftDelete_ShouldThrowInvalidOperationException_WhenRecordIsAlreadyDeleted()
     {
-        var medicalRecord = MedicalRecord.Create(10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
+        var medicalRecord = MedicalRecord.Create(1, 10, "notes", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
         medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow);
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -367,7 +383,7 @@ public class MedicalRecordTests
     [InlineData("  {\"risk\":true}  ", "{\"risk\":true}")]
     public void Create_ShouldNormalizeAndAcceptFlagsJson_WhenValueIsAbsentOrValidObject(string? flagsJson, string? expectedFlagsJson)
     {
-        var medicalRecord = MedicalRecord.Create(
+        var medicalRecord = MedicalRecord.Create(1,
             10,
             "notes",
             flagsJson,
@@ -390,7 +406,7 @@ public class MedicalRecordTests
     [InlineData("{ /* comment */ \"risk\": true }")]
     public void Create_ShouldThrowArgumentException_WhenFlagsJsonIsInvalidOrRootIsNotObject(string flagsJson)
     {
-        var exception = Assert.Throws<ArgumentException>(() => MedicalRecord.Create(
+        var exception = Assert.Throws<ArgumentException>(() => MedicalRecord.Create(1,
             10,
             "notes",
             flagsJson,
@@ -413,7 +429,7 @@ public class MedicalRecordTests
         var updatedAt = new DateTime(2026, 5, 23, 10, 0, 0, DateTimeKind.Utc);
         var createdByUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
         var updatedByUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
-        var medicalRecord = MedicalRecord.Create(10, "old", "{\"old\":true}", createdByUserId, createdAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old", "{\"old\":true}", createdByUserId, createdAt);
 
         medicalRecord.UpdateNotes("new", flagsJson, updatedByUserId, updatedAt);
 
@@ -432,7 +448,7 @@ public class MedicalRecordTests
     [InlineData("null")]
     public void UpdateNotes_ShouldThrowArgumentException_WhenFlagsJsonIsInvalidOrRootIsNotObject(string flagsJson)
     {
-        var medicalRecord = MedicalRecord.Create(
+        var medicalRecord = MedicalRecord.Create(1,
             10,
             "old",
             "{\"old\":true}",
@@ -459,7 +475,7 @@ public class MedicalRecordTests
         var createdByUserId = Guid.Parse("11111111-2222-3333-4444-555555555555");
         var updatedByUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
         var attemptedUpdatedByUserId = Guid.Parse("99999999-8888-7777-6666-555555555555");
-        var medicalRecord = MedicalRecord.Create(10, "old notes", "{\"old\":true}", createdByUserId, createdAt);
+        var medicalRecord = MedicalRecord.Create(1, 10, "old notes", "{\"old\":true}", createdByUserId, createdAt);
         medicalRecord.UpdateNotes("current notes", "{\"current\":true}", updatedByUserId, updatedAt);
         var id = medicalRecord.Id;
 
@@ -481,5 +497,25 @@ public class MedicalRecordTests
         Assert.Equal(id, medicalRecord.Id);
     }
 
+
+    [Fact]
+    public void UpdateNotes_ShouldPreserveClinicId()
+    {
+        var medicalRecord = MedicalRecord.Create(123, 10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
+
+        medicalRecord.UpdateNotes("new", "{}", Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow);
+
+        Assert.Equal(123, medicalRecord.ClinicId);
+    }
+
+    [Fact]
+    public void SoftDelete_ShouldPreserveClinicId()
+    {
+        var medicalRecord = MedicalRecord.Create(123, 10, "old", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-1));
+
+        medicalRecord.SoftDelete(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), DateTime.UtcNow);
+
+        Assert.Equal(123, medicalRecord.ClinicId);
+    }
 
 }

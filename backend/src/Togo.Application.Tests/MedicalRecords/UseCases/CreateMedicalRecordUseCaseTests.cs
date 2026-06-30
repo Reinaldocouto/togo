@@ -35,7 +35,7 @@ public sealed class CreateMedicalRecordUseCaseTests
     {
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
-        var patientId = petRepository.AddPet();
+        var patientId = petRepository.AddPet(clinicId: 42);
         var request = new CreateMedicalRecordRequest("  General  ", "  {\"flag\":true}  ");
         var auditLogWriter = new FakeClinicalAuditLogWriter();
         var currentUserService = new FakeCurrentUserService(CurrentUserId)
@@ -49,12 +49,14 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.Equal(ApplicationResultType.Success, result.Type);
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Data);
+        Assert.Equal(42, result.Data.ClinicId);
         Assert.Equal(patientId, result.Data.PatientId);
         Assert.Equal("General", result.Data.GeneralNotes);
         Assert.Equal("{\"flag\":true}", result.Data.FlagsJson);
         Assert.NotEqual(default, result.Data.UpdatedAt);
         Assert.Equal(1, repository.AddCallsCount);
         var persisted = Assert.Single(repository.Items);
+        Assert.Equal(42, persisted.ClinicId);
         Assert.Equal(CurrentUserId, persisted.CreatedByUserId);
         Assert.Equal(CurrentUserId, persisted.UpdatedByUserId);
         Assert.NotEqual(default, persisted.CreatedAt);
@@ -68,6 +70,7 @@ public sealed class CreateMedicalRecordUseCaseTests
         Assert.Equal("Veterinarian", auditEvent.UserProfile);
         Assert.Equal(DateTimeKind.Utc, auditEvent.OccurredAt.Kind);
         Assert.NotNull(auditEvent.MetadataJson);
+        Assert.Contains("\"ClinicId\":42", auditEvent.MetadataJson);
         Assert.Contains($"\"PatientId\":{patientId}", auditEvent.MetadataJson);
         Assert.DoesNotContain(request.GeneralNotes!, auditEvent.MetadataJson);
         Assert.DoesNotContain(request.FlagsJson!, auditEvent.MetadataJson);
@@ -105,7 +108,7 @@ public sealed class CreateMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(Togo.Domain.Entities.MedicalRecord.Create(patientId, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        repository.AddExisting(Togo.Domain.Entities.MedicalRecord.Create(1, patientId, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var result = await CreateUseCase(repository, petRepository)
             .ExecuteAsync(patientId, new CreateMedicalRecordRequest("new", "{}"), CancellationToken.None);
@@ -121,7 +124,7 @@ public sealed class CreateMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        var deletedRecord = Togo.Domain.Entities.MedicalRecord.Create(patientId, "deleted", "{\"old\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-3));
+        var deletedRecord = Togo.Domain.Entities.MedicalRecord.Create(1, patientId, "deleted", "{\"old\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddHours(-3));
         deletedRecord.SoftDelete(CurrentUserId, DateTime.UtcNow.AddHours(-2));
         repository.AddExisting(deletedRecord);
         var auditLogWriter = new FakeClinicalAuditLogWriter();
