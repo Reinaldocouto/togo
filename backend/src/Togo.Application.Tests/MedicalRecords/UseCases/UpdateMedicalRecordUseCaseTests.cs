@@ -20,7 +20,7 @@ public sealed class UpdateMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(MedicalRecord.Create(patientId, "old", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1)));
+        repository.AddExisting(MedicalRecord.Create(1, patientId, "old", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1)));
         using var cts = new CancellationTokenSource();
 
         await CreateUseCase(repository, petRepository)
@@ -41,7 +41,7 @@ public sealed class UpdateMedicalRecordUseCaseTests
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
         var createdAt = DateTime.UtcNow.AddHours(-1);
-        repository.AddExisting(MedicalRecord.Create(patientId, "old", "{\"v\":1}", CreatorUserId, createdAt));
+        repository.AddExisting(MedicalRecord.Create(1, patientId, "old", "{\"v\":1}", CreatorUserId, createdAt));
 
         var auditLogWriter = new FakeClinicalAuditLogWriter();
         var currentUserService = new FakeCurrentUserService(UpdatingUserId)
@@ -124,7 +124,7 @@ public sealed class UpdateMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository { ReturnNullOnGetByPatientId = true };
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
+        repository.AddExisting(MedicalRecord.Create(1, patientId, "note", "{}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow));
 
         var result = await CreateUseCase(repository, petRepository)
             .ExecuteAsync(patientId, new UpdateMedicalRecordRequest("note", "{}"), CancellationToken.None);
@@ -145,7 +145,7 @@ public sealed class UpdateMedicalRecordUseCaseTests
         var patientId = petRepository.AddPet();
         var createdAt = DateTime.UtcNow.AddHours(-2);
         var originalUpdatedAt = DateTime.UtcNow.AddHours(-1);
-        var medicalRecord = MedicalRecord.Create(patientId, "old notes", "{\"old\":true}", CreatorUserId, createdAt);
+        var medicalRecord = MedicalRecord.Create(1, patientId, "old notes", "{\"old\":true}", CreatorUserId, createdAt);
         medicalRecord.UpdateNotes("current notes", "{\"current\":true}", CreatorUserId, originalUpdatedAt);
         repository.AddExisting(medicalRecord);
         var auditLogWriter = new FakeClinicalAuditLogWriter();
@@ -180,7 +180,7 @@ public sealed class UpdateMedicalRecordUseCaseTests
         var patientId = petRepository.AddPet();
         var createdAt = DateTime.UtcNow.AddHours(-3);
         var deletedAt = DateTime.UtcNow.AddHours(-2);
-        var medicalRecord = MedicalRecord.Create(patientId, "old deleted note", "{\"v\":1}", CreatorUserId, createdAt);
+        var medicalRecord = MedicalRecord.Create(1, patientId, "old deleted note", "{\"v\":1}", CreatorUserId, createdAt);
         medicalRecord.SoftDelete(UpdatingUserId, deletedAt);
         repository.AddExisting(medicalRecord);
         var auditLogWriter = new FakeClinicalAuditLogWriter();
@@ -223,7 +223,7 @@ public sealed class UpdateMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        var medicalRecord = MedicalRecord.Create(patientId, "old", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1));
+        var medicalRecord = MedicalRecord.Create(1, patientId, "old", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1));
         repository.AddExisting(medicalRecord);
         var originalUpdatedAt = medicalRecord.UpdatedAt;
         var currentUserService = new FakeCurrentUserService(UpdatingUserId) { ThrowResolutionException = true };

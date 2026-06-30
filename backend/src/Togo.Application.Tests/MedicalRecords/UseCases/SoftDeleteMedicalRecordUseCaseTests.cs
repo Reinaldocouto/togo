@@ -17,7 +17,7 @@ public sealed class SoftDeleteMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1)));
+        repository.AddExisting(MedicalRecord.Create(1, patientId, "note", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1)));
         using var cts = new CancellationTokenSource();
 
         await CreateUseCase(repository, petRepository).ExecuteAsync(patientId, cts.Token);
@@ -37,7 +37,7 @@ public sealed class SoftDeleteMedicalRecordUseCaseTests
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
         var createdAt = DateTime.UtcNow.AddHours(-2);
-        var medicalRecord = MedicalRecord.Create(patientId, "clinical note", "{\"flag\":true}", CreatorUserId, createdAt);
+        var medicalRecord = MedicalRecord.Create(1, patientId, "clinical note", "{\"flag\":true}", CreatorUserId, createdAt);
         repository.AddExisting(medicalRecord);
         var currentUserService = new FakeCurrentUserService(DeletingUserId)
         {
@@ -108,7 +108,7 @@ public sealed class SoftDeleteMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository { ReturnNullOnGetByPatientId = true };
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        repository.AddExisting(MedicalRecord.Create(patientId, "note", "{}", CreatorUserId, DateTime.UtcNow));
+        repository.AddExisting(MedicalRecord.Create(1, patientId, "note", "{}", CreatorUserId, DateTime.UtcNow));
 
         var result = await CreateUseCase(repository, petRepository).ExecuteAsync(patientId, CancellationToken.None);
 
@@ -123,7 +123,7 @@ public sealed class SoftDeleteMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        var medicalRecord = MedicalRecord.Create(patientId, "note", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1));
+        var medicalRecord = MedicalRecord.Create(1, patientId, "note", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-1));
         repository.AddExisting(medicalRecord);
         var currentUserService = new FakeCurrentUserService(DeletingUserId) { ThrowResolutionException = true };
 
@@ -142,7 +142,7 @@ public sealed class SoftDeleteMedicalRecordUseCaseTests
         var repository = new FakeMedicalRecordRepository();
         var petRepository = new FakePetRepository();
         var patientId = petRepository.AddPet();
-        var medicalRecord = MedicalRecord.Create(patientId, "note", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-2));
+        var medicalRecord = MedicalRecord.Create(1, patientId, "note", "{}", CreatorUserId, DateTime.UtcNow.AddHours(-2));
         medicalRecord.SoftDelete(DeletingUserId, DateTime.UtcNow.AddHours(-1));
         repository.AddExisting(medicalRecord);
 

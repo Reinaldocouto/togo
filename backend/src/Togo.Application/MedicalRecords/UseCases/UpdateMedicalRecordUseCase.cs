@@ -97,7 +97,7 @@ public class UpdateMedicalRecordUseCase
     private static string CreateMetadataJson(long patientId) =>
         JsonSerializer.Serialize(new { PatientId = patientId });
 
-    private static ApplicationResult<MedicalRecordResponse> ToMedicalRecordResponseResult(ApplicationResult<bool> validationResult) =>
+    private static ApplicationResult<MedicalRecordResponse> ToMedicalRecordResponseResult<T>(ApplicationResult<T> validationResult) =>
         validationResult.Type switch
         {
             ApplicationResultType.NotFound => ApplicationResult<MedicalRecordResponse>.NotFound(validationResult.Error!),
@@ -109,6 +109,7 @@ public class UpdateMedicalRecordUseCase
     private static MedicalRecordResponse ToResponse(MedicalRecord medicalRecord) =>
         new(
             medicalRecord.Id,
+            medicalRecord.ClinicId,
             medicalRecord.PatientId,
             medicalRecord.GeneralNotes,
             medicalRecord.FlagsJson,

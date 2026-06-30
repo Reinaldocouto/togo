@@ -6,12 +6,14 @@ public class MedicalRecord
 {
     private MedicalRecord() { }
 
-    private MedicalRecord(long patientId, string? generalNotes, string? flagsJson, Guid createdByUserId, DateTime createdAt)
+    private MedicalRecord(long clinicId, long patientId, string? generalNotes, string? flagsJson, Guid createdByUserId, DateTime createdAt)
     {
+        ValidateId(clinicId, nameof(clinicId));
         ValidateId(patientId, nameof(patientId));
         ValidateUserId(createdByUserId, nameof(createdByUserId));
         ValidateDate(createdAt, nameof(createdAt));
 
+        ClinicId = clinicId;
         PatientId = patientId;
         GeneralNotes = NormalizeOptional(generalNotes);
         FlagsJson = NormalizeAndValidateFlagsJson(flagsJson, nameof(flagsJson));
@@ -25,6 +27,7 @@ public class MedicalRecord
     }
 
     public long Id { get; private set; }
+    public long ClinicId { get; private set; }
     public long PatientId { get; private set; }
     public string? GeneralNotes { get; private set; }
     public string? FlagsJson { get; private set; }
@@ -36,8 +39,8 @@ public class MedicalRecord
     public DateTime? DeletedAt { get; private set; }
     public Guid? DeletedByUserId { get; private set; }
 
-    public static MedicalRecord Create(long patientId, string? generalNotes, string? flagsJson, Guid createdByUserId, DateTime createdAt) =>
-        new(patientId, generalNotes, flagsJson, createdByUserId, createdAt);
+    public static MedicalRecord Create(long clinicId, long patientId, string? generalNotes, string? flagsJson, Guid createdByUserId, DateTime createdAt) =>
+        new(clinicId, patientId, generalNotes, flagsJson, createdByUserId, createdAt);
 
     public void UpdateNotes(string? generalNotes, string? flagsJson, Guid updatedByUserId, DateTime updatedAt)
     {

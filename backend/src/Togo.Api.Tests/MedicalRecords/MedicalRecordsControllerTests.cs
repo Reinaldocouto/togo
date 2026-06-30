@@ -34,7 +34,7 @@ public sealed class MedicalRecordsControllerTests
         using var app = CreateApp();
         var patientId = 1L;
         app.PetRepository.AddPatient(patientId);
-        var medicalRecord = MedicalRecord.Create(patientId, "General", "{\"risk\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-5));
+        var medicalRecord = MedicalRecord.Create(1, patientId, "General", "{\"risk\":false}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-5));
         await app.MedicalRecordRepository.AddAsync(medicalRecord, CancellationToken.None);
 
         var response = await app.AuthorizedClient.GetAsync($"/api/patients/{patientId}/medical-record");
@@ -72,7 +72,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(10);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(10, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(1, 10, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClientWithoutProfile().GetAsync("/api/patients/10/medical-record");
 
@@ -86,7 +86,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(11);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(11, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(1, 11, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClient(profile).GetAsync("/api/patients/11/medical-record");
 
@@ -98,7 +98,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(12);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(12, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(1, 12, "read", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClient(UserProfiles.Assistant).GetAsync("/api/patients/12/medical-record");
 
@@ -133,12 +133,14 @@ public sealed class MedicalRecordsControllerTests
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(body);
         Assert.True(body!.Id > 0);
+        Assert.Equal(1, body.ClinicId);
         Assert.Equal(3, body.PatientId);
         Assert.Equal("note", body.GeneralNotes);
         Assert.Equal("{\"a\":1}", body.FlagsJson);
         Assert.NotEqual(default, body.UpdatedAt);
         var persisted = await app.MedicalRecordRepository.GetByPatientIdAsync(3, CancellationToken.None);
         Assert.NotNull(persisted);
+        Assert.Equal(1, persisted!.ClinicId);
         Assert.Equal(Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), persisted!.CreatedByUserId);
         Assert.Equal(persisted.CreatedByUserId, persisted.UpdatedByUserId);
         Assert.Equal(persisted.CreatedAt, persisted.UpdatedAt);
@@ -235,7 +237,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(6);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(6, "existing", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(1, 6, "existing", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
         var response = await app.AuthorizedClient.PostAsJsonAsync("/api/patients/6/medical-record", new CreateMedicalRecordRequest("new", null));
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -245,7 +247,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(7);
-        var existing = MedicalRecord.Create(7, "before", "{\"v\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10));
+        var existing = MedicalRecord.Create(1, 7, "before", "{\"v\":1}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10));
         await app.MedicalRecordRepository.AddAsync(existing, CancellationToken.None);
         var previousUpdatedAt = existing.UpdatedAt;
 
@@ -271,7 +273,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(20);
-        var existing = MedicalRecord.Create(20, "before", "{\"before\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10));
+        var existing = MedicalRecord.Create(1, 20, "before", "{\"before\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10));
         await app.MedicalRecordRepository.AddAsync(existing, CancellationToken.None);
         var originalUpdatedAt = existing.UpdatedAt;
 
@@ -299,7 +301,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(16);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(16, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(1, 16, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClient(profile)
             .PutAsJsonAsync("/api/patients/16/medical-record", new UpdateMedicalRecordRequest("after", null));
@@ -312,7 +314,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(17);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(17, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(1, 17, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClientWithoutProfile()
             .PutAsJsonAsync("/api/patients/17/medical-record", new UpdateMedicalRecordRequest("after", null));
@@ -327,7 +329,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(18);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(18, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(1, 18, "before", null, Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow), CancellationToken.None);
 
         var response = await app.CreateAuthenticatedClient(profile)
             .PutAsJsonAsync("/api/patients/18/medical-record", new UpdateMedicalRecordRequest("after", null));
@@ -345,7 +347,7 @@ public sealed class MedicalRecordsControllerTests
     {
         using var app = CreateApp();
         app.PetRepository.AddPatient(9);
-        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(9, "old", "{\"old\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10)), CancellationToken.None);
+        await app.MedicalRecordRepository.AddAsync(MedicalRecord.Create(1, 9, "old", "{\"old\":true}", Guid.Parse("11111111-2222-3333-4444-555555555555"), DateTime.UtcNow.AddMinutes(-10)), CancellationToken.None);
         var response = await app.AuthorizedClient.PutAsJsonAsync("/api/patients/9/medical-record", new UpdateMedicalRecordRequest("   ", "   "));
         var body = await response.Content.ReadFromJsonAsync<MedicalRecordResponse>();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

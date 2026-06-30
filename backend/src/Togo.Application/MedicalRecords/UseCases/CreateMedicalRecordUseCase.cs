@@ -60,7 +60,7 @@ public class CreateMedicalRecordUseCase
         try
         {
             var currentUser = _currentUserService.GetCurrentUser();
-            var medicalRecord = MedicalRecord.Create(patientId, request.GeneralNotes, request.FlagsJson, currentUser.UserId, DateTime.UtcNow);
+            var medicalRecord = MedicalRecord.Create(patientValidation.Data!.ClinicId, patientId, request.GeneralNotes, request.FlagsJson, currentUser.UserId, DateTime.UtcNow);
             await _medicalRecordRepository.AddAsync(medicalRecord, cancellationToken);
             await WriteCreatedAuditLogAsync(medicalRecord, currentUser, cancellationToken);
 
@@ -88,15 +88,15 @@ public class CreateMedicalRecordUseCase
             UserId: currentUser.UserId,
             UserProfile: currentUser.Profile,
             OccurredAt: DateTime.UtcNow,
-            MetadataJson: CreateMetadataJson(medicalRecord.PatientId));
+            MetadataJson: CreateMetadataJson(medicalRecord.ClinicId, medicalRecord.PatientId));
 
         await _clinicalAuditLogWriter.WriteAsync(auditEvent, cancellationToken);
     }
 
-    private static string CreateMetadataJson(long patientId) =>
-        JsonSerializer.Serialize(new { PatientId = patientId });
+    private static string CreateMetadataJson(long clinicId, long patientId) =>
+        JsonSerializer.Serialize(new { ClinicId = clinicId, PatientId = patientId });
 
-    private static ApplicationResult<MedicalRecordResponse> ToMedicalRecordResponseResult(ApplicationResult<bool> validationResult) =>
+    private static ApplicationResult<MedicalRecordResponse> ToMedicalRecordResponseResult<T>(ApplicationResult<T> validationResult) =>
         validationResult.Type switch
         {
             ApplicationResultType.NotFound => ApplicationResult<MedicalRecordResponse>.NotFound(validationResult.Error!),
@@ -108,6 +108,7 @@ public class CreateMedicalRecordUseCase
     private static MedicalRecordResponse ToResponse(MedicalRecord medicalRecord) =>
         new(
             medicalRecord.Id,
+            medicalRecord.ClinicId,
             medicalRecord.PatientId,
             medicalRecord.GeneralNotes,
             medicalRecord.FlagsJson,

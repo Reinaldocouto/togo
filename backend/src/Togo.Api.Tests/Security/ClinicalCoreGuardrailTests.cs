@@ -72,7 +72,7 @@ public sealed class ClinicalCoreGuardrailTests
     {
         var properties = typeof(MedicalRecordResponse).GetProperties().Select(property => property.Name).ToArray();
 
-        Assert.Equal(["Id", "PatientId", "GeneralNotes", "FlagsJson", "UpdatedAt"], properties);
+        Assert.Equal(["Id", "ClinicId", "PatientId", "GeneralNotes", "FlagsJson", "UpdatedAt"], properties);
         Assert.DoesNotContain("CreatedByUserId", properties);
         Assert.DoesNotContain("UpdatedByUserId", properties);
         Assert.DoesNotContain("IsDeleted", properties);
