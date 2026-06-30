@@ -487,6 +487,9 @@ namespace Togo.Infrastructure.Migrations
                     b.Property<long>("AttendanceId")
                         .HasColumnType("bigint");
 
+                    b.Property<long>("ClinicId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("IssuedAt")
                         .HasColumnType("datetime(6)");
 
@@ -496,6 +499,15 @@ namespace Togo.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AttendanceId");
+
+                    b.HasIndex("ClinicId")
+                        .HasDatabaseName("IX_Prescriptions_ClinicId");
+
+                    b.HasIndex("ClinicId", "AttendanceId")
+                        .HasDatabaseName("IX_Prescriptions_ClinicId_AttendanceId");
+
+                    b.HasIndex("ClinicId", "IssuedAt")
+                        .HasDatabaseName("IX_Prescriptions_ClinicId_IssuedAt");
 
                     b.HasIndex("IssuedAt");
 
@@ -689,6 +701,12 @@ namespace Togo.Infrastructure.Migrations
 
             modelBuilder.Entity("Togo.Domain.Entities.Prescription", b =>
                 {
+                    b.HasOne("Togo.Domain.Entities.Clinic", null)
+                        .WithMany()
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Togo.Domain.Entities.Attendance", null)
                         .WithMany()
                         .HasForeignKey("AttendanceId")
