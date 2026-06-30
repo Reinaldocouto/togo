@@ -6,14 +6,16 @@ public class ClinicalEvolution
 {
     private ClinicalEvolution() { }
 
-    private ClinicalEvolution(long attendanceId, DateTime registeredAt, EvolutionType type, string text, Guid createdByUserId, DateTime createdAt)
+    private ClinicalEvolution(long clinicId, long attendanceId, DateTime registeredAt, EvolutionType type, string text, Guid createdByUserId, DateTime createdAt)
     {
+        ValidateId(clinicId, nameof(clinicId));
         ValidateId(attendanceId, nameof(attendanceId));
         ValidateDate(registeredAt, nameof(registeredAt));
         ValidateText(text);
         ValidateUserId(createdByUserId, nameof(createdByUserId));
         ValidateDate(createdAt, nameof(createdAt));
 
+        ClinicId = clinicId;
         AttendanceId = attendanceId;
         RegisteredAt = registeredAt;
         Type = type;
@@ -25,6 +27,7 @@ public class ClinicalEvolution
     }
 
     public long Id { get; private set; }
+    public long ClinicId { get; private set; }
     public long AttendanceId { get; private set; }
     public DateTime RegisteredAt { get; private set; }
     public EvolutionType Type { get; private set; }
@@ -34,8 +37,8 @@ public class ClinicalEvolution
     public Guid UpdatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
-    public static ClinicalEvolution Create(long attendanceId, DateTime registeredAt, EvolutionType type, string text, Guid createdByUserId, DateTime createdAt) =>
-        new(attendanceId, registeredAt, type, text, createdByUserId, createdAt);
+    public static ClinicalEvolution Create(long clinicId, long attendanceId, DateTime registeredAt, EvolutionType type, string text, Guid createdByUserId, DateTime createdAt) =>
+        new(clinicId, attendanceId, registeredAt, type, text, createdByUserId, createdAt);
 
     public void UpdateText(string text, Guid updatedByUserId, DateTime updatedAt)
     {

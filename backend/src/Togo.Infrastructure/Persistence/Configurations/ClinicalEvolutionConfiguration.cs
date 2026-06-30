@@ -13,6 +13,7 @@ public class ClinicalEvolutionConfiguration : IEntityTypeConfiguration<ClinicalE
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).ValueGeneratedOnAdd();
 
+        builder.Property(e => e.ClinicId).IsRequired();
         builder.Property(e => e.AttendanceId).IsRequired();
         builder.Property(e => e.RegisteredAt).IsRequired();
         builder.Property(e => e.Type).IsRequired().HasConversion<string>();
@@ -22,11 +23,19 @@ public class ClinicalEvolutionConfiguration : IEntityTypeConfiguration<ClinicalE
         builder.Property(e => e.UpdatedByUserId).IsRequired();
         builder.Property(e => e.UpdatedAt).IsRequired();
 
+        builder.HasOne<Clinic>()
+            .WithMany()
+            .HasForeignKey(e => e.ClinicId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne<Attendance>()
             .WithMany()
             .HasForeignKey(e => e.AttendanceId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasIndex(e => e.ClinicId).HasDatabaseName("IX_ClinicalEvolutions_ClinicId");
+        builder.HasIndex(e => new { e.ClinicId, e.AttendanceId }).HasDatabaseName("IX_ClinicalEvolutions_ClinicId_AttendanceId");
+        builder.HasIndex(e => new { e.ClinicId, e.RegisteredAt }).HasDatabaseName("IX_ClinicalEvolutions_ClinicId_RegisteredAt");
         builder.HasIndex(e => e.AttendanceId);
         builder.HasIndex(e => e.RegisteredAt);
     }

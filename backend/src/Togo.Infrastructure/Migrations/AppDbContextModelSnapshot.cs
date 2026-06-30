@@ -141,6 +141,12 @@ namespace Togo.Infrastructure.Migrations
 
                     b.HasIndex("AttendanceId");
 
+                    b.HasIndex("ClinicId");
+
+                    b.HasIndex("ClinicId", "AttendanceId");
+
+                    b.HasIndex("ClinicId", "RegisteredAt");
+
                     b.HasIndex("RegisteredAt");
 
                     b.ToTable("ClinicalEvolutions", (string)null);
@@ -638,6 +644,12 @@ namespace Togo.Infrastructure.Migrations
 
             modelBuilder.Entity("Togo.Domain.Entities.ClinicalEvolution", b =>
                 {
+                    b.HasOne("Togo.Domain.Entities.Clinic", null)
+                        .WithMany()
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Togo.Domain.Entities.Attendance", null)
                         .WithMany()
                         .HasForeignKey("AttendanceId")

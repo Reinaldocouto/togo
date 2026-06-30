@@ -30,10 +30,12 @@ public sealed class CreateClinicalEvolutionUseCaseTests
 
         Assert.Equal(ApplicationResultType.Success, result.Type);
         Assert.NotNull(result.Data);
+        Assert.Equal(42, result.Data.ClinicId);
         Assert.Equal(10, result.Data.AttendanceId);
         Assert.Equal("Clinical note", result.Data.Text);
         Assert.Equal(1, clinicalEvolutionRepository.AddCallsCount);
         var persisted = Assert.Single(clinicalEvolutionRepository.Items);
+        Assert.Equal(42, persisted.ClinicId);
         Assert.Equal(TestUserId, persisted.CreatedByUserId);
         Assert.Equal(TestUserId, persisted.UpdatedByUserId);
         Assert.True(persisted.CreatedAt >= TestCreatedAt);
@@ -66,6 +68,7 @@ public sealed class CreateClinicalEvolutionUseCaseTests
         Assert.Equal(TestUserId, auditEvent.UserId);
         Assert.Equal("Veterinarian", auditEvent.UserProfile);
         Assert.NotNull(auditEvent.MetadataJson);
+        Assert.Contains("\"ClinicId\":42", auditEvent.MetadataJson);
         Assert.Contains("\"AttendanceId\":10", auditEvent.MetadataJson);
         Assert.Contains("\"Type\":\"ClinicalNote\"", auditEvent.MetadataJson);
         Assert.DoesNotContain("Text", auditEvent.MetadataJson);
@@ -203,6 +206,14 @@ public sealed class CreateClinicalEvolutionUseCaseTests
         Assert.Equal(0, repository.AddCallsCount);
     }
 
+    [Fact]
+    public void CreateClinicalEvolutionRequest_ShouldNotExposeClinicId()
+    {
+        var property = typeof(CreateClinicalEvolutionRequest).GetProperty("ClinicId");
+
+        Assert.Null(property);
+    }
+
     private static CreateClinicalEvolutionUseCase CreateUseCase(FakeAttendanceRepository attendanceRepository, FakeClinicalEvolutionRepository clinicalEvolutionRepository) =>
         CreateUseCase(attendanceRepository, clinicalEvolutionRepository, new FakeCurrentUserService(TestUserId), new FakeClinicalAuditLogWriter());
 
@@ -213,7 +224,7 @@ public sealed class CreateClinicalEvolutionUseCaseTests
         FakeClinicalAuditLogWriter clinicalAuditLogWriter) =>
         new(attendanceRepository, clinicalEvolutionRepository, currentUserService, clinicalAuditLogWriter, new TestLogger<CreateClinicalEvolutionUseCase>());
 
-    private static Attendance CreateOpenAttendance() => Attendance.Create(1, 1, "ATT-001", RegisteredAt.AddHours(-1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+    private static Attendance CreateOpenAttendance() => Attendance.Create(42, 1, "ATT-001", RegisteredAt.AddHours(-1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
 
     private static CreateClinicalEvolutionRequest CreateRequest(long attendanceId, DateTime? registeredAt = null, string text = "  Clinical note  ") =>
         new(attendanceId, registeredAt ?? RegisteredAt, EvolutionType.ClinicalNote, text);
