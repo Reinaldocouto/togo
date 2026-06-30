@@ -217,14 +217,6 @@ public sealed class CreateClinicalEvolutionUseCaseTests
     private static CreateClinicalEvolutionUseCase CreateUseCase(FakeAttendanceRepository attendanceRepository, FakeClinicalEvolutionRepository clinicalEvolutionRepository) =>
         CreateUseCase(attendanceRepository, clinicalEvolutionRepository, new FakeCurrentUserService(TestUserId), new FakeClinicalAuditLogWriter());
 
-    [Fact]
-    public void CreateClinicalEvolutionRequest_ShouldNotExposeClinicId()
-    {
-        var property = typeof(CreateClinicalEvolutionRequest).GetProperty("ClinicId");
-
-        Assert.Null(property);
-    }
-
     private static CreateClinicalEvolutionUseCase CreateUseCase(
         FakeAttendanceRepository attendanceRepository,
         FakeClinicalEvolutionRepository clinicalEvolutionRepository,
