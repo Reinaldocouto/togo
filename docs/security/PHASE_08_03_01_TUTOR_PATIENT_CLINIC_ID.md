@@ -59,13 +59,18 @@ A validação de duplicidade de documento de tutor passou a considerar `ClinicId
 
 - Testes de domínio foram atualizados para criação válida com `ClinicId`, rejeição de zero/negativo e preservação das validações existentes.
 - Testes de criação/validação de pet foram atualizados para `ClinicId` válido, `ClinicId` inválido e tutor de outra clínica.
-- Comandos de validação foram tentados no ambiente disponível; `dotnet` não está instalado no container atual, portanto build/testes dependem do ambiente local/CI.
+- Testes de update de pet garantem que `UpdatePetRequest` não expõe `ClinicId` e que a validação de tutor usa o `ClinicId` existente do `Patient`.
+- Testes de Infrastructure impactados por `Tutor`/`Patient` passaram a criar `Organization`/`Clinic` explicitamente por meio de `ClinicalScopeTestData`, sem seed global.
+- Durante o PR 199 houve falhas intermediárias de build/testes; o fluxo foi corrigido e o CI final do PR 199 passou com sucesso.
+- Nesta revisão pós-merge, os comandos de validação foram tentados no ambiente disponível; `dotnet` não está instalado no container atual, portanto a reexecução local de build/testes depende de ambiente local/CI.
 
 ## Riscos remanescentes
 
 - Ainda não há autorização contextual real por usuário/clínica.
 - `ClinicId` informado no payload pode ser falsificado até as fases de autorização contextual.
+- Ainda não há validação amigável de existência da `Clinic` na Application; a integridade é garantida pela FK obrigatória para `Clinics`, e a validação amigável fica como dívida para fase posterior.
 - O backfill da migration usa a primeira clínica disponível ou uma clínica transitória de compatibilidade; isso precisa ser revisado para dados reais.
+- O `Down` da migration remove FKs, índices e colunas `ClinicId`, mas não remove automaticamente a organização/clínica transitória eventualmente criada para compatibilidade, para evitar apagar dados que podem ter sido reutilizados após o rollback.
 - Listagens ainda não filtram por contexto clínico.
 
 ## Fora do escopo desta fase
@@ -88,6 +93,16 @@ Esta fase não implementa:
 - Tutor multi-clínica.
 - Front-end.
 
+## Revisão pós-merge — Fase 8.3.1.1
+
+A revisão técnica pós-merge confirmou que a Fase 8.3.1 permaneceu restrita a `Tutor` e `Patient`:
+
+- Não houve relaxamento de FKs: `ClinicId` segue obrigatório no modelo final e as FKs para `Clinics` usam `DeleteBehavior.Restrict`.
+- `Pet` permanece sem `ClinicId` direto; projeções de detalhes de pet expõem o `ClinicId` vindo de `Patient`.
+- `UpdatePetRequest` não expõe `ClinicId`; updates usam o escopo clínico já persistido no `Patient`.
+- Não houve avanço para `Attendance`, autorização contextual, `CurrentClinicalContext`, `UserClinicAccess`, filtros globais ou front-end.
+- A correção de build em `UpdatePetUseCase` e os ajustes de testes de Infrastructure com `ClinicalScopeTestData` fazem parte do estado final validado no PR 199.
+
 ## Próxima fase recomendada
 
-Fase 8.3.2 — Introdução de `ClinicId` em `Attendance`.
+Fase 8.3.2 — Introdução de `ClinicId` em `Attendance`, somente após esta revisão 8.3.1.1.
