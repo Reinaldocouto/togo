@@ -4,23 +4,26 @@ public class Prescription
 {
     private Prescription() { }
 
-    private Prescription(long attendanceId, DateTime issuedAt, string? notes)
+    private Prescription(long clinicId, long attendanceId, DateTime issuedAt, string? notes)
     {
+        ValidateId(clinicId, nameof(clinicId));
         ValidateId(attendanceId, nameof(attendanceId));
         ValidateDate(issuedAt, nameof(issuedAt));
 
+        ClinicId = clinicId;
         AttendanceId = attendanceId;
         IssuedAt = issuedAt;
         Notes = NormalizeOptional(notes);
     }
 
     public long Id { get; private set; }
+    public long ClinicId { get; private set; }
     public long AttendanceId { get; private set; }
     public DateTime IssuedAt { get; private set; }
     public string? Notes { get; private set; }
 
-    public static Prescription Create(long attendanceId, DateTime issuedAt, string? notes) =>
-        new(attendanceId, issuedAt, notes);
+    public static Prescription Create(long clinicId, long attendanceId, DateTime issuedAt, string? notes) =>
+        new(clinicId, attendanceId, issuedAt, notes);
 
     public void UpdateNotes(string? notes)
     {

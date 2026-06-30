@@ -92,6 +92,7 @@ public sealed class PrescriptionsControllerTests
         var internalProperties = typeof(PrescriptionResponse).GetProperties().Select(property => property.Name).ToArray();
 
         Assert.Equal(["Id", "AttendanceId", "IssuedAt", "ItemCount"], createdProperties);
+        Assert.Contains("ClinicId", internalProperties);
         Assert.Contains("Items", internalProperties);
         Assert.Contains("Notes", internalProperties);
     }
@@ -157,7 +158,7 @@ public sealed class PrescriptionsControllerTests
     {
         using var app = CreateApp();
         app.AttendanceRepository.AddAttendance(4, AttendanceStatus.Open);
-        await app.PrescriptionRepository.AddAsync(Prescription.Create(4, DateTime.UtcNow, "hidden notes"), [new PrescriptionItemDraft(123, 1, "ml", "q12h", null)], CancellationToken.None);
+        await app.PrescriptionRepository.AddAsync(Prescription.Create(1, 4, DateTime.UtcNow, "hidden notes"), [new PrescriptionItemDraft(123, 1, "ml", "q12h", null)], CancellationToken.None);
 
         var response = await app.AuthorizedClient.GetAsync("/api/attendances/4/prescriptions");
         var json = await response.Content.ReadAsStringAsync();

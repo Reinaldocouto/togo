@@ -49,7 +49,7 @@ public class CreatePrescriptionUseCase
         }
 
         var currentUser = _currentUserService.GetCurrentUser();
-        var prescription = Prescription.Create(request.AttendanceId, request.IssuedAt, request.Notes);
+        var prescription = Prescription.Create(attendance.ClinicId, request.AttendanceId, request.IssuedAt, request.Notes);
         var itemDrafts = request.Items
             .Select(item => new PrescriptionItemDraft(item.ProductId, item.Quantity, item.Unit, item.Dosage, item.DurationDays))
             .ToList();
@@ -63,6 +63,7 @@ public class CreatePrescriptionUseCase
 
         return ApplicationResult<PrescriptionResponse>.Success(new PrescriptionResponse(
             prescription.Id,
+            prescription.ClinicId,
             prescription.AttendanceId,
             prescription.IssuedAt,
             prescription.Notes,
@@ -78,13 +79,13 @@ public class CreatePrescriptionUseCase
             UserId: currentUser.UserId,
             UserProfile: currentUser.Profile,
             OccurredAt: DateTime.UtcNow,
-            MetadataJson: CreateMetadataJson(prescription.AttendanceId));
+            MetadataJson: CreateMetadataJson(prescription.ClinicId, prescription.AttendanceId));
 
         await _clinicalAuditLogWriter.WriteAsync(auditEvent, cancellationToken);
     }
 
-    private static string CreateMetadataJson(long attendanceId) =>
-        JsonSerializer.Serialize(new { AttendanceId = attendanceId });
+    private static string CreateMetadataJson(long clinicId, long attendanceId) =>
+        JsonSerializer.Serialize(new { ClinicId = clinicId, AttendanceId = attendanceId });
 
     private static string? Validate(long attendanceId, CreatePrescriptionRequest request)
     {

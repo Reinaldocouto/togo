@@ -27,6 +27,8 @@ public class CreatePrescriptionUseCaseTests
         Assert.Equal(ApplicationResultType.Success, result.Type);
         Assert.Equal(1, repo.AddCallsCount);
         Assert.Single(repo.AddedItems);
+        Assert.Equal(1, result.Data!.ClinicId);
+        Assert.Equal(1, repo.AddedPrescription!.ClinicId);
         Assert.Equal("notes", result.Data!.Notes);
         Assert.Equal(1, audit.WriteCallsCount);
         var auditEvent = Assert.Single(audit.Events);
@@ -37,6 +39,7 @@ public class CreatePrescriptionUseCaseTests
         Assert.Equal("Veterinarian", auditEvent.UserProfile);
         Assert.NotEqual(default, auditEvent.OccurredAt);
         Assert.NotNull(auditEvent.MetadataJson!);
+        Assert.Contains("\"ClinicId\":1", auditEvent.MetadataJson!);
         Assert.Contains("\"AttendanceId\":10", auditEvent.MetadataJson!);
     }
 
@@ -55,6 +58,7 @@ public class CreatePrescriptionUseCaseTests
         Assert.DoesNotContain("Dosage", combined);
         Assert.DoesNotContain("SENSITIVE_DOSAGE", combined);
         Assert.DoesNotContain("Items", combined);
+        Assert.Contains("ClinicId", auditEvent.MetadataJson!);
         Assert.DoesNotContain("ProductId", combined);
         Assert.DoesNotContain("123", auditEvent.MetadataJson!);
     }
@@ -90,6 +94,18 @@ public class CreatePrescriptionUseCaseTests
         Assert.Equal(ApplicationResultType.Conflict, result.Type);
         Assert.Equal(0, repo.AddCallsCount);
         Assert.Equal(0, audit.WriteCallsCount);
+    }
+
+    [Fact]
+    public void CreatePrescriptionRequest_ShouldNotAcceptClinicId()
+    {
+        Assert.DoesNotContain(typeof(CreatePrescriptionRequest).GetProperties(), property => property.Name == "ClinicId");
+    }
+
+    [Fact]
+    public void PrescriptionItemResponse_ShouldNotExposeClinicId()
+    {
+        Assert.DoesNotContain(typeof(PrescriptionItemResponse).GetProperties(), property => property.Name == "ClinicId");
     }
 
     [Fact]

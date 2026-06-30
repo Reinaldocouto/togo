@@ -26,6 +26,7 @@ public class ClinicalCascadeDeleteBehaviorTests
         AssertDeleteBehavior<MedicalRecord>(context, nameof(MedicalRecord.PatientId), DeleteBehavior.Restrict);
         AssertDeleteBehavior<ClinicalEvolution>(context, nameof(ClinicalEvolution.ClinicId), DeleteBehavior.Restrict);
         AssertDeleteBehavior<ClinicalEvolution>(context, nameof(ClinicalEvolution.AttendanceId), DeleteBehavior.Restrict);
+        AssertDeleteBehavior<Prescription>(context, nameof(Prescription.ClinicId), DeleteBehavior.Restrict);
         AssertDeleteBehavior<Prescription>(context, nameof(Prescription.AttendanceId), DeleteBehavior.Restrict);
         AssertDeleteBehavior<PrescriptionItem>(context, nameof(PrescriptionItem.PrescriptionId), DeleteBehavior.Cascade);
     }
@@ -114,7 +115,7 @@ public class ClinicalCascadeDeleteBehaviorTests
         await using var _ = connection;
 
         var attendance = await AddAttendanceAsync(context, "Patient protected prescription", "ATD-CASCADE-003");
-        var prescription = Prescription.Create(attendance.Id, new DateTime(2026, 6, 5, 9, 30, 0, DateTimeKind.Utc), "Prescription must remain.");
+        var prescription = Prescription.Create(attendance.ClinicId, attendance.Id, new DateTime(2026, 6, 5, 9, 30, 0, DateTimeKind.Utc), "Prescription must remain.");
         context.Prescriptions.Add(prescription);
         await context.SaveChangesAsync();
 
