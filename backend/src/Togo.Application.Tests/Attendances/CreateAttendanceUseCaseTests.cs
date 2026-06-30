@@ -20,7 +20,7 @@ public sealed class CreateAttendanceUseCaseTests
     {
         var attendanceRepository = new FakeAttendanceRepository();
         var petRepository = new FakePetRepository();
-        var patientId = petRepository.AddPet();
+        var patientId = petRepository.AddPet(clinicId: 42);
         var auditLogWriter = new FakeClinicalAuditLogWriter();
         var currentUserService = new FakeCurrentUserService(CurrentUserId) { CurrentUser = new CurrentUserInfo(CurrentUserId, "Veterinarian", true) };
         var useCase = CreateUseCase(attendanceRepository, petRepository, currentUserService, auditLogWriter);
@@ -31,6 +31,7 @@ public sealed class CreateAttendanceUseCaseTests
         Assert.Equal(ApplicationResultType.Success, result.Type);
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Data);
+        Assert.Equal(42, result.Data.ClinicId);
         Assert.Equal(patientId, result.Data.PatientId);
         Assert.Equal(request.AttendanceNumber, result.Data.AttendanceNumber);
         Assert.Equal(request.OpenedAt, result.Data.OpenedAt);
@@ -46,7 +47,7 @@ public sealed class CreateAttendanceUseCaseTests
         Assert.Equal(CurrentUserId, auditEvent.UserId);
         Assert.Equal("Veterinarian", auditEvent.UserProfile);
         Assert.Equal(result.Data.Id.ToString(), auditEvent.EntityId);
-        AssertAuditMetadata(auditEvent.MetadataJson, patientId, AttendanceStatus.Open);
+        AssertAuditMetadata(auditEvent.MetadataJson, 42, patientId, AttendanceStatus.Open);
     }
 
     [Fact]
@@ -156,6 +157,7 @@ public sealed class CreateAttendanceUseCaseTests
 
         var persisted = (await attendanceRepository.ListByPatientIdAsync(patientId, CancellationToken.None)).Single();
         Assert.Equal("ATT-TRIM-001", persisted.AttendanceNumber);
+        Assert.Equal(1, persisted.ClinicId);
     }
 
     [Fact]
@@ -172,6 +174,14 @@ public sealed class CreateAttendanceUseCaseTests
             useCase.ExecuteAsync(CreateValidRequest(patientId: patientId), CancellationToken.None));
 
         Assert.Empty(auditLogWriter.Events);
+    }
+
+    [Fact]
+    public void CreateAttendanceRequest_ShouldNotExposeClinicId()
+    {
+        var property = typeof(CreateAttendanceRequest).GetProperty("ClinicId");
+
+        Assert.Null(property);
     }
 
     private static CreateAttendanceUseCase CreateUseCase(
@@ -200,13 +210,14 @@ public sealed class CreateAttendanceUseCaseTests
             new TestLogger<CreateAttendanceUseCase>());
     }
 
-    private static void AssertAuditMetadata(string? metadataJson, long expectedPatientId, AttendanceStatus expectedStatus)
+    private static void AssertAuditMetadata(string? metadataJson, long expectedClinicId, long expectedPatientId, AttendanceStatus expectedStatus)
     {
         Assert.False(string.IsNullOrWhiteSpace(metadataJson));
         using var metadata = JsonDocument.Parse(metadataJson);
         var root = metadata.RootElement;
 
-        Assert.Equal(2, root.EnumerateObject().Count());
+        Assert.Equal(3, root.EnumerateObject().Count());
+        Assert.Equal(expectedClinicId, root.GetProperty("ClinicId").GetInt64());
         Assert.Equal(expectedPatientId, root.GetProperty("PatientId").GetInt64());
         Assert.Equal(expectedStatus.ToString(), root.GetProperty("Status").GetString());
         Assert.False(root.TryGetProperty("GeneralNotes", out _));

@@ -6,14 +6,16 @@ public class Attendance
 {
     private Attendance() { }
 
-    private Attendance(long patientId, string attendanceNumber, DateTime openedAt, AttendanceType type, Guid createdByUserId, DateTime createdAtUtc)
+    private Attendance(long clinicId, long patientId, string attendanceNumber, DateTime openedAt, AttendanceType type, Guid createdByUserId, DateTime createdAtUtc)
     {
+        ValidateId(clinicId, nameof(clinicId));
         ValidateId(patientId, nameof(patientId));
         ValidateRequired(attendanceNumber, nameof(attendanceNumber));
         ValidateDate(openedAt, nameof(openedAt));
         ValidateUserId(createdByUserId, nameof(createdByUserId));
         ValidateDate(createdAtUtc, nameof(createdAtUtc));
 
+        ClinicId = clinicId;
         PatientId = patientId;
         AttendanceNumber = attendanceNumber.Trim();
         OpenedAt = openedAt;
@@ -27,6 +29,7 @@ public class Attendance
     }
 
     public long Id { get; private set; }
+    public long ClinicId { get; private set; }
     public long PatientId { get; private set; }
     public string AttendanceNumber { get; private set; } = string.Empty;
     public DateTime OpenedAt { get; private set; }
@@ -41,8 +44,8 @@ public class Attendance
     public Guid? CanceledByUserId { get; private set; }
     public DateTime? CanceledAt { get; private set; }
 
-    public static Attendance Create(long patientId, string attendanceNumber, DateTime openedAt, AttendanceType type, Guid createdByUserId, DateTime createdAtUtc) =>
-        new(patientId, attendanceNumber, openedAt, type, createdByUserId, createdAtUtc);
+    public static Attendance Create(long clinicId, long patientId, string attendanceNumber, DateTime openedAt, AttendanceType type, Guid createdByUserId, DateTime createdAtUtc) =>
+        new(clinicId, patientId, attendanceNumber, openedAt, type, createdByUserId, createdAtUtc);
 
     public void Close(DateTime closedAt, Guid closedByUserId, DateTime updatedAtUtc)
     {

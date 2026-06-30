@@ -213,7 +213,7 @@ public sealed class CreateClinicalEvolutionUseCaseTests
         FakeClinicalAuditLogWriter clinicalAuditLogWriter) =>
         new(attendanceRepository, clinicalEvolutionRepository, currentUserService, clinicalAuditLogWriter, new TestLogger<CreateClinicalEvolutionUseCase>());
 
-    private static Attendance CreateOpenAttendance() => Attendance.Create(1, "ATT-001", RegisteredAt.AddHours(-1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
+    private static Attendance CreateOpenAttendance() => Attendance.Create(1, 1, "ATT-001", RegisteredAt.AddHours(-1), AttendanceType.Consultation, TestUserId, TestCreatedAt);
 
     private static CreateClinicalEvolutionRequest CreateRequest(long attendanceId, DateTime? registeredAt = null, string text = "  Clinical note  ") =>
         new(attendanceId, registeredAt ?? RegisteredAt, EvolutionType.ClinicalNote, text);

@@ -70,7 +70,8 @@ public class CreateAttendanceUseCase
         {
             var currentUser = _currentUserService.GetCurrentUser();
             var createdAtUtc = DateTime.UtcNow;
-            var attendance = Attendance.Create(request.PatientId, request.AttendanceNumber, request.OpenedAt, request.Type, currentUser.UserId, createdAtUtc);
+            var patientScope = patientValidation.Data!;
+            var attendance = Attendance.Create(patientScope.ClinicId, request.PatientId, request.AttendanceNumber, request.OpenedAt, request.Type, currentUser.UserId, createdAtUtc);
             await _attendanceRepository.AddAsync(attendance, cancellationToken);
             await WriteCreatedAuditLogAsync(attendance, currentUser, cancellationToken);
 
@@ -93,15 +94,15 @@ public class CreateAttendanceUseCase
             UserId: currentUser.UserId,
             UserProfile: currentUser.Profile,
             OccurredAt: DateTime.UtcNow,
-            MetadataJson: CreateMetadataJson(attendance.PatientId, attendance.Status));
+            MetadataJson: CreateMetadataJson(attendance.ClinicId, attendance.PatientId, attendance.Status));
 
         await _clinicalAuditLogWriter.WriteAsync(auditEvent, cancellationToken);
     }
 
-    private static string CreateMetadataJson(long patientId, AttendanceStatus status) =>
-        JsonSerializer.Serialize(new { PatientId = patientId, Status = status.ToString() });
+    private static string CreateMetadataJson(long clinicId, long patientId, AttendanceStatus status) =>
+        JsonSerializer.Serialize(new { ClinicId = clinicId, PatientId = patientId, Status = status.ToString() });
 
-    private static ApplicationResult<AttendanceResponse> ToAttendanceResponseResult(ApplicationResult<bool> validationResult) =>
+    private static ApplicationResult<AttendanceResponse> ToAttendanceResponseResult<T>(ApplicationResult<T> validationResult) =>
         validationResult.Type switch
         {
             ApplicationResultType.NotFound => ApplicationResult<AttendanceResponse>.NotFound(validationResult.Error!),
@@ -113,6 +114,7 @@ public class CreateAttendanceUseCase
     private static AttendanceResponse ToResponse(Attendance attendance) =>
         new(
             attendance.Id,
+            attendance.ClinicId,
             attendance.PatientId,
             attendance.AttendanceNumber,
             attendance.OpenedAt,

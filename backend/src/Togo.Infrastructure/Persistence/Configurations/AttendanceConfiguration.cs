@@ -13,6 +13,7 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
         builder.HasKey(a => a.Id);
         builder.Property(a => a.Id).ValueGeneratedOnAdd();
 
+        builder.Property(a => a.ClinicId).IsRequired();
         builder.Property(a => a.PatientId).IsRequired();
         builder.Property(a => a.AttendanceNumber).IsRequired().HasMaxLength(30);
         builder.Property(a => a.OpenedAt).IsRequired();
@@ -27,11 +28,19 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
         builder.Property(a => a.Status).IsRequired().HasConversion<string>();
         builder.Property(a => a.Type).IsRequired().HasConversion<string>();
 
+        builder.HasOne<Clinic>()
+            .WithMany()
+            .HasForeignKey(a => a.ClinicId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne<Patient>()
             .WithMany()
             .HasForeignKey(a => a.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasIndex(a => a.ClinicId);
+        builder.HasIndex(a => new { a.ClinicId, a.OpenedAt });
+        builder.HasIndex(a => new { a.ClinicId, a.Status });
         builder.HasIndex(a => a.PatientId);
         builder.HasIndex(a => a.AttendanceNumber).IsUnique();
         builder.HasIndex(a => a.OpenedAt);

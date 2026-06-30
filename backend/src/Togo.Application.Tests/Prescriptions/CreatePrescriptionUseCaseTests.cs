@@ -114,7 +114,7 @@ public class CreatePrescriptionUseCaseTests
     private static (CreatePrescriptionUseCase, FakePrescriptionRepository, FakeClinicalAuditLogWriter) CreateUseCase(AttendanceStatus status, FakeCurrentUserService? currentUserService = null)
     {
         var attendanceRepo = new FakeAttendanceRepository();
-        var attendance = Attendance.Create(1, "ATT", Now, AttendanceType.Consultation, UserId, Now);
+        var attendance = Attendance.Create(1, 1, "ATT", Now, AttendanceType.Consultation, UserId, Now);
         if (status == AttendanceStatus.Closed) attendance.Close(Now.AddMinutes(1), UserId, Now.AddMinutes(1));
         if (status == AttendanceStatus.Canceled) attendance.Cancel(UserId, Now.AddMinutes(1));
         attendanceRepo.AddAttendanceForLookup(10, attendance);

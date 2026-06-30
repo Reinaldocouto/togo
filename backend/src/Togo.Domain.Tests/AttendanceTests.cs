@@ -15,7 +15,7 @@ public class AttendanceTests
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var attendance = Attendance.Create(
+        var attendance = Attendance.Create(1,
             patientId: 10,
             attendanceNumber: "  ATD-0001  ",
             openedAt: openedAt,
@@ -24,6 +24,7 @@ public class AttendanceTests
             createdAtUtc: TestCreatedAt);
 
         // Assert
+        Assert.Equal(1, attendance.ClinicId);
         Assert.Equal(10, attendance.PatientId);
         Assert.Equal("ATD-0001", attendance.AttendanceNumber);
         Assert.Equal(openedAt, attendance.OpenedAt);
@@ -39,6 +40,20 @@ public class AttendanceTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
+    public void Create_ShouldThrowArgumentOutOfRangeException_WhenClinicIdIsInvalid(long clinicId)
+    {
+        var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
+
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Attendance.Create(clinicId, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt));
+
+        Assert.StartsWith("Id must be greater than zero", exception.Message);
+        Assert.Equal("clinicId", exception.ParamName);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
     public void Create_ShouldThrowArgumentOutOfRangeException_WhenPatientIdIsInvalid(long patientId)
     {
         // Arrange
@@ -46,7 +61,7 @@ public class AttendanceTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            Attendance.Create(
+            Attendance.Create(1,
                 patientId: patientId,
                 attendanceNumber: "ATD-0001",
                 openedAt: openedAt,
@@ -67,7 +82,7 @@ public class AttendanceTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            Attendance.Create(
+            Attendance.Create(1,
                 patientId: 10,
                 attendanceNumber: attendanceNumber,
                 openedAt: openedAt,
@@ -83,7 +98,7 @@ public class AttendanceTests
     {
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            Attendance.Create(
+            Attendance.Create(1,
                 patientId: 10,
                 attendanceNumber: "ATD-0001",
                 openedAt: default,
@@ -100,7 +115,7 @@ public class AttendanceTests
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
 
         var exception = Assert.Throws<ArgumentException>(() =>
-            Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, Guid.Empty, TestCreatedAt));
+            Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, Guid.Empty, TestCreatedAt));
 
         Assert.Equal("createdByUserId", exception.ParamName);
     }
@@ -111,7 +126,7 @@ public class AttendanceTests
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
 
         var exception = Assert.Throws<ArgumentException>(() =>
-            Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, default));
+            Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, default));
 
         Assert.Equal("createdAtUtc", exception.ParamName);
     }
@@ -121,7 +136,7 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         var closedAt = new DateTime(2026, 5, 11, 11, 30, 0, DateTimeKind.Utc);
 
         // Act
@@ -134,6 +149,7 @@ public class AttendanceTests
         Assert.Equal(TestUserId, attendance.UpdatedByUserId);
         Assert.Equal(TestCreatedAt.AddHours(1), attendance.UpdatedAt);
         Assert.Equal(TestCreatedAt, attendance.CreatedAt);
+        Assert.Equal(1, attendance.ClinicId);
     }
 
     [Fact]
@@ -141,7 +157,7 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => attendance.Close(default, TestUserId, TestCreatedAt.AddHours(1)));
@@ -154,7 +170,7 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         var invalidClosedAt = new DateTime(2026, 5, 11, 9, 59, 59, DateTimeKind.Utc);
 
         // Act & Assert
@@ -168,7 +184,7 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         var firstClosedAt = new DateTime(2026, 5, 11, 11, 30, 0, DateTimeKind.Utc);
         var secondClosedAt = new DateTime(2026, 5, 11, 12, 0, 0, DateTimeKind.Utc);
 
@@ -183,7 +199,7 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
 
         // Act
         attendance.Cancel(TestUserId, TestCreatedAt.AddHours(1));
@@ -196,6 +212,7 @@ public class AttendanceTests
         Assert.Equal(TestUserId, attendance.UpdatedByUserId);
         Assert.Equal(TestCreatedAt.AddHours(1), attendance.UpdatedAt);
         Assert.Equal(TestCreatedAt, attendance.CreatedAt);
+        Assert.Equal(1, attendance.ClinicId);
     }
 
     [Fact]
@@ -203,7 +220,7 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         var closedAt = new DateTime(2026, 5, 11, 11, 30, 0, DateTimeKind.Utc);
         attendance.Close(closedAt, TestUserId, TestCreatedAt.AddHours(1));
 
@@ -216,7 +233,7 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         attendance.Cancel(TestUserId, TestCreatedAt.AddHours(1));
 
         // Act & Assert
@@ -228,7 +245,7 @@ public class AttendanceTests
     {
         // Arrange
         var openedAt = new DateTime(2026, 5, 11, 10, 0, 0, DateTimeKind.Utc);
-        var attendance = Attendance.Create(10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 10, "ATD-0001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         var closedAt = new DateTime(2026, 5, 11, 11, 30, 0, DateTimeKind.Utc);
         attendance.Cancel(TestUserId, TestCreatedAt.AddHours(1));
 

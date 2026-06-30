@@ -57,7 +57,7 @@ public class ClinicalEvolutionRepositoryTests
         var patient = Patient.Create(clinic.Id, PatientType.Pet, attendanceNumber + " Patient", null, "Active", DateTime.UtcNow);
         context.Patients.Add(patient);
         await context.SaveChangesAsync();
-        var attendance = Attendance.Create(patient.Id, attendanceNumber, DateTime.UtcNow, AttendanceType.Consultation, Guid.Parse("11111111-1111-1111-1111-111111111111"), DateTime.UtcNow);
+        var attendance = Attendance.Create(patient.ClinicId, patient.Id, attendanceNumber, DateTime.UtcNow, AttendanceType.Consultation, Guid.Parse("11111111-1111-1111-1111-111111111111"), DateTime.UtcNow);
         context.Attendances.Add(attendance);
         await context.SaveChangesAsync();
         return attendance;

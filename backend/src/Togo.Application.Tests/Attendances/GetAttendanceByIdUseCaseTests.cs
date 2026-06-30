@@ -49,7 +49,7 @@ public sealed class GetAttendanceByIdUseCaseTests
         var repository = new FakeAttendanceRepository();
         const long attendanceLookupId = 123;
         var openedAt = new DateTime(2026, 02, 10, 09, 00, 00, DateTimeKind.Utc);
-        var attendance = Attendance.Create(12, "ATT-GET-001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+        var attendance = Attendance.Create(1, 12, "ATT-GET-001", openedAt, AttendanceType.Consultation, TestUserId, TestCreatedAt);
         repository.AddAttendanceForLookup(attendanceLookupId, attendance);
         var useCase = CreateUseCase(repository);
 

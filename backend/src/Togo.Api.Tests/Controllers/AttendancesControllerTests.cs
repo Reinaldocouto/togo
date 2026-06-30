@@ -117,7 +117,7 @@ public sealed class AttendancesControllerTests
         return new TestContext(controller, repository);
     }
 
-    private static Attendance CreateAttendance(string number) => Attendance.Create(1, number, DateTime.UtcNow, AttendanceType.Consultation, TestUserId, TestCreatedAt);
+    private static Attendance CreateAttendance(string number) => Attendance.Create(1, 1, number, DateTime.UtcNow, AttendanceType.Consultation, TestUserId, TestCreatedAt);
     private sealed record TestContext(AttendancesController Controller, FakeAttendanceRepository Repository);
 
     private sealed class NullLogger<T> : ILogger<T>
