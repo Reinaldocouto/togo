@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Togo.Application.Security;
 using Togo.Application.Tutors.Contracts;
 using Togo.Application.Tutors.Validators;
 using Togo.Domain.Entities;
@@ -8,16 +9,22 @@ namespace Togo.Application.Tutors.UseCases;
 public class CreateTutorUseCase
 {
     private readonly ITutorRepository _tutorRepository;
+    private readonly ICurrentClinicalContext _currentClinicalContext;
+    private readonly IClinicalContextAuthorizationService _clinicalContextAuthorizationService;
     private readonly TutorDocumentUniquenessValidator _documentUniquenessValidator;
     private readonly ILogger<CreateTutorUseCase> _logger;
 
     public CreateTutorUseCase(
         ITutorRepository tutorRepository,
         TutorDocumentUniquenessValidator documentUniquenessValidator,
+        ICurrentClinicalContext currentClinicalContext,
+        IClinicalContextAuthorizationService clinicalContextAuthorizationService,
         ILogger<CreateTutorUseCase> logger)
     {
         _tutorRepository = tutorRepository;
         _documentUniquenessValidator = documentUniquenessValidator;
+        _currentClinicalContext = currentClinicalContext;
+        _clinicalContextAuthorizationService = clinicalContextAuthorizationService;
         _logger = logger;
     }
 
@@ -26,10 +33,13 @@ public class CreateTutorUseCase
         var hasDocument = !string.IsNullOrWhiteSpace(request.Document);
         _logger.LogInformation("Creating tutor. HasDocument: {HasDocument}", hasDocument);
 
-        if (request.ClinicId <= 0)
+        var clinicId = _currentClinicalContext.GetRequiredClinicId();
+        await _clinicalContextAuthorizationService.EnsureCanAccessCurrentClinicAsync(cancellationToken);
+
+        if (request.ClinicId > 0 && request.ClinicId != clinicId)
         {
-            _logger.LogWarning("Tutor creation failed because clinic id is invalid");
-            return ApplicationResult<TutorResponse>.ValidationError("ClinicId must be greater than zero.");
+            _logger.LogWarning("Tutor creation failed because request clinic differs from authorized context. RequestClinicId: {RequestClinicId}. ClinicId: {ClinicId}", request.ClinicId, clinicId);
+            return ApplicationResult<TutorResponse>.ValidationError("ClinicId does not match the authorized clinical context.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -39,7 +49,7 @@ public class CreateTutorUseCase
         }
 
         var documentUniquenessValidation = await _documentUniquenessValidator
-            .ValidateAsync(request.ClinicId, request.Document, null, cancellationToken);
+            .ValidateAsync(clinicId, request.Document, null, cancellationToken);
 
         if (!documentUniquenessValidation.IsSuccess)
         {
@@ -47,7 +57,7 @@ public class CreateTutorUseCase
             return ApplicationResult<TutorResponse>.Conflict(documentUniquenessValidation.Error!);
         }
 
-        var tutor = Tutor.Create(request.ClinicId, request.Name, request.Document, request.Email, request.Phone, DateTime.UtcNow);
+        var tutor = Tutor.Create(clinicId, request.Name, request.Document, request.Email, request.Phone, DateTime.UtcNow);
         await _tutorRepository.AddAsync(tutor, cancellationToken);
 
         _logger.LogInformation("Tutor created successfully. TutorId: {TutorId}", tutor.Id);
