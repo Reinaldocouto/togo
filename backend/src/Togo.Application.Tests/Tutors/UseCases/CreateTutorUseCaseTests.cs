@@ -1,3 +1,4 @@
+using Togo.Application.Tests;
 using Togo.Application.Tests.Pets.Fakes;
 using Togo.Application.Tutors;
 using Togo.Application.Tutors.Contracts;
@@ -14,28 +15,28 @@ public sealed class CreateTutorUseCaseTests
     {
         var repository = new FakeTutorRepository();
         var useCase = CreateUseCase(repository);
-        var request = new CreateTutorRequest(2, "John Doe", "123", "john@example.com", "555");
+        var request = new CreateTutorRequest(1, "John Doe", "123", "john@example.com", "555");
 
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
 
         Assert.Equal(ApplicationResultType.Success, result.Type);
         Assert.NotNull(result.Data);
-        Assert.Equal(2, result.Data.ClinicId);
-        Assert.Equal(2, repository.Tutors.Single().ClinicId);
+        Assert.Equal(1, result.Data.ClinicId);
+        Assert.Equal(1, repository.Tutors.Single().ClinicId);
     }
 
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public async Task ExecuteAsync_ShouldReturnValidationError_WhenClinicIdIsInvalid(long clinicId)
+    public async Task ExecuteAsync_ShouldAllowLegacyEmptyClinicId_WhenContextIsAuthorized(long clinicId)
     {
         var useCase = CreateUseCase(new FakeTutorRepository());
         var request = new CreateTutorRequest(clinicId, "John Doe", "123", null, null);
 
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
 
-        Assert.Equal(ApplicationResultType.ValidationError, result.Type);
-        Assert.Equal("ClinicId must be greater than zero.", result.Error);
+        Assert.Equal(ApplicationResultType.Success, result.Type);
+        Assert.Equal(1, result.Data!.ClinicId);
     }
 
     [Fact]
@@ -57,7 +58,7 @@ public sealed class CreateTutorUseCaseTests
         var repository = new FakeTutorRepository();
         repository.Add(Tutor.Create(1, "Existing", "123", null, null, DateTime.UtcNow));
         var useCase = CreateUseCase(repository);
-        var request = new CreateTutorRequest(2, "John Doe", "123", null, null);
+        var request = new CreateTutorRequest(0, "John Doe", "123", null, null);
 
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
 
@@ -70,7 +71,7 @@ public sealed class CreateTutorUseCaseTests
             repository,
             new TestLogger<TutorDocumentUniquenessValidator>());
 
-        return new CreateTutorUseCase(repository, validator, new TestLogger<CreateTutorUseCase>());
+        return new CreateTutorUseCase(repository, validator, new FakeCurrentClinicalContext(1), new FakeClinicalContextAuthorizationService(), new TestLogger<CreateTutorUseCase>());
     }
 
     private sealed class FakeTutorRepository : ITutorRepository
@@ -80,11 +81,11 @@ public sealed class CreateTutorUseCaseTests
 
         public void Add(Tutor tutor) => _tutors.Add(tutor);
 
-        public Task<Tutor?> GetByIdAsync(long id, CancellationToken cancellationToken) =>
-            Task.FromResult(_tutors.FirstOrDefault(tutor => tutor.Id == id));
+        public Task<Tutor?> GetByIdAsync(long id, long clinicId, CancellationToken cancellationToken) =>
+            Task.FromResult(_tutors.FirstOrDefault(tutor => tutor.Id == id && tutor.ClinicId == clinicId));
 
-        public Task<IReadOnlyList<Tutor>> ListAsync(CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<Tutor>>(_tutors);
+        public Task<IReadOnlyList<Tutor>> ListAsync(long clinicId, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<Tutor>>(_tutors.Where(tutor => tutor.ClinicId == clinicId).ToList());
 
         public Task AddAsync(Tutor tutor, CancellationToken cancellationToken)
         {

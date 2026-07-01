@@ -14,15 +14,16 @@ public class TutorRepository : ITutorRepository
         _context = context;
     }
 
-    public async Task<Tutor?> GetByIdAsync(long id, CancellationToken cancellationToken)
+    public async Task<Tutor?> GetByIdAsync(long id, long clinicId, CancellationToken cancellationToken)
     {
-        return await _context.Tutors.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        return await _context.Tutors.FirstOrDefaultAsync(t => t.Id == id && t.ClinicId == clinicId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Tutor>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Tutor>> ListAsync(long clinicId, CancellationToken cancellationToken)
     {
         return await _context.Tutors
             .AsNoTracking()
+            .Where(t => t.ClinicId == clinicId)
             .OrderBy(t => t.Name)
             .ToListAsync(cancellationToken);
     }

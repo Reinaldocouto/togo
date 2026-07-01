@@ -124,3 +124,11 @@ Débitos específicos ainda abertos:
 - regras potencialmente globais, como microchip e número de atendimento, precisam de decisão explícita e testes de isolamento.
 
 Referência: `docs/security/PHASE_08_06_00_CONTEXTUAL_QUERY_FILTERS_PLANNING.md`.
+
+## Atualização — Fase 8.6.1
+
+- Filtros explícitos por contexto clínico foram aplicados aos fluxos protegidos de Tutor e Patient/Pet.
+- Ainda faltam filtros contextuais incrementais em Attendance, MedicalRecord, ClinicalEvolution e Prescription.
+- Microchip permanece com unicidade global; isso pode bloquear cadastros entre clínicas e revelar indiretamente duplicidade cross-clinic por mensagem genérica de conflito.
+- A padronização HTTP de ausência de contexto clínico e acesso negado ainda deve ser revisada em fase posterior.
+- Mensagens de `NotFound` foram preferidas para entidades por ID fora da clínica autorizada, mas outras validações transversais devem continuar sendo revisadas para evitar enumeração cross-clinic.
