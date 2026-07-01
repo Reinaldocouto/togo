@@ -60,15 +60,15 @@ Este arquivo concentra riscos e débitos identificados durante a implementação
 - **Impacto:** Mesmo com contexto clínico ativo resolvido, consultas e comandos ainda não validam automaticamente o escopo permitido do usuário nem filtram dados por clínica.
 - **Fase sugerida para tratamento:** Fase 8.5 — autorização contextual; Fase 8.6 — filtros por contexto.
 - **Severidade:** alta
-- **Status:** parcialmente tratado na Fase 8.4; permanece aberto para autorização e filtros
+- **Status:** parcialmente tratado nas Fases 8.4 e 8.5; existe serviço mínimo de autorização contextual, mas permanecem abertos aplicação transversal nos fluxos e filtros por contexto
 
-### 8. UserClinicAccess ainda ausente
+### 8. UserClinicAccess mínimo implementado
 
-- **Descrição:** Ainda não existe validação de vínculo usuário-clínica. Isso será necessário antes de ambiente real.
-- **Impacto:** Mesmo com `ClinicId` persistido, o sistema ainda não comprova se o usuário pode operar naquela clínica.
-- **Fase sugerida para tratamento:** Fase 8.5 — autorização contextual.
+- **Descrição:** A Fase 8.5 criou `UserClinicAccess`, persistência, repository e serviço mínimo para validar vínculo ativo usuário-clínica. Ainda falta aplicar essa autorização de forma sistemática nos endpoints/fluxos clínicos.
+- **Impacto:** O modelo de vínculo já existe, mas endpoints que não chamarem o serviço de autorização contextual ainda não estarão protegidos contra operação cruzada.
+- **Fase sugerida para tratamento:** Fase 8.6/8.7 — aplicação sistemática junto dos filtros e hardening de endpoints.
 - **Severidade:** alta
-- **Status:** aberto
+- **Status:** parcialmente tratado na Fase 8.5
 
 ### 9. Filtros globais por contexto ainda ausentes
 
@@ -92,15 +92,15 @@ Este arquivo concentra riscos e débitos identificados durante a implementação
 - **Impacto:** Clientes podem enviar qualquer `ClinicId` positivo até que autorização contextual valide vínculo usuário-clínica.
 - **Fase sugerida para tratamento:** Fase 8.5 — autorização contextual e desenho definitivo do mecanismo de seleção de clínica.
 - **Severidade:** alta
-- **Status:** aberto
+- **Status:** parcialmente tratado na Fase 8.5; `X-Clinic-Id` ainda não autoriza sozinho e deve ser validado pelo serviço de autorização contextual quando a operação exigir clínica
 
-### 12. `CurrentClinicalContext` sem autorização
+### 12. `CurrentClinicalContext` com autorização mínima disponível
 
-- **Descrição:** `ICurrentClinicalContext` e `HttpCurrentClinicalContext` resolvem contexto ativo, mas não validam `UserClinicAccess`, organização, unidade clínica ou permissões.
-- **Impacto:** O contexto ativo não deve ser usado como prova de acesso; ele é apenas dado de entrada resolvido para fases futuras.
-- **Fase sugerida para tratamento:** Fase 8.5 — autorização contextual.
+- **Descrição:** `ICurrentClinicalContext` e `HttpCurrentClinicalContext` continuam apenas resolvendo contexto ativo, mas a Fase 8.5 criou `IClinicalContextAuthorizationService` para validar `UserClinicAccess` ativo quando chamado. O contexto por si só ainda não valida organização, unidade clínica ou permissões granulares.
+- **Impacto:** O contexto ativo não deve ser usado isoladamente como prova de acesso; endpoints/fluxos precisam invocar a autorização contextual até que exista aplicação transversal.
+- **Fase sugerida para tratamento:** Fase 8.6/8.7 — filtros por contexto e aplicação sistemática.
 - **Severidade:** alta
-- **Status:** aberto
+- **Status:** parcialmente tratado na Fase 8.5
 
 ### 13. Padronização HTTP para contexto clínico ausente ou inválido
 

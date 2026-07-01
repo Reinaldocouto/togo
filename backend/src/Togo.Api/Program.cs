@@ -53,6 +53,7 @@ var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 builder.Services.AddCurrentClinicalContext();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddClinicalContextAuthorization();
 builder.Services.AddScoped<ITutorRepository, TutorRepository>();
 builder.Services.AddScoped<IPetRepository, PetRepository>();
 builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
