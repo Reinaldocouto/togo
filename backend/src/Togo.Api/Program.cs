@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Togo.Api.DependencyInjection;
 using Togo.Api.Middlewares;
 using Togo.Api.Security;
 using Togo.Application.Services;
@@ -49,7 +50,7 @@ var jwtSecret = builder.Configuration["Jwt:Secret"]
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
 // ====== DEPENDENCY INJECTION ======
-builder.Services.AddHttpContextAccessor();
+builder.Services.AddCurrentClinicalContext();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITutorRepository, TutorRepository>();
