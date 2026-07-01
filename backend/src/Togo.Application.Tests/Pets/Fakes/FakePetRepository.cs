@@ -57,17 +57,27 @@ internal sealed class FakePetRepository : IPetRepository
         _deleteConflictPatientIds.Add(patientId);
     }
 
-    public Task<IReadOnlyList<PetListItemProjection>> ListAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<PetListItemProjection>> ListAsync(long clinicId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         IReadOnlyList<PetListItemProjection> pets = _pets
+            .Where(pet => pet.ClinicId == clinicId)
             .OrderBy(pet => pet.Name, StringComparer.Ordinal)
             .Select(ToListItemProjection)
             .ToList();
 
         return Task.FromResult(pets);
     }
+
+    public Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, long clinicId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var pet = _pets.FirstOrDefault(pet => pet.PatientId == patientId && pet.ClinicId == clinicId);
+        return Task.FromResult(pet is null ? null : ToDetailsProjection(pet));
+    }
+
 
     public Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken)
     {
@@ -77,11 +87,11 @@ internal sealed class FakePetRepository : IPetRepository
         return Task.FromResult(pet is null ? null : ToDetailsProjection(pet));
     }
 
-    public Task<bool> TutorExistsAsync(long tutorId, CancellationToken cancellationToken)
+    public Task<bool> TutorExistsAsync(long tutorId, long clinicId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        return Task.FromResult(_existingTutorClinics.ContainsKey(tutorId));
+        return Task.FromResult(_existingTutorClinics.TryGetValue(tutorId, out var tutorClinicId) && tutorClinicId == clinicId);
     }
 
     public Task<bool> TutorBelongsToClinicAsync(long tutorId, long clinicId, CancellationToken cancellationToken)
@@ -134,11 +144,11 @@ internal sealed class FakePetRepository : IPetRepository
         return Task.FromResult(ToDetailsProjection(pet));
     }
 
-    public Task<PetDetailsProjection?> UpdateAsync(UpdatePetRepositoryData data, CancellationToken cancellationToken)
+    public Task<PetDetailsProjection?> UpdateAsync(UpdatePetRepositoryData data, long clinicId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var petIndex = _pets.FindIndex(pet => pet.PatientId == data.PatientId);
+        var petIndex = _pets.FindIndex(pet => pet.PatientId == data.PatientId && pet.ClinicId == clinicId);
         if (petIndex < 0)
         {
             return Task.FromResult<PetDetailsProjection?>(null);
@@ -164,7 +174,7 @@ internal sealed class FakePetRepository : IPetRepository
         return Task.FromResult<PetDetailsProjection?>(ToDetailsProjection(updatedPet));
     }
 
-    public Task<bool> DeleteAsync(long patientId, CancellationToken cancellationToken)
+    public Task<bool> DeleteAsync(long patientId, long clinicId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -173,7 +183,7 @@ internal sealed class FakePetRepository : IPetRepository
             throw new InvalidOperationException("Pet cannot be deleted.");
         }
 
-        var petIndex = _pets.FindIndex(pet => pet.PatientId == patientId);
+        var petIndex = _pets.FindIndex(pet => pet.PatientId == patientId && pet.ClinicId == clinicId);
         if (petIndex < 0)
         {
             return Task.FromResult(false);

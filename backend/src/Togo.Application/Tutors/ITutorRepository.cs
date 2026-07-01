@@ -4,8 +4,8 @@ namespace Togo.Application.Tutors;
 
 public interface ITutorRepository
 {
-    Task<Tutor?> GetByIdAsync(long id, CancellationToken cancellationToken);
-    Task<IReadOnlyList<Tutor>> ListAsync(CancellationToken cancellationToken);
+    Task<Tutor?> GetByIdAsync(long id, long clinicId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Tutor>> ListAsync(long clinicId, CancellationToken cancellationToken);
     Task AddAsync(Tutor tutor, CancellationToken cancellationToken);
     Task UpdateAsync(Tutor tutor, CancellationToken cancellationToken);
     Task DeleteAsync(Tutor tutor, CancellationToken cancellationToken);

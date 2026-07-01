@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Togo.Application.Security;
 using Togo.Application.Tutors.Contracts;
 using Togo.Application.Tutors.Validators;
 
@@ -7,16 +8,22 @@ namespace Togo.Application.Tutors.UseCases;
 public class UpdateTutorUseCase
 {
     private readonly ITutorRepository _tutorRepository;
+    private readonly ICurrentClinicalContext _currentClinicalContext;
+    private readonly IClinicalContextAuthorizationService _clinicalContextAuthorizationService;
     private readonly TutorDocumentUniquenessValidator _documentUniquenessValidator;
     private readonly ILogger<UpdateTutorUseCase> _logger;
 
     public UpdateTutorUseCase(
         ITutorRepository tutorRepository,
         TutorDocumentUniquenessValidator documentUniquenessValidator,
+        ICurrentClinicalContext currentClinicalContext,
+        IClinicalContextAuthorizationService clinicalContextAuthorizationService,
         ILogger<UpdateTutorUseCase> logger)
     {
         _tutorRepository = tutorRepository;
         _documentUniquenessValidator = documentUniquenessValidator;
+        _currentClinicalContext = currentClinicalContext;
+        _clinicalContextAuthorizationService = clinicalContextAuthorizationService;
         _logger = logger;
     }
 
@@ -37,7 +44,10 @@ public class UpdateTutorUseCase
             return ApplicationResult<TutorResponse>.ValidationError("Name is required.");
         }
 
-        var tutor = await _tutorRepository.GetByIdAsync(id, cancellationToken);
+        var clinicId = _currentClinicalContext.GetRequiredClinicId();
+        await _clinicalContextAuthorizationService.EnsureCanAccessCurrentClinicAsync(cancellationToken);
+
+        var tutor = await _tutorRepository.GetByIdAsync(id, clinicId, cancellationToken);
         if (tutor is null)
         {
             _logger.LogWarning("Tutor update failed because tutor was not found. TutorId: {TutorId}", id);

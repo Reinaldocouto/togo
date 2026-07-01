@@ -151,8 +151,13 @@ public sealed class AttendancesControllerTests
 
     private sealed class FakePetRepository(bool patientExists) : IPetRepository
     {
-        public Task<IReadOnlyList<PetListItemProjection>> ListAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<PetListItemProjection>>([]);
         public Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken)
+        {
+            return GetByPatientIdAsync(patientId, 1, cancellationToken);
+        }
+
+        public Task<IReadOnlyList<PetListItemProjection>> ListAsync(long clinicId, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<PetListItemProjection>>([]);
+        public Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, long clinicId, CancellationToken cancellationToken)
         {
             if (!patientExists)
             {
@@ -176,11 +181,11 @@ public sealed class AttendancesControllerTests
 
             return Task.FromResult<PetDetailsProjection?>(projection);
         }
-        public Task<bool> TutorExistsAsync(long tutorId, CancellationToken cancellationToken) => Task.FromResult(true);
+        public Task<bool> TutorExistsAsync(long tutorId, long clinicId, CancellationToken cancellationToken) => Task.FromResult(true);
         public Task<bool> TutorBelongsToClinicAsync(long tutorId, long clinicId, CancellationToken cancellationToken) => Task.FromResult(true);
         public Task<bool> MicrochipExistsAsync(string microchip, long? ignorePatientId, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<PetDetailsProjection> CreateAsync(CreatePetRepositoryData data, CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task<PetDetailsProjection?> UpdateAsync(UpdatePetRepositoryData data, CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task<bool> DeleteAsync(long patientId, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<PetDetailsProjection?> UpdateAsync(UpdatePetRepositoryData data, long clinicId, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<bool> DeleteAsync(long patientId, long clinicId, CancellationToken cancellationToken) => throw new NotImplementedException();
     }
 }

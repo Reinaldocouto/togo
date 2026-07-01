@@ -1,17 +1,24 @@
 using Microsoft.Extensions.Logging;
+using Togo.Application.Security;
 
 namespace Togo.Application.Tutors.UseCases;
 
 public class DeleteTutorUseCase
 {
     private readonly ITutorRepository _tutorRepository;
+    private readonly ICurrentClinicalContext _currentClinicalContext;
+    private readonly IClinicalContextAuthorizationService _clinicalContextAuthorizationService;
     private readonly ILogger<DeleteTutorUseCase> _logger;
 
     public DeleteTutorUseCase(
         ITutorRepository tutorRepository,
+        ICurrentClinicalContext currentClinicalContext,
+        IClinicalContextAuthorizationService clinicalContextAuthorizationService,
         ILogger<DeleteTutorUseCase> logger)
     {
         _tutorRepository = tutorRepository;
+        _currentClinicalContext = currentClinicalContext;
+        _clinicalContextAuthorizationService = clinicalContextAuthorizationService;
         _logger = logger;
     }
 
@@ -24,7 +31,10 @@ public class DeleteTutorUseCase
             _logger.LogWarning("Tutor delete failed due to invalid id. TutorId: {TutorId}", id);
         }
 
-        var tutor = await _tutorRepository.GetByIdAsync(id, cancellationToken);
+        var clinicId = _currentClinicalContext.GetRequiredClinicId();
+        await _clinicalContextAuthorizationService.EnsureCanAccessCurrentClinicAsync(cancellationToken);
+
+        var tutor = await _tutorRepository.GetByIdAsync(id, clinicId, cancellationToken);
         if (tutor is null)
         {
             _logger.LogWarning("Tutor delete failed because tutor was not found. TutorId: {TutorId}", id);
