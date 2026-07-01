@@ -109,3 +109,18 @@ Este arquivo concentra riscos e débitos identificados durante a implementação
 - **Fase sugerida para tratamento:** Fase 8.5 ou hardening imediatamente posterior.
 - **Severidade:** média
 - **Status:** aberto
+
+## Fase 8.6.0 — Débitos mapeados para filtros de consulta por contexto
+
+A Fase 8.6.0 documentou que o débito de filtros por contexto clínico permanece aberto até a implementação incremental das subfases 8.6.x.
+
+Débitos específicos ainda abertos:
+
+- consultas por ID sem `ClinicId` podem expor ou alterar dados de outra clínica;
+- validadores globais de existência/unicidade podem vazar existência de dados cross-clinic;
+- listagens clínicas sem filtro podem ser confundidas com listagens administrativas globais;
+- payloads com `ClinicId` ainda precisam ser tratados como dados não confiáveis até validação contextual;
+- entidades sem `ClinicId` direto, como `Pet` e `PrescriptionItem`, exigem filtros via entidade pai;
+- regras potencialmente globais, como microchip e número de atendimento, precisam de decisão explícita e testes de isolamento.
+
+Referência: `docs/security/PHASE_08_06_00_CONTEXTUAL_QUERY_FILTERS_PLANNING.md`.
