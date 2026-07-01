@@ -24,7 +24,7 @@ public class CurrentClinicalContextTests
 
     [Theory]
     [InlineData(null, false)]
-    [InlineData(1, true)]
+    [InlineData(1L, true)]
     public void HasClinic_ShouldReflectClinicIdPresence(long? clinicId, bool expectedHasClinic)
     {
         var context = new TestCurrentClinicalContext(clinicId);
