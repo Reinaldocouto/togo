@@ -606,6 +606,41 @@ namespace Togo.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Togo.Domain.Entities.UserClinicAccess", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("ClinicId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClinicId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "ClinicId")
+                        .IsUnique();
+
+                    b.ToTable("UserClinicAccesses", (string)null);
+                });
+
             modelBuilder.Entity("Togo.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -722,6 +757,21 @@ namespace Togo.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
+            modelBuilder.Entity("Togo.Domain.Entities.UserClinicAccess", b =>
+                {
+                    b.HasOne("Togo.Domain.Entities.Clinic", null)
+                        .WithMany()
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Togo.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
 #pragma warning restore 612, 618
         }
     }

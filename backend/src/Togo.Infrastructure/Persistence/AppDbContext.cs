@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Clinic> Clinics => Set<Clinic>();
     public DbSet<ClinicUnit> ClinicUnits => Set<ClinicUnit>();
+    public DbSet<UserClinicAccess> UserClinicAccesses => Set<UserClinicAccess>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
