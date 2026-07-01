@@ -15,12 +15,13 @@ public class PetRepository : IPetRepository
         _context = context;
     }
 
-    public async Task<IReadOnlyList<PetListItemProjection>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PetListItemProjection>> ListAsync(long clinicId, CancellationToken cancellationToken)
     {
         return await (
             from pet in _context.Pets.AsNoTracking()
             join patient in _context.Patients.AsNoTracking()
                 on pet.PatientId equals patient.Id
+            where patient.ClinicId == clinicId
             orderby patient.Name
             select new PetListItemProjection(
                 patient.Id,
@@ -33,6 +34,31 @@ public class PetRepository : IPetRepository
                 pet.Microchip))
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, long clinicId, CancellationToken cancellationToken)
+    {
+        return await (
+            from pet in _context.Pets.AsNoTracking()
+            join patient in _context.Patients.AsNoTracking()
+                on pet.PatientId equals patient.Id
+            where patient.Id == patientId && patient.ClinicId == clinicId
+            select new PetDetailsProjection(
+                patient.Id,
+                patient.ClinicId,
+                pet.TutorId,
+                patient.Name,
+                patient.BirthDate,
+                patient.Status,
+                pet.Species,
+                pet.Breed,
+                pet.Sex,
+                pet.WeightKg,
+                pet.Microchip,
+                patient.CreatedAt,
+                patient.UpdatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
 
     public async Task<PetDetailsProjection?> GetByPatientIdAsync(long patientId, CancellationToken cancellationToken)
     {
@@ -58,11 +84,11 @@ public class PetRepository : IPetRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<bool> TutorExistsAsync(long tutorId, CancellationToken cancellationToken)
+    public async Task<bool> TutorExistsAsync(long tutorId, long clinicId, CancellationToken cancellationToken)
     {
         return await _context.Tutors
             .AsNoTracking()
-            .AnyAsync(tutor => tutor.Id == tutorId, cancellationToken);
+            .AnyAsync(tutor => tutor.Id == tutorId && tutor.ClinicId == clinicId, cancellationToken);
     }
 
     public async Task<bool> TutorBelongsToClinicAsync(long tutorId, long clinicId, CancellationToken cancellationToken)
@@ -109,14 +135,14 @@ public class PetRepository : IPetRepository
         }
     }
 
-    public async Task<PetDetailsProjection?> UpdateAsync(UpdatePetRepositoryData data, CancellationToken cancellationToken)
+    public async Task<PetDetailsProjection?> UpdateAsync(UpdatePetRepositoryData data, long clinicId, CancellationToken cancellationToken)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
             var patient = await _context.Patients
-                .FirstOrDefaultAsync(patient => patient.Id == data.PatientId, cancellationToken);
+                .FirstOrDefaultAsync(patient => patient.Id == data.PatientId && patient.ClinicId == clinicId, cancellationToken);
 
             var pet = await _context.Pets
                 .FirstOrDefaultAsync(pet => pet.PatientId == data.PatientId, cancellationToken);
@@ -142,10 +168,10 @@ public class PetRepository : IPetRepository
         }
     }
 
-    public async Task<bool> DeleteAsync(long patientId, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(long patientId, long clinicId, CancellationToken cancellationToken)
     {
         var patient = await _context.Patients
-            .FirstOrDefaultAsync(patient => patient.Id == patientId, cancellationToken);
+            .FirstOrDefaultAsync(patient => patient.Id == patientId && patient.ClinicId == clinicId, cancellationToken);
 
         if (patient is null)
         {

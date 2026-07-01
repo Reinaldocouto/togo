@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Togo.Application.Security;
 using Togo.Application.Pets.Contracts;
 using Togo.Application.Tutors;
 
@@ -7,13 +8,19 @@ namespace Togo.Application.Pets.UseCases;
 public class GetPetByIdUseCase
 {
     private readonly IPetRepository _petRepository;
+    private readonly ICurrentClinicalContext _currentClinicalContext;
+    private readonly IClinicalContextAuthorizationService _clinicalContextAuthorizationService;
     private readonly ILogger<GetPetByIdUseCase> _logger;
 
     public GetPetByIdUseCase(
         IPetRepository petRepository,
+        ICurrentClinicalContext currentClinicalContext,
+        IClinicalContextAuthorizationService clinicalContextAuthorizationService,
         ILogger<GetPetByIdUseCase> logger)
     {
         _petRepository = petRepository;
+        _currentClinicalContext = currentClinicalContext;
+        _clinicalContextAuthorizationService = clinicalContextAuthorizationService;
         _logger = logger;
     }
 
@@ -29,7 +36,10 @@ public class GetPetByIdUseCase
             return ApplicationResult<PetResponse>.ValidationError("Patient id is invalid.");
         }
 
-        var pet = await _petRepository.GetByPatientIdAsync(patientId, cancellationToken);
+        var clinicId = _currentClinicalContext.GetRequiredClinicId();
+        await _clinicalContextAuthorizationService.EnsureCanAccessCurrentClinicAsync(cancellationToken);
+
+        var pet = await _petRepository.GetByPatientIdAsync(patientId, clinicId, cancellationToken);
         if (pet is null)
         {
             _logger.LogWarning("Pet not found. PatientId: {PatientId}", patientId);

@@ -1,3 +1,4 @@
+using Togo.Application.Tests;
 using Microsoft.Extensions.Logging;
 using Togo.Application.Pets.Contracts;
 using Togo.Application.Pets.UseCases;
@@ -321,6 +322,8 @@ public sealed class UpdatePetUseCaseTests
             repository,
             tutorExistsValidator,
             microchipUniquenessValidator,
+            new FakeCurrentClinicalContext(1),
+            new FakeClinicalContextAuthorizationService(),
             logger ?? new TestLogger<UpdatePetUseCase>());
     }
 

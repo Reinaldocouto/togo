@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Togo.Application.Security;
 using Togo.Application.Tutors.Contracts;
 
 namespace Togo.Application.Tutors.UseCases;
@@ -6,13 +7,19 @@ namespace Togo.Application.Tutors.UseCases;
 public class GetTutorByIdUseCase
 {
     private readonly ITutorRepository _tutorRepository;
+    private readonly ICurrentClinicalContext _currentClinicalContext;
+    private readonly IClinicalContextAuthorizationService _clinicalContextAuthorizationService;
     private readonly ILogger<GetTutorByIdUseCase> _logger;
 
     public GetTutorByIdUseCase(
         ITutorRepository tutorRepository,
+        ICurrentClinicalContext currentClinicalContext,
+        IClinicalContextAuthorizationService clinicalContextAuthorizationService,
         ILogger<GetTutorByIdUseCase> logger)
     {
         _tutorRepository = tutorRepository;
+        _currentClinicalContext = currentClinicalContext;
+        _clinicalContextAuthorizationService = clinicalContextAuthorizationService;
         _logger = logger;
     }
 
@@ -25,7 +32,10 @@ public class GetTutorByIdUseCase
             _logger.LogWarning("Tutor get by id failed due to invalid id. TutorId: {TutorId}", id);
         }
 
-        var tutor = await _tutorRepository.GetByIdAsync(id, cancellationToken);
+        var clinicId = _currentClinicalContext.GetRequiredClinicId();
+        await _clinicalContextAuthorizationService.EnsureCanAccessCurrentClinicAsync(cancellationToken);
+
+        var tutor = await _tutorRepository.GetByIdAsync(id, clinicId, cancellationToken);
         if (tutor is null)
         {
             _logger.LogWarning("Tutor not found. TutorId: {TutorId}", id);

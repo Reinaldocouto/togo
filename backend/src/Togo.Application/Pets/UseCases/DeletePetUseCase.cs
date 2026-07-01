@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Togo.Application.Security;
 using Togo.Application.Tutors;
 
 namespace Togo.Application.Pets.UseCases;
@@ -6,13 +7,19 @@ namespace Togo.Application.Pets.UseCases;
 public class DeletePetUseCase
 {
     private readonly IPetRepository _petRepository;
+    private readonly ICurrentClinicalContext _currentClinicalContext;
+    private readonly IClinicalContextAuthorizationService _clinicalContextAuthorizationService;
     private readonly ILogger<DeletePetUseCase> _logger;
 
     public DeletePetUseCase(
         IPetRepository petRepository,
+        ICurrentClinicalContext currentClinicalContext,
+        IClinicalContextAuthorizationService clinicalContextAuthorizationService,
         ILogger<DeletePetUseCase> logger)
     {
         _petRepository = petRepository;
+        _currentClinicalContext = currentClinicalContext;
+        _clinicalContextAuthorizationService = clinicalContextAuthorizationService;
         _logger = logger;
     }
 
@@ -30,7 +37,10 @@ public class DeletePetUseCase
 
         try
         {
-            var deleted = await _petRepository.DeleteAsync(patientId, cancellationToken);
+            var clinicId = _currentClinicalContext.GetRequiredClinicId();
+            await _clinicalContextAuthorizationService.EnsureCanAccessCurrentClinicAsync(cancellationToken);
+
+            var deleted = await _petRepository.DeleteAsync(patientId, clinicId, cancellationToken);
             if (!deleted)
             {
                 _logger.LogWarning("Pet delete failed because pet was not found. PatientId: {PatientId}", patientId);

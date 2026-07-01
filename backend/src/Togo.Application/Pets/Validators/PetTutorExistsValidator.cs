@@ -33,7 +33,7 @@ public class PetTutorExistsValidator
             return ApplicationResult<bool>.ValidationError("Tutor id is invalid.");
         }
 
-        var tutorExists = await _petRepository.TutorExistsAsync(tutorId, cancellationToken);
+        var tutorExists = await _petRepository.TutorExistsAsync(tutorId, clinicId, cancellationToken);
         if (!tutorExists)
         {
             _logger.LogWarning("Pet tutor existence validation failed because tutor was not found. TutorId: {TutorId}", tutorId);

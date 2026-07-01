@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Togo.Application.Security;
 using Togo.Application.Pets.Contracts;
 using Togo.Application.Pets.Validators;
 using Togo.Application.Tutors;
@@ -9,6 +10,8 @@ namespace Togo.Application.Pets.UseCases;
 public class CreatePetUseCase
 {
     private readonly IPetRepository _petRepository;
+    private readonly ICurrentClinicalContext _currentClinicalContext;
+    private readonly IClinicalContextAuthorizationService _clinicalContextAuthorizationService;
     private readonly PetTutorExistsValidator _petTutorExistsValidator;
     private readonly PetMicrochipUniquenessValidator _petMicrochipUniquenessValidator;
     private readonly ILogger<CreatePetUseCase> _logger;
@@ -17,11 +20,15 @@ public class CreatePetUseCase
         IPetRepository petRepository,
         PetTutorExistsValidator petTutorExistsValidator,
         PetMicrochipUniquenessValidator petMicrochipUniquenessValidator,
+        ICurrentClinicalContext currentClinicalContext,
+        IClinicalContextAuthorizationService clinicalContextAuthorizationService,
         ILogger<CreatePetUseCase> logger)
     {
         _petRepository = petRepository;
         _petTutorExistsValidator = petTutorExistsValidator;
         _petMicrochipUniquenessValidator = petMicrochipUniquenessValidator;
+        _currentClinicalContext = currentClinicalContext;
+        _clinicalContextAuthorizationService = clinicalContextAuthorizationService;
         _logger = logger;
     }
 
@@ -35,7 +42,16 @@ public class CreatePetUseCase
             request.TutorId,
             hasMicrochip);
 
-        var tutorValidation = await _petTutorExistsValidator.ValidateAsync(request.TutorId, request.ClinicId, cancellationToken);
+        var clinicId = _currentClinicalContext.GetRequiredClinicId();
+        await _clinicalContextAuthorizationService.EnsureCanAccessCurrentClinicAsync(cancellationToken);
+
+        if (request.ClinicId > 0 && request.ClinicId != clinicId)
+        {
+            _logger.LogWarning("Pet creation failed because request clinic differs from authorized context. RequestClinicId: {RequestClinicId}. ClinicId: {ClinicId}", request.ClinicId, clinicId);
+            return ApplicationResult<PetResponse>.ValidationError("ClinicId does not match the authorized clinical context.");
+        }
+
+        var tutorValidation = await _petTutorExistsValidator.ValidateAsync(request.TutorId, clinicId, cancellationToken);
         if (!tutorValidation.IsSuccess)
         {
             _logger.LogWarning(
@@ -55,7 +71,7 @@ public class CreatePetUseCase
         }
 
         var data = new CreatePetRepositoryData(
-            request.ClinicId,
+            clinicId,
             request.TutorId,
             PatientType.Pet,
             request.Name,
